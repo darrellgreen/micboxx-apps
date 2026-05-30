@@ -21,7 +21,7 @@ import { RoomReactionsToolbar } from "@/features/rooms/components/RoomReactionsT
 import { tokens } from "@micboxx/theme";
 
 import { ChatBubble } from "./ChatBubble";
-import { getMessageOpacity, shouldCompactWithPrevious } from "./chat-utils";
+import { getMessageOpacity, shouldCompactWithPrevious } from "@micboxx/utils";
 import { useRoomChatList } from "./useRoomChatList";
 
 const MESSAGE_LIMIT = 60;

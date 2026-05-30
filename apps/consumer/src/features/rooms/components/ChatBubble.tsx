@@ -5,7 +5,7 @@ import { VerifiedBadge } from "@micboxx/ui";
 import type { RoomChatMessage } from "@micboxx/contracts";
 import { tokens } from "@micboxx/theme";
 
-import { formatTime, getAvatarBackground, getInitials } from "./chat-utils";
+import { formatTime, getAvatarBackground, getInitials } from "@micboxx/utils";
 
 interface ChatBubbleProps {
   item: RoomChatMessage;

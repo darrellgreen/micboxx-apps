@@ -22,7 +22,7 @@ import {
   resolveAlbumRoute,
   resolvePlaylistRoute,
   resolveUserRoute,
-} from "@/features/catalog/detail-utils";
+} from "@micboxx/utils";
 import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
 import { formatDuration } from "@micboxx/api";
 import {

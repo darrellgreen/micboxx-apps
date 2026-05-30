@@ -17,8 +17,8 @@ import {
 import {
     buildAlbumAccessCtaModel,
     buildAlbumRelatedLane,
-    joinMetaParts,
 } from "@/features/catalog/detail-utils";
+import { joinMetaParts } from "@micboxx/utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { formatDuration } from "@micboxx/api";

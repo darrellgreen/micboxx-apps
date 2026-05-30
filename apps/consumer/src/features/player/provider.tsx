@@ -9,7 +9,7 @@ import {
 } from "react";
 
 import { noopPlayerAnalyticsSink } from "@/features/player/analytics";
-import { PLAYER_ANALYTICS_EVENTS } from "@/features/player/constants/events";
+import { PLAYER_ANALYTICS_EVENTS } from "@micboxx/utils";
 import { noopDownloadPlaybackResolver } from "@/features/player/downloads";
 import { trackPlayerAdapter } from "@/features/player/engine/adapter";
 import type { EngineTrack } from "@/features/player/engine/types";

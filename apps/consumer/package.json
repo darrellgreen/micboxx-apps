@@ -29,6 +29,7 @@
     "@micboxx/contracts": "*",
     "@micboxx/theme": "*",
     "@micboxx/ui": "*",
+    "@micboxx/utils": "*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/slider": "5.0.1",
     "@react-native-masked-view/masked-view": "^0.3.2",

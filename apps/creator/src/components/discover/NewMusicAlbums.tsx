@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { PublicTrackSummary } from "@micboxx/contracts";
-import { resolveAlbumRoute } from "@/features/catalog/detail-utils";
+import { resolveAlbumRoute } from "@micboxx/utils";
 import { tokens } from "@micboxx/theme";
 
 interface AlbumItem {

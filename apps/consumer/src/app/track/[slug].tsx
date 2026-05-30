@@ -31,7 +31,7 @@ import {
     joinMetaParts,
     resolveAlbumRoute,
     resolveUserRoute,
-} from "@/features/catalog/detail-utils";
+} from "@micboxx/utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import {
     buildTrackAccessContext,

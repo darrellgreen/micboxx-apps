@@ -16,11 +16,8 @@ import {
     DetailStatusPanel,
     RelatedLaneSection,
 } from "@/features/catalog/components/detail-shared";
-import {
-    buildPlaylistRelatedLane,
-    joinMetaParts,
-    resolveTrackRoute,
-} from "@/features/catalog/detail-utils";
+import { buildPlaylistRelatedLane } from "@/features/catalog/detail-utils";
+import { joinMetaParts, resolveTrackRoute } from "@micboxx/utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { env } from "@/config/env";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";

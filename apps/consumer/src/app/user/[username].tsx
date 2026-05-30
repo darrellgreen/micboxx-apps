@@ -28,6 +28,7 @@ import {
     buildAlbumRelatedLane,
     buildPlaylistRelatedLane,
 } from "@/features/catalog/detail-utils";
+import { joinMetaParts } from "@micboxx/utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { env } from "@/config/env";
 import { formatCompactNumber } from "@micboxx/api";
