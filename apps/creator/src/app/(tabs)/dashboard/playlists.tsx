@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
 
-import type { DashboardPlaylistSummary } from "@/contracts/dashboard";
+import type { DashboardPlaylistSummary } from "@micboxx/contracts";
 import { getMyPlaylists } from "@/features/dashboard/api";
 import { formatDuration, formatRelativeTime } from "@/lib/formatters";
 import {

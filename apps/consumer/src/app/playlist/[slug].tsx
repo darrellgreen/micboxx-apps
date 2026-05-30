@@ -6,8 +6,8 @@ import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
-import type { DashboardPlaylistTrack } from "@/contracts/dashboard";
-import type { PublicTrackSummary } from "@/contracts/micboxx";
+import type { DashboardPlaylistTrack } from "@micboxx/contracts";
+import type { PublicTrackSummary } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import {
     DetailActionBar,

@@ -4,7 +4,7 @@ import {
     type PayloadAction,
 } from "@reduxjs/toolkit";
 
-import type { MicboxxSession } from "@/contracts/micboxx";
+import type { MicboxxSession } from "@micboxx/contracts";
 import {
     isAuthCancelledError,
     revokeDrupalSession,

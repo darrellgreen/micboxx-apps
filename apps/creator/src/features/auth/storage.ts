@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
-import type { MicboxxSession, MicboxxSessionUser } from "@/contracts/micboxx";
+import type { MicboxxSession, MicboxxSessionUser } from "@micboxx/contracts";
 
 const LEGACY_SESSION_KEY = "micboxx.mobile.session";
 const ACCESS_TOKEN_KEY = "micboxx.mobile.session.accessToken";

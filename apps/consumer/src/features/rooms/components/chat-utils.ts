@@ -1,4 +1,4 @@
-import type { RoomChatMessage } from "@/contracts/rooms";
+import type { RoomChatMessage } from "@micboxx/contracts";
 
 const AVATAR_PALETTES = ["#0f172a", "#1f2937", "#0b3d2a", "#2a1f3d"] as const;
 

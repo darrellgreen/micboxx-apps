@@ -7,7 +7,7 @@ import type {
     PublicTrackList,
     PublicTrackPage,
     PublicTrackSummary,
-} from "@/contracts/micboxx";
+} from "@micboxx/contracts";
 import { apiFetch } from "@/lib/api/client";
 import { mockSearchResults } from "@/lib/mock-data";
 

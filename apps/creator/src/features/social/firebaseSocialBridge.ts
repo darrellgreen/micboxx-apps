@@ -16,8 +16,8 @@
 // full architectural decision behind this bridge.
 
 import { env } from "@/config/env";
-import type { MicboxxSession } from "@/contracts/micboxx";
-import type { FirebaseSocialAuthTokenResponse } from "@/contracts/social";
+import type { MicboxxSession } from "@micboxx/contracts";
+import type { FirebaseSocialAuthTokenResponse } from "@micboxx/contracts";
 
 export class FirebaseSocialBridgeError extends Error {
   constructor(

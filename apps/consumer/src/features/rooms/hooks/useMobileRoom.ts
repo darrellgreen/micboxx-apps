@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 
 import { env } from "@/config/env";
-import type { PublicTrackSummary } from "@/contracts/micboxx";
+import type { PublicTrackSummary } from "@micboxx/contracts";
 import type {
     MobileRoomStateSnapshot,
     RoomActivityResponse,
@@ -18,7 +18,7 @@ import type {
     RoomState,
     RoomSupportBalance,
     RoomTimeMachineResponse,
-} from "@/contracts/rooms";
+} from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";

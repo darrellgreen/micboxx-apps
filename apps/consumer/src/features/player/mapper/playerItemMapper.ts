@@ -1,4 +1,4 @@
-import type { PublicTrack, PublicTrackSummary } from "@/contracts/micboxx";
+import type { PublicTrack, PublicTrackSummary } from "@micboxx/contracts";
 import { resolvePlaybackAuthorization } from "@/features/player/mapper/playbackSourceResolver";
 import type { PlayerItem } from "@/features/player/types/player";
 

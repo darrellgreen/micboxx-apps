@@ -34,7 +34,7 @@ import type {
     RoomReactionEntry,
     RoomReactionType,
     RoomSupportStats,
-} from "@/contracts/rooms";
+} from "@micboxx/contracts";
 
 const emptySnapshot: MobileRoomStateSnapshot = {
   presence: [],

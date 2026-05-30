@@ -1,7 +1,7 @@
 import { addDoc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { getFirebaseClientDb } from "@/config/firebase";
-import type { MicboxxSessionUser } from "@/contracts/micboxx";
+import type { MicboxxSessionUser } from "@micboxx/contracts";
 import {
     buildDirectConversationPayload,
     buildDirectMessagePayload,

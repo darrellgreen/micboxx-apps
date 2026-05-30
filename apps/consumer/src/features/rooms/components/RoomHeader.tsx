@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { RoomCapabilities, RoomRelease } from "@/contracts/rooms";
+import type { RoomCapabilities, RoomRelease } from "@micboxx/contracts";
 import { tokens } from "@/theme/tokens";
 
 export function RoomHeader({

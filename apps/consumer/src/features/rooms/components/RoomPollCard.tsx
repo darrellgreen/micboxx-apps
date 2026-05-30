@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { RoomActivePollState } from "@/contracts/rooms";
+import type { RoomActivePollState } from "@micboxx/contracts";
 import { tokens } from "@/theme/tokens";
 
 export function RoomPollCard({

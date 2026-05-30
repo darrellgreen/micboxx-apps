@@ -8,7 +8,7 @@ import {
     type NativeSyntheticEvent,
 } from "react-native";
 
-import type { RoomChatMessage } from "@/contracts/rooms";
+import type { RoomChatMessage } from "@micboxx/contracts";
 
 interface UseRoomChatListOptions {
   messageCount: number;

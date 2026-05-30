@@ -3,7 +3,7 @@ import type {
   RegisterResult,
   ResendCodeResult,
   VerifyResult,
-} from "@/contracts/registration";
+} from "@micboxx/contracts";
 import { apiFetch } from "@/lib/api/client";
 
 export async function registerUserForVerification(

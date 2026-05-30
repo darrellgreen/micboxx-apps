@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
-import type { RoomPresenceSummaryEntry } from "@/contracts/rooms";
+import type { RoomPresenceSummaryEntry } from "@micboxx/contracts";
 import { tokens } from "@/theme/tokens";
 
 export function RoomPresenceBar({ presence }: { presence: RoomPresenceSummaryEntry[] }) {

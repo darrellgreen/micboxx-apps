@@ -3,7 +3,7 @@ import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 
 import { env, hasLiveDrupalConfig } from "@/config/env";
-import type { MicboxxSession, MicboxxSessionUser } from "@/contracts/micboxx";
+import type { MicboxxSession, MicboxxSessionUser } from "@micboxx/contracts";
 import {
     clearStoredSession,
     readStoredSession,

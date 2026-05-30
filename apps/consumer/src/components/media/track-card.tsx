@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import type { PublicTrackSummary } from "@/contracts/micboxx";
+import type { PublicTrackSummary } from "@micboxx/contracts";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { formatDuration } from "@/lib/formatters";
 import { tokens } from "@/theme/tokens";

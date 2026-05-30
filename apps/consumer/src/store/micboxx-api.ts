@@ -3,11 +3,11 @@ import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
 import type {
     EntitlementState,
     PublicSubscriptionPlan,
-} from "@/contracts/commerce";
+} from "@micboxx/contracts";
 import type {
     DashboardPlaylist,
     DashboardPlaylistList,
-} from "@/contracts/dashboard";
+} from "@micboxx/contracts";
 import type {
     DiscoverPersonalizedResponse,
     ForYouResponse,
@@ -19,7 +19,7 @@ import type {
     PublicTrackList,
     PublicTrackPage,
     PublicTrackSummary,
-} from "@/contracts/micboxx";
+} from "@micboxx/contracts";
 import type {
     PublicRoomDiscoveryFilter,
     PublicRoomList,
@@ -32,7 +32,7 @@ import type {
     RoomSupportSendResponse,
     RoomSupportStatusResult,
     RoomTimeMachineResponse,
-} from "@/contracts/rooms";
+} from "@micboxx/contracts";
 import {
     getAlbumPage,
     getArtistPage,

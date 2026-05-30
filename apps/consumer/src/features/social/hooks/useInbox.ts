@@ -2,7 +2,7 @@ import { limit, onSnapshot, orderBy, query } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
-import type { UserConversationInboxItem } from "@/contracts/social";
+import type { UserConversationInboxItem } from "@micboxx/contracts";
 import {
     getUserConversationItemsCollection,
     readUserConversationInboxItem,

@@ -14,7 +14,7 @@ import type {
     RoomSupportSendResponse,
     RoomSupportStatusResult,
     RoomTimeMachineResponse,
-} from "@/contracts/rooms";
+} from "@micboxx/contracts";
 import {
     ensureFreshSession,
     isAuthSessionExpiredError,

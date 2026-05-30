@@ -16,8 +16,8 @@ import { ShimmerPlaceholder } from "@/components/ui/shimmer-placeholder";
 import type {
   PublicArtistSummary,
   PublicTrackSummary
-} from "@/contracts/micboxx";
-import type { PublicRoomSummary } from "@/contracts/rooms";
+} from "@micboxx/contracts";
+import type { PublicRoomSummary } from "@micboxx/contracts";
 import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
 import { hapticSelection } from "@/hooks/useHaptic";
 import { useAppSelector } from "@/store/hooks";

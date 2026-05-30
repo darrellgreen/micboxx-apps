@@ -4,7 +4,7 @@ import type {
     PublicPlaylist,
     PublicTrack,
     PublicTrackSummary,
-} from "@/contracts/micboxx";
+} from "@micboxx/contracts";
 import {
     formatCompactNumber,
     formatCurrency,

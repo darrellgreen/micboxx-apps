@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import type { DirectMessage } from "@/contracts/social";
+import type { DirectMessage } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { ComposeBar } from "@/features/social/components/ComposeBar";
 import { MessageBubble } from "@/features/social/components/MessageBubble";

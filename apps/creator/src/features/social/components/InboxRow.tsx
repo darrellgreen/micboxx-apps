@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Avatar } from "@/components/ui/avatar";
-import type { UserConversationInboxItem } from "@/contracts/social";
+import type { UserConversationInboxItem } from "@micboxx/contracts";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { formatRelativeTime } from "@/lib/formatters";
 import { tokens } from "@/theme/tokens";

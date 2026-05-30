@@ -13,13 +13,13 @@ import type {
   DashboardUploadOptions,
   DashboardUserProfile,
 } from "@/contracts/creator";
-import type { MicboxxSession, MicboxxSessionUser } from "@/contracts/micboxx";
+import type { MicboxxSession, MicboxxSessionUser } from "@micboxx/contracts";
 import type {
   DirectConversation,
   DirectMessage,
   SocialNotification,
   UserConversationInboxItem,
-} from "@/contracts/social";
+} from "@micboxx/contracts";
 
 export type CreatorFixtureScenario =
   | "creator_ready"

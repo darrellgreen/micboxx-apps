@@ -1,4 +1,4 @@
-import type { MicboxxSession, PublicTrack } from "@/contracts/micboxx";
+import type { MicboxxSession, PublicTrack } from "@micboxx/contracts";
 import { mapTrackToPlayerItem } from "@/features/player/mapper/playerItemMapper";
 import { formatCurrency } from "@/lib/formatters";
 

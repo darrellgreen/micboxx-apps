@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import type { RoomClockState, RoomClockTrackEntry } from "@/contracts/rooms";
+import type { RoomClockState, RoomClockTrackEntry } from "@micboxx/contracts";
 import { TrackWaveform } from "@/features/player/components/TrackWaveform";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { tokens } from "@/theme/tokens";

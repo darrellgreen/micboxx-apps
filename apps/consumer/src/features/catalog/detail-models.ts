@@ -8,7 +8,7 @@ import type {
     PublicPlaylist,
     PublicPlaylistPage,
     PublicTrackPage,
-} from "@/contracts/micboxx";
+} from "@micboxx/contracts";
 
 export type PublicUserSummary = PublicArtistSummary;
 export type PublicUserPage = PublicArtistPage;

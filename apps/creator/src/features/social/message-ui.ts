@@ -1,7 +1,7 @@
 import type {
   DirectConversation,
   UserConversationInboxItem,
-} from "@/contracts/social";
+} from "@micboxx/contracts";
 
 export type ConversationFilter =
   | "all"

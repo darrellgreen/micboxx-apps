@@ -7,7 +7,7 @@ import {
     type Firestore,
 } from "firebase/firestore";
 
-import type { MicboxxSessionUser } from "@/contracts/micboxx";
+import type { MicboxxSessionUser } from "@micboxx/contracts";
 import type {
     DirectConversation,
     DirectMessage,
@@ -18,7 +18,7 @@ import type {
     TrackSocialMeta,
     UserSocialMeta,
     UserConversationInboxItem,
-} from "@/contracts/social";
+} from "@micboxx/contracts";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object"

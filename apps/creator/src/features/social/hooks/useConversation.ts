@@ -2,7 +2,7 @@ import { limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
-import type { DirectConversation, DirectMessage } from "@/contracts/social";
+import type { DirectConversation, DirectMessage } from "@micboxx/contracts";
 import { markConversationRead } from "@/features/social/dm-service";
 import {
     getConversationMessagesCollection,

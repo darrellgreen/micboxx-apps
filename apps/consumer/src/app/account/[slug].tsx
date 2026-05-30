@@ -24,8 +24,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Pill } from "@/components/ui/pill";
 import { ShimmerPlaceholder } from "@/components/ui/shimmer-placeholder";
 import { getFirebaseClientDb } from "@/config/firebase";
-import type { PublicTrackSummary } from "@/contracts/micboxx";
-import type { SocialNotification } from "@/contracts/social";
+import type { PublicTrackSummary } from "@micboxx/contracts";
+import type { SocialNotification } from "@micboxx/contracts";
 import {
   ACCOUNT_DESTINATIONS,
   getUserRoleLabel,

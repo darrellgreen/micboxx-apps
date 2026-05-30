@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import type { RegisterRequest } from "@/contracts/registration";
+import type { RegisterRequest } from "@micboxx/contracts";
 import { registerUserForVerification } from "@/features/auth/registration-api";
 import { ApiError } from "@/lib/api/client";
 import { tokens } from "@/theme/tokens";

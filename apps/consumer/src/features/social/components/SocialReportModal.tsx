@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-nativ
 import {
   SOCIAL_REPORT_REASON_OPTIONS,
   type SocialReportReasonKey,
-} from "@/contracts/social";
+} from "@micboxx/contracts";
 import { tokens } from "@/theme/tokens";
 
 export function SocialReportModal({

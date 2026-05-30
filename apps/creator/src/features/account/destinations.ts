@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 
-import type { MicboxxSessionUser } from "@/contracts/micboxx";
+import type { MicboxxSessionUser } from "@micboxx/contracts";
 
 export type AccountDestinationSlug =
   | "profile"

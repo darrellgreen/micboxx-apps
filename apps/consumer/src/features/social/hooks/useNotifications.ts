@@ -2,7 +2,7 @@ import { limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
-import type { SocialNotification } from "@/contracts/social";
+import type { SocialNotification } from "@micboxx/contracts";
 import {
     getNotificationsCollection,
     readSocialNotification,

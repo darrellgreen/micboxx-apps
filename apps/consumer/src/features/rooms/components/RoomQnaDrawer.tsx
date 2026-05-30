@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import type { RoomQnaQuestion, RoomQnaState } from "@/contracts/rooms";
+import type { RoomQnaQuestion, RoomQnaState } from "@micboxx/contracts";
 import { tokens } from "@/theme/tokens";
 
 export function RoomQnaDrawer({

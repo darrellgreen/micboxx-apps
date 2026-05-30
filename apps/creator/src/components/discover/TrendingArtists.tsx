@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { hapticSelection, hapticSuccess } from "@/hooks/useHaptic";
 
-import type { PublicArtistSummary } from "@/contracts/micboxx";
+import type { PublicArtistSummary } from "@micboxx/contracts";
 import { resolveUserRoute } from "@/features/catalog/detail-utils";
 import { tokens } from "@/theme/tokens";
 

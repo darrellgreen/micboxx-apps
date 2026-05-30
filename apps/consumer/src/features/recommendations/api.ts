@@ -1,5 +1,5 @@
 import { env, shouldUseLocalWebFixtures } from "@/config/env";
-import type { DiscoverPersonalizedResponse, ForYouResponse } from "@/contracts/micboxx";
+import type { DiscoverPersonalizedResponse, ForYouResponse } from "@micboxx/contracts";
 import { apiFetch } from "@/lib/api/client";
 import { mockForYou } from "@/lib/mock-data";
 

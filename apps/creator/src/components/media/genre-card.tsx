@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import type { PublicGenre } from "@/contracts/micboxx";
+import type { PublicGenre } from "@micboxx/contracts";
 import { tokens } from "@/theme/tokens";
 
 function getAccentForGenre(slug: string): string {

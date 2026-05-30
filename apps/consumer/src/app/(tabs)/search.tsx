@@ -16,7 +16,7 @@ import { ArtistCard } from "@/components/media/artist-card";
 import { GenreCard } from "@/components/media/genre-card";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { ShimmerPlaceholder } from "@/components/ui/shimmer-placeholder";
-import type { PublicPlaylist } from "@/contracts/micboxx";
+import type { PublicPlaylist } from "@micboxx/contracts";
 import {
   getGenreRoute,
   resolveAlbumRoute,

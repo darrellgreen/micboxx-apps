@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-import type { SocialReportReasonKey, TrackComment } from "@/contracts/social";
+import type { SocialReportReasonKey, TrackComment } from "@micboxx/contracts";
 import { ComposeBar } from "@/features/social/components/ComposeBar";
 import { SocialReportModal } from "@/features/social/components/SocialReportModal";
 import { useTrackComments } from "@/features/social/hooks/useTrackComments";

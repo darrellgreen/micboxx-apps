@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SectionHeader } from "@/components/discover";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import type { PublicRoomSummary } from "@/contracts/rooms";
+import type { PublicRoomSummary } from "@micboxx/contracts";
 import { useGetPublicRoomsQuery } from "@/store/micboxx-api";
 import { tokens } from "@/theme/tokens";
 

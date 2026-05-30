@@ -11,7 +11,7 @@ import {
     View,
 } from "react-native";
 
-import type { RoomLiveVideoTokenResponse } from "@/contracts/rooms";
+import type { RoomLiveVideoTokenResponse } from "@micboxx/contracts";
 import { getRoomLiveVideoAudienceToken } from "@/features/rooms/api";
 import { tokens } from "@/theme/tokens";
 

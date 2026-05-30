@@ -14,7 +14,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
-import type { SocialReportReasonKey, TrackComment } from "@/contracts/social";
+import type { SocialReportReasonKey, TrackComment } from "@micboxx/contracts";
 import {
   buildSocialReportPayload,
   buildTrackCommentPayload,

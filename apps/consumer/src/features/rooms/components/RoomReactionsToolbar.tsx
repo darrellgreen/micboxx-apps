@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { RoomReactionEntry, RoomReactionType } from "@/contracts/rooms";
+import type { RoomReactionEntry, RoomReactionType } from "@micboxx/contracts";
 import {
     RoomReactionFireIcon,
     RoomReactionHeartIcon,

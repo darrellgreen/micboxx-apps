@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { RoomSupportBalance, RoomSupportStats } from "@/contracts/rooms";
+import type { RoomSupportBalance, RoomSupportStats } from "@micboxx/contracts";
 import { tokens } from "@/theme/tokens";
 
 function dollars(cents: number | null | undefined) {

@@ -7,7 +7,7 @@ import type {
     PublicSearchResults,
     PublicTrackList,
     PublicTrackPage,
-} from "@/contracts/micboxx";
+} from "@micboxx/contracts";
 
 const artist = {
   id: 7,

@@ -1,4 +1,4 @@
-import type { RoomLiveVideoTokenResponse, RoomMomentState } from "@/contracts/rooms";
+import type { RoomLiveVideoTokenResponse, RoomMomentState } from "@micboxx/contracts";
 
 export interface LiveVideoTakeoverSurfaceProps {
   roomId: number | string;

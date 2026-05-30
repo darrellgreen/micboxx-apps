@@ -1,11 +1,11 @@
 import type {
     DashboardPlaylist,
     DashboardPlaylistList,
-} from "@/contracts/dashboard";
+} from "@micboxx/contracts";
 import type {
     EntitlementState,
     PublicSubscriptionPlan,
-} from "@/contracts/commerce";
+} from "@micboxx/contracts";
 import { ensureFreshSession } from "@/features/auth/api";
 import { apiFetch } from "@/lib/api/client";
 

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import type { RoomMomentState } from "@/contracts/rooms";
+import type { RoomMomentState } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
 import { ArtistDropInBanner } from "@/features/rooms/components/ArtistDropInBanner";

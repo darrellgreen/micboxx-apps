@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 
-import type { PublicTrackSummary } from "@/contracts/micboxx";
+import type { PublicTrackSummary } from "@micboxx/contracts";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";

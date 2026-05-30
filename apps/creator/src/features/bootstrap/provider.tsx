@@ -27,7 +27,7 @@ import type {
 import type {
   SocialNotification,
   UserConversationInboxItem,
-} from "@/contracts/social";
+} from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import {
   readCreatorIntroSeen,

@@ -1,8 +1,8 @@
 import { collection, onSnapshot, query, where, type Unsubscribe } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 
-import type { CommerceOrderHistoryEntry, CommerceOrderLinePayload } from "@/contracts/commerce";
-import type { PublicArtistPage, PublicTrackPage, PublicTrackSummary } from "@/contracts/micboxx";
+import type { CommerceOrderHistoryEntry, CommerceOrderLinePayload } from "@micboxx/contracts";
+import type { PublicArtistPage, PublicTrackPage, PublicTrackSummary } from "@micboxx/contracts";
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
 import { getArtistPage, getRecentlyPlayedTracks, getTrackPage } from "@/features/catalog/api";
 import { getMyPlaylists, getOrderHistory } from "@/features/dashboard/api";

@@ -1,6 +1,6 @@
 import { useEffect, type FC, type PropsWithChildren } from "react";
 
-import type { MicboxxSession } from "@/contracts/micboxx";
+import type { MicboxxSession } from "@micboxx/contracts";
 import {
     hydrateAuthSession,
     signIn as signInThunk,

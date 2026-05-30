@@ -13,7 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import type { PublicTrackSummary } from "@/contracts/micboxx";
+import type { PublicTrackSummary } from "@micboxx/contracts";
 import { resolveTrackRoute } from "@/features/catalog/detail-utils";
 import { formatDuration } from "@/lib/formatters";
 import { tokens } from "@/theme/tokens";

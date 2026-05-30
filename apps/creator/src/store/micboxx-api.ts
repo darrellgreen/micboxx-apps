@@ -3,11 +3,11 @@ import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
 import type {
     EntitlementState,
     PublicSubscriptionPlan,
-} from "@/contracts/commerce";
+} from "@micboxx/contracts";
 import type {
     DashboardPlaylist,
     DashboardPlaylistList,
-} from "@/contracts/dashboard";
+} from "@micboxx/contracts";
 import type {
     ForYouResponse,
     PublicAlbumPage,
@@ -18,7 +18,7 @@ import type {
     PublicTrackList,
     PublicTrackPage,
     PublicTrackSummary,
-} from "@/contracts/micboxx";
+} from "@micboxx/contracts";
 import {
     getAlbumPage,
     getArtistPage,

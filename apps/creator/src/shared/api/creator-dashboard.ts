@@ -1,4 +1,4 @@
-import type { MicboxxSession, MicboxxSessionUser } from "@/contracts/micboxx";
+import type { MicboxxSession, MicboxxSessionUser } from "@micboxx/contracts";
 import type {
   AlbumMetadataUpdate,
   CreatorAnalyticsPayload,

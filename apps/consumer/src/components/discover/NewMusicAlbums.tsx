@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { PublicTrackSummary } from "@/contracts/micboxx";
+import type { PublicTrackSummary } from "@micboxx/contracts";
 import { resolveAlbumRoute } from "@/features/catalog/detail-utils";
 import { tokens } from "@/theme/tokens";
 

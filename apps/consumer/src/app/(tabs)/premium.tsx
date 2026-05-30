@@ -17,7 +17,7 @@ import type {
   EntitlementCapabilityDetail,
   EntitlementState,
   PublicSubscriptionPlan,
-} from "@/contracts/commerce";
+} from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { formatCurrency } from "@/lib/formatters";
 import {

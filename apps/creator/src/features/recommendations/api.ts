@@ -1,4 +1,4 @@
-import type { ForYouResponse } from "@/contracts/micboxx";
+import type { ForYouResponse } from "@micboxx/contracts";
 import { env } from "@/config/env";
 import { apiFetch } from "@/lib/api/client";
 
