@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "178960836945",
+    "firebase_url": "https://micboxx-98bb6.firebaseio.com",
+    "project_id": "micboxx-98bb6",
+    "storage_bucket": "micboxx-98bb6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:178960836945:android:6755177d027ed082ec0b70",
+        "android_client_info": {
+          "package_name": "com.micboxx.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNNRD6OUVeeBKMsMknmiuvMS8sMVKKq3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

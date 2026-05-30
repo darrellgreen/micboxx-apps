@@ -1,0 +1,65 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { tokens } from "@/theme/tokens";
+
+interface PlayerTopBarProps {
+  onBack: () => void;
+}
+
+export function PlayerTopBar({ onBack }: PlayerTopBarProps) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={[s.topBar, { paddingTop: insets.top + 4 }]}>
+      <Pressable onPress={onBack} style={s.circleBtn}>
+        <Ionicons
+          name="chevron-back"
+          size={22}
+          color={tokens.colors.textPrimary}
+        />
+      </Pressable>
+
+      <View style={s.centerFill}>
+        <Image
+          source={require("../../../assets/images/fav.png")}
+          style={s.centerIcon}
+          contentFit="contain"
+        />
+      </View>
+      <View style={s.circleSpacer} />
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 4,
+  },
+  centerFill: {
+    flex: 1,
+    alignItems: "center",
+  },
+  centerIcon: {
+    width: 28,
+    height: 28,
+  },
+  circleBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(21,27,35,0.70)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  circleSpacer: {
+    width: 42,
+    height: 42,
+  },
+});
