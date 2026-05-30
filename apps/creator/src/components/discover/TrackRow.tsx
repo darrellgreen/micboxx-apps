@@ -12,7 +12,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "@micboxx/ui";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import { resolveTrackRoute } from "@/features/catalog/detail-utils";
 import { formatDuration } from "@/lib/formatters";

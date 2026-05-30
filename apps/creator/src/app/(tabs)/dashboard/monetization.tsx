@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { Text, StyleSheet } from "react-native";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { buildPayoutReadinessSummary } from "@/features/revenue/insights";
 import { getCreatorUpgradeUrl } from "@/shared/api/external-links";

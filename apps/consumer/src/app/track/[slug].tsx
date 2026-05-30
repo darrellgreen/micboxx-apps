@@ -19,7 +19,7 @@ import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
-import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { VerifiedBadge } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { useAuth } from "@/features/auth/provider";
 import {

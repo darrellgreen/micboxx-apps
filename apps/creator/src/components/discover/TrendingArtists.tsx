@@ -2,8 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { hapticSelection, hapticSuccess } from "@/hooks/useHaptic";
+import { AnimatedPressable } from "@micboxx/ui";
+import { hapticSelection, hapticSuccess } from "@micboxx/ui";
 
 import type { PublicArtistSummary } from "@micboxx/contracts";
 import { resolveUserRoute } from "@/features/catalog/detail-utils";

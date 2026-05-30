@@ -17,8 +17,8 @@ import { PlayerProgressCompact } from "@/features/player/components/PlayerProgre
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { usePlayerContext } from "@/features/player/provider";
 import { selectDisplaySubtitle } from "@/features/player/selectors";
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { hapticLight, hapticSuccess } from "@/hooks/useHaptic";
+import { AnimatedPressable } from "@micboxx/ui";
+import { hapticLight, hapticSuccess } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;

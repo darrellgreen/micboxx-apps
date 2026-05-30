@@ -2,8 +2,8 @@ import { Image } from "expo-image";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { hapticSelection, hapticSuccess } from "@/hooks/useHaptic";
+import { AnimatedPressable } from "@micboxx/ui";
+import { hapticSelection, hapticSuccess } from "@micboxx/ui";
 import type { PublicArtistSummary } from "@micboxx/contracts";
 import { formatCount } from "@/lib/formatters";
 import { tokens } from "@micboxx/theme";

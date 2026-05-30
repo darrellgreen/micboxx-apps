@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { hapticLight, hapticSelection } from "@/hooks/useHaptic";
+import { hapticLight, hapticSelection } from "./useHaptic";
 
 const ReanimatedPressable = Animated.createAnimatedComponent(Pressable);
 

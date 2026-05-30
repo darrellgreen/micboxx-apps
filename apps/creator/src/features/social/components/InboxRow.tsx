@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar } from "@micboxx/ui";
 import type { UserConversationInboxItem } from "@micboxx/contracts";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { formatRelativeTime } from "@/lib/formatters";

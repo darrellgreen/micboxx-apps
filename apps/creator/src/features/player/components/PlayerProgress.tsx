@@ -11,7 +11,7 @@ import Animated, {
 
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
-import { hapticSelection } from "@/hooks/useHaptic";
+import { hapticSelection } from "@micboxx/ui";
 import { formatDuration } from "@/lib/formatters";
 import { tokens } from "@micboxx/theme";
 

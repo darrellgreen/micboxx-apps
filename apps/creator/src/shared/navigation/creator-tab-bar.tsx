@@ -15,7 +15,7 @@ import { AddSquareTabIcon } from "@/components/icons/AddSquareTabIcon";
 import { HomeTabIcon } from "@/components/icons/HomeTabIcon";
 import { LibraryTabIcon } from "@/components/icons/LibraryTabIcon";
 import { PieChartTabIcon } from "@/components/icons/PieChartTabIcon";
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "@micboxx/ui";
 import {
     CREATOR_TAB_META,
     CREATOR_TAB_ORDER,

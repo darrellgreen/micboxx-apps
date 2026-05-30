@@ -4,8 +4,8 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { Avatar } from "@/components/ui/avatar";
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { Avatar } from "@micboxx/ui";
+import { AnimatedPressable } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { tokens } from "@micboxx/theme";
 

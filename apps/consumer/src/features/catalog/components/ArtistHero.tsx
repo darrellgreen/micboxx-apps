@@ -11,8 +11,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { AnimatedPressable } from "@micboxx/ui";
+import { VerifiedBadge } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 interface ArtistHeroStat {

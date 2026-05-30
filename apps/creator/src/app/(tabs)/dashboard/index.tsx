@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "@micboxx/ui";
 import type {
   DashboardAlbumSummary,
   DashboardTrackSummary,

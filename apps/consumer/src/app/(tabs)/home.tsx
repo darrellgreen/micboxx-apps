@@ -11,15 +11,15 @@ import {
   TrendingArtists,
 } from "@/components/discover";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { ShimmerPlaceholder } from "@/components/ui/shimmer-placeholder";
+import { AnimatedPressable } from "@micboxx/ui";
+import { ShimmerPlaceholder } from "@micboxx/ui";
 import type {
   PublicArtistSummary,
   PublicTrackSummary
 } from "@micboxx/contracts";
 import type { PublicRoomSummary } from "@micboxx/contracts";
 import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
-import { hapticSelection } from "@/hooks/useHaptic";
+import { hapticSelection } from "@micboxx/ui";
 import { useAppSelector } from "@/store/hooks";
 import {
   useGetDiscoverPersonalizedQuery,

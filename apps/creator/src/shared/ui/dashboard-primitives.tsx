@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export type ChipTabOption = {

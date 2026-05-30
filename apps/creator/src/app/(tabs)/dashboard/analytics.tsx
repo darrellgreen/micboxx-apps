@@ -16,7 +16,7 @@ import Svg, {
 
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import type { DashboardAnalyticsPeriod } from "@/contracts/creator";
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ErrorState, Panel } from "@/shared/ui/layout";
 import { tokens } from "@micboxx/theme";

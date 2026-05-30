@@ -17,7 +17,7 @@ import { TrackRow } from "@/components/discover";
 import {
   BottomActionSheet,
   type BottomActionSheetItem,
-} from "@/components/ui/bottom-action-sheet";
+} from "@micboxx/ui";
 import {
     DetailRouteHeader,
     DetailStatusPanel,

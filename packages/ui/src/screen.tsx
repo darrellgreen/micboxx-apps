@@ -1,7 +1,7 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView, StyleSheet, View, type ScrollViewProps } from "react-native";
 
-import { AppBackdrop } from "@/components/ui/app-backdrop";
+import { AppBackdrop } from "./app-backdrop";
 import { tokens } from "@micboxx/theme";
 
 interface ScreenProps extends ScrollViewProps {

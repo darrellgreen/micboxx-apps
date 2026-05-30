@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "@micboxx/ui";
 import { useAuth } from "@/features/auth/provider";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreatorEntryHref } from "@/features/bootstrap/routes";

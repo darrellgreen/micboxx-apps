@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar } from "@micboxx/ui";
 import type { PublicArtistSummary } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { getOrCreateConversation } from "@/features/social/dm-service";

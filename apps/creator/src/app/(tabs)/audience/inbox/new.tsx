@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar } from "@micboxx/ui";
 import type { PublicArtistSummary } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { InboxRow } from "@/features/social/components/InboxRow";

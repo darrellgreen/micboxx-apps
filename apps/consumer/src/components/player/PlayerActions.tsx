@@ -9,8 +9,8 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { hapticSuccess } from "@/hooks/useHaptic";
+import { AnimatedPressable } from "@micboxx/ui";
+import { hapticSuccess } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 interface PlayerActionsProps {

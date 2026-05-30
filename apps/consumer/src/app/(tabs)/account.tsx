@@ -3,8 +3,8 @@ import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { Avatar } from "@/components/ui/avatar";
+import { AnimatedPressable } from "@micboxx/ui";
+import { Avatar } from "@micboxx/ui";
 import { useAuth } from "@/features/auth/provider";
 import { tokens } from "@micboxx/theme";
 

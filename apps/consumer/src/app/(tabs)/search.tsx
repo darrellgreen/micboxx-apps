@@ -14,8 +14,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { SectionHeader, TrackRow } from "@/components/discover";
 import { ArtistCard } from "@/components/media/artist-card";
 import { GenreCard } from "@/components/media/genre-card";
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { ShimmerPlaceholder } from "@/components/ui/shimmer-placeholder";
+import { AnimatedPressable } from "@micboxx/ui";
+import { ShimmerPlaceholder } from "@micboxx/ui";
 import type { PublicPlaylist } from "@micboxx/contracts";
 import {
   getGenreRoute,

@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider } from "react-redux";
 
 import { AccountDrawerProvider } from "@/components/navigation/account-drawer";
-import { AppBackdrop } from "@/components/ui/app-backdrop";
+import { AppBackdrop } from "@micboxx/ui";
 import { AuthProvider } from "@/features/auth/provider";
 import { CreatorBootstrapProvider } from "@/features/bootstrap/provider";
 import { registerRoomLiveKitGlobals } from "@/features/rooms/live-video/registerLiveKitGlobals";

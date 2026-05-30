@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 
 import { AccountDrawerProvider } from "@/components/navigation/account-drawer";
-import { AppBackdrop } from "@/components/ui/app-backdrop";
+import { AppBackdrop } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { AccountPreferencesProvider } from "@/features/account/provider";
 import { AuthProvider } from "@/features/auth/provider";

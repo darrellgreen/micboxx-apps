@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef } from "react";
 import { Animated, Image, StyleSheet, Text, View } from "react-native";
 
-import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { VerifiedBadge } from "@micboxx/ui";
 import type { RoomChatMessage } from "@micboxx/contracts";
 import { tokens } from "@micboxx/theme";
 

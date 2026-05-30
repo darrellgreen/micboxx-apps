@@ -20,9 +20,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
-import { Avatar } from "@/components/ui/avatar";
-import { Pill } from "@/components/ui/pill";
-import { ShimmerPlaceholder } from "@/components/ui/shimmer-placeholder";
+import { Avatar } from "@micboxx/ui";
+import { Pill } from "@micboxx/ui";
+import { ShimmerPlaceholder } from "@micboxx/ui";
 import { getFirebaseClientDb } from "@/config/firebase";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import type { SocialNotification } from "@micboxx/contracts";

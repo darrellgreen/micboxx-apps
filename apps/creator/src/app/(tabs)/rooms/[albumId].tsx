@@ -12,7 +12,7 @@ import {
     View,
 } from "react-native";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "@micboxx/ui";
 import {
     activateRoomQna,
     activateRoomSupport,

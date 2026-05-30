@@ -6,7 +6,7 @@ import {
     type ViewStyle,
 } from "react-native";
 
-import { AnimatedPressable } from "@/components/ui/animated-pressable";
+import { AnimatedPressable } from "./animated-pressable";
 
 interface PillProps extends Omit<PressableProps, "style"> {
   label: string;
