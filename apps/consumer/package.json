@@ -79,6 +79,9 @@
     "typescript": "~5.9.2"
   },
   "expo": {
+    "autolinking": {
+      "nativeModulesDir": "../../node_modules"
+    },
     "doctor": {
       "reactNativeDirectoryCheck": {
         "exclude": [
