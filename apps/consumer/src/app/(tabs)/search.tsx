@@ -12,8 +12,8 @@ import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SectionHeader, TrackRow } from "@/components/discover";
-import { ArtistCard } from "@/components/media/artist-card";
-import { GenreCard } from "@/components/media/genre-card";
+import { ArtistCard } from "@micboxx/media";
+import { GenreCard } from "@micboxx/media";
 import { AnimatedPressable } from "@micboxx/ui";
 import { ShimmerPlaceholder } from "@micboxx/ui";
 import type { PublicPlaylist } from "@micboxx/contracts";

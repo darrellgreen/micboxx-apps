@@ -4,7 +4,6 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { AnimatedPressable } from "@micboxx/ui";
 import type { PublicTrackSummary } from "@micboxx/contracts";
-import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { formatDuration } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
@@ -15,6 +14,9 @@ interface TrackCardProps {
   layout?: "card" | "row";
   rank?: number;
   rowVariant?: "default" | "browser";
+  isActive?: boolean;
+  isPlaying?: boolean;
+  progressPercent?: number;
 }
 
 export function TrackCard({
@@ -24,11 +26,10 @@ export function TrackCard({
   layout = "card",
   rank,
   rowVariant = "default",
+  isActive = false,
+  isPlaying = false,
+  progressPercent = 0,
 }: TrackCardProps) {
-  const { currentItem, playbackState, progressPercent } = useNowPlaying();
-  const isActive = currentItem?.id === String(track.id);
-  const isPlaying =
-    isActive && (playbackState === "playing" || playbackState === "buffering");
 
   if (layout === "row") {
     return (

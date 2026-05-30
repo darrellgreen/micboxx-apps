@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SectionHeader, TrackRow } from "@/components/discover";
-import { ArtistCard } from "@/components/media/artist-card";
+import { ArtistCard } from "@micboxx/media";
 import type { PublicArtistSummary, PublicTrackSummary } from "@micboxx/contracts";
 import { resolveAlbumRoute, resolveUserRoute } from "@micboxx/utils";
 import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";

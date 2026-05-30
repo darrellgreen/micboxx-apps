@@ -1,5 +1,5 @@
 export { PlayerActions } from "./PlayerActions";
-export { PlayerArtworkRing } from "./PlayerArtworkRing";
+export { PlayerArtworkRing } from "@micboxx/media";
 export { PlayerLyricHandle } from "./PlayerLyricHandle";
 export { PlayerTopBar } from "./PlayerTopBar";
 export { PlayerTrackInfo } from "./PlayerTrackInfo";

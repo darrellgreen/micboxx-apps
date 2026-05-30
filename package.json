@@ -15,6 +15,10 @@
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
     "reset": "npm run clean && npm install"
   },
+  "overrides": {
+    "@types/react": "~19.1.0"
+  },
+
   "engines": {
     "node": ">=24 <25"
   }

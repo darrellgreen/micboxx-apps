@@ -1,0 +1,27 @@
+{
+  "name": "@micboxx/media",
+  "version": "0.0.1",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.0",
+    "@types/react": "~19.1.0"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "dependencies": {
+    "@micboxx/contracts": "*",
+    "@micboxx/theme": "*",
+    "@micboxx/ui": "*",
+    "@micboxx/api": "*",
+    "expo-image": "~1.12.9",
+    "@expo/vector-icons": "~14.0.0",
+    "expo-linear-gradient": "~12.0.1"
+  }
+}
