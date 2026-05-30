@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
 import type { RoomPresenceSummaryEntry } from "@micboxx/contracts";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function RoomPresenceBar({ presence }: { presence: RoomPresenceSummaryEntry[] }) {
   const visible = presence

@@ -2,7 +2,7 @@ import { Text, StyleSheet } from "react-native";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { KeyValueRow, Panel, ScreenShell } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function ReleaseHealthScreen() {
   const bootstrap = useCreatorBootstrap();

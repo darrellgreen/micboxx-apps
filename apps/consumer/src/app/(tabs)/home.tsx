@@ -29,7 +29,7 @@ import {
   useGetPublicRoomsQuery,
   useGetRecentlyPlayedQuery,
 } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 

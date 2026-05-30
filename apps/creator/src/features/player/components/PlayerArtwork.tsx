@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function PlayerArtwork({ size = 48 }: { size?: number }) {
   const { currentItem } = useNowPlaying();

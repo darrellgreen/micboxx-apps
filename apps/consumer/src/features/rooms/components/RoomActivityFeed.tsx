@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import type { RoomActivityResponse, RoomTimeMachineResponse } from "@micboxx/contracts";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function RoomActivityFeed({
   activity,

@@ -17,7 +17,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const LABEL_MAP: Record<string, string> = {
   home: "Discover",

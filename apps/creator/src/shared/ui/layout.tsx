@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function ScreenShell({
   title,

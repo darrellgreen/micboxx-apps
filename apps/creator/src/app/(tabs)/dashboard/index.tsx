@@ -12,7 +12,7 @@ import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreateEntryHref } from "@/features/bootstrap/routes";
 import { formatDuration } from "@/lib/formatters";
 import { ErrorState, ScreenShell } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const CREATE_ALBUM_HREF = "/create/album";
 const COMPLETE_PROFILE_HREF = "/account/profile";

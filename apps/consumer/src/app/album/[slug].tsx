@@ -23,7 +23,7 @@ import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { formatDuration } from "@/lib/formatters";
 import { useGetAlbumPageQuery } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function AlbumDetailScreen() {
   const params = useLocalSearchParams<{ slug?: string | string[] }>();

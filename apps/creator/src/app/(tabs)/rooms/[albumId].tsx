@@ -45,7 +45,7 @@ import type {
 import { formatRelativeTime } from "@/lib/formatters";
 import { CreatorApiError } from "@/shared/api/creator-dashboard";
 import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

@@ -29,7 +29,7 @@ import {
   resolveParticipantRole,
   type ConversationFilter,
 } from "@/features/social/message-ui";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const FILTER_OPTIONS: { value: ConversationFilter; label: string }[] = [
   { value: "all", label: "All" },

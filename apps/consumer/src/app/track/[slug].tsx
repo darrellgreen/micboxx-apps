@@ -46,7 +46,7 @@ import {
   formatRelativeTime,
 } from "@/lib/formatters";
 import { useGetTrackPageQuery } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function TrackDetailScreen() {
   const params = useLocalSearchParams<{ slug?: string | string[] }>();

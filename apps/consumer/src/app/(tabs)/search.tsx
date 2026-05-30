@@ -29,7 +29,7 @@ import {
   useGetDiscoverTracksQuery,
   useSearchCatalogQuery,
 } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const AUTOCOMPLETE_DELAY_MS = 350;
 

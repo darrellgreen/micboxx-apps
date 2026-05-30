@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 

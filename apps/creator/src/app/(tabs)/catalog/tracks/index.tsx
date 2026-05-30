@@ -13,7 +13,7 @@ import {
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
 import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 type TrackFilter = "all" | "draft" | "scheduled" | "published" | "failed";
 

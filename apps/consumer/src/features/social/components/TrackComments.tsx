@@ -14,7 +14,7 @@ import type { SocialReportReasonKey, TrackComment } from "@micboxx/contracts";
 import { ComposeBar } from "@/features/social/components/ComposeBar";
 import { SocialReportModal } from "@/features/social/components/SocialReportModal";
 import { useTrackComments } from "@/features/social/hooks/useTrackComments";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function formatRelativeDate(value: string | null): string {
   if (!value) {

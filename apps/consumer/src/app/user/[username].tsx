@@ -32,7 +32,7 @@ import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { env } from "@/config/env";
 import { formatCompactNumber } from "@/lib/formatters";
 import { useGetUserPageQuery } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { useUserFollowState } from "@/features/social/hooks/useUserFollowState";
 

@@ -7,7 +7,7 @@ import {
     RoomReactionHeartIcon,
     RoomReactionWaveIcon,
 } from "@/features/rooms/components/RoomReactionIcons";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const ROOM_MOMENT_REACTION_TYPES: RoomReactionType[] = ["fire", "felt_this", "this_part"];
 

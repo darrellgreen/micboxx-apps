@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { RoomSupportBalance, RoomSupportStats } from "@micboxx/contracts";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function dollars(cents: number | null | undefined) {
   return `$${((cents ?? 0) / 100).toFixed(2)}`;

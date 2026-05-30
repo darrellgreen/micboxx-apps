@@ -3,7 +3,7 @@ import { Linking, StyleSheet, Text } from "react-native";
 
 import { getPasswordResetUrl } from "@/shared/api/external-links";
 import { ScreenShell, Panel, PillButton } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function ResetPasswordHandoffScreen() {
   const url = getPasswordResetUrl();

@@ -43,7 +43,7 @@ import {
   useGetPopularTracksQuery,
   useGetRecentlyPlayedQuery,
 } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 type PlayerSurface = ReturnType<typeof useDiscoverPlayer>;

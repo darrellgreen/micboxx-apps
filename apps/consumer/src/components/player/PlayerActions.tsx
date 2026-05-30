@@ -11,7 +11,7 @@ import Animated, {
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { hapticSuccess } from "@/hooks/useHaptic";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface PlayerActionsProps {
   liked: boolean;

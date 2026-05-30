@@ -19,7 +19,7 @@ import type { DashboardAnalyticsPeriod } from "@/contracts/creator";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ErrorState, Panel } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const PERIOD_OPTIONS: DashboardAnalyticsPeriod[] = ["7d", "30d", "90d"];
 

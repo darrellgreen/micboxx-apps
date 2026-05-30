@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/features/auth/provider";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 

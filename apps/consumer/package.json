@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@micboxx/contracts": "*",
+    "@micboxx/theme": "*",
     "@config-plugins/react-native-webrtc": "13.0.0",
     "@expo/vector-icons": "^15.0.3",
     "@livekit/react-native": "^2.10.3",

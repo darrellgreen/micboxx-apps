@@ -9,7 +9,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useAuth } from "@/features/auth/provider";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreatorEntryHref } from "@/features/bootstrap/routes";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function SignInScreen() {
   const bootstrap = useCreatorBootstrap();

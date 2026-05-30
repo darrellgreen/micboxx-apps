@@ -7,7 +7,7 @@ import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { Avatar } from "@/components/ui/avatar";
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 type AccountNavItem = {
   key: string;

@@ -17,7 +17,7 @@ import { SectionHeader } from "@/components/discover";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import type { PublicRoomSummary } from "@micboxx/contracts";
 import { useGetPublicRoomsQuery } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function roomKey(room: PublicRoomSummary): string {
   return room.release_identifier || `${room.release_ref_type}:${room.release_ref_id}`;

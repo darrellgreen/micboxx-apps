@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function Field({
   label,

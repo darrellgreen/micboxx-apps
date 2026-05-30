@@ -18,7 +18,7 @@ import {
   verifyRegistrationCode,
 } from "@/features/auth/registration-api";
 import { ApiError } from "@/lib/api/client";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function firstParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) {

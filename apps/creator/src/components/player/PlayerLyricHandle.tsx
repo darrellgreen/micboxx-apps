@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function PlayerLyricHandle() {
   return (

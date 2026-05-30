@@ -7,7 +7,7 @@ import { hapticSelection, hapticSuccess } from "@/hooks/useHaptic";
 
 import type { PublicArtistSummary } from "@micboxx/contracts";
 import { resolveUserRoute } from "@/features/catalog/detail-utils";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function resolveArtistImageUri(artist: PublicArtistSummary): string | null {
   const avatarUrl =

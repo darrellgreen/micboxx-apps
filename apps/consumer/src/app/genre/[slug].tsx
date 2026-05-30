@@ -21,7 +21,7 @@ import {
   useGetDiscoverTracksQuery,
   useSearchCatalogQuery,
 } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function formatGenreLabel(slug: string) {
   return slug

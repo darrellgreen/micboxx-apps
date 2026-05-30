@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { notifyDeepLinkCallback } from "@/features/auth/api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 WebBrowser.maybeCompleteAuthSession();
 

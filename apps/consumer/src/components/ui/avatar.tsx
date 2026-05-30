@@ -1,4 +1,4 @@
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 import { Image } from "expo-image";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";

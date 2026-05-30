@@ -6,7 +6,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { formatDuration } from "@/lib/formatters";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface TrackCardProps {
   track: PublicTrackSummary;

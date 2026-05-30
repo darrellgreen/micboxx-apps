@@ -6,7 +6,7 @@ import type { DashboardTrack } from "@/contracts/creator";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { getTrackStatus, publishTrack } from "@/shared/api/creator-dashboard";
 import { ErrorState, KeyValueRow, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function ReviewTrackScreen() {
   const { draftId } = useLocalSearchParams<{ draftId?: string }>();

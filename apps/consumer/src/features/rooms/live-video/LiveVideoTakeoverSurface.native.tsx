@@ -13,7 +13,7 @@ import {
 
 import type { RoomLiveVideoTokenResponse } from "@micboxx/contracts";
 import { getRoomLiveVideoAudienceToken } from "@/features/rooms/api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 import type { LiveVideoTakeoverSurfaceProps } from "./types";
 

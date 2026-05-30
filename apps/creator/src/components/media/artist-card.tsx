@@ -6,7 +6,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { hapticSelection, hapticSuccess } from "@/hooks/useHaptic";
 import type { PublicArtistSummary } from "@micboxx/contracts";
 import { formatCount } from "@/lib/formatters";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface ArtistCardProps {
   artist: PublicArtistSummary;

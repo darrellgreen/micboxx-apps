@@ -4,7 +4,7 @@
  * a two-tone colour approach for headings.
  */
 import { Text, type TextProps, StyleSheet } from "react-native";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface GradientTextProps extends TextProps {
   children: React.ReactNode;

@@ -2,7 +2,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView, StyleSheet, View, type ScrollViewProps } from "react-native";
 
 import { AppBackdrop } from "@/components/ui/app-backdrop";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface ScreenProps extends ScrollViewProps {
   /** Skip bottom padding (e.g. for screens with a fixed footer) */

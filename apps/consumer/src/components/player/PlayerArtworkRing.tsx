@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Dimensions, StyleSheet, View } from "react-native";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const ARTWORK_SIZE = SCREEN_WIDTH * 0.52;

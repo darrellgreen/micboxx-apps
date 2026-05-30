@@ -31,7 +31,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Pill } from "@/components/ui/pill";
 import { useAuth } from "@/features/auth/provider";
 import { hapticLight } from "@/hooks/useHaptic";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.84, 360);
 

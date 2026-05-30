@@ -4,7 +4,7 @@ import { StyleSheet, Text } from "react-native";
 import { resolveOnboardingHref } from "@/features/bootstrap/routes";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ScreenShell, Panel, PillButton } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function OnboardingIntroScreen() {
   const bootstrap = useCreatorBootstrap();

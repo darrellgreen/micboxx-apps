@@ -16,7 +16,7 @@ import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
 import { usePlayerState } from "@/features/player/hooks/usePlayerState";
 import { selectHasNext, selectHasPrevious } from "@/features/player/selectors";
 import { hapticLight, hapticSelection } from "@/hooks/useHaptic";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function PlayerControls({ compact = false }: { compact?: boolean }) {
   const { play, pause, skipNext, skipPrevious } = usePlayerControls();

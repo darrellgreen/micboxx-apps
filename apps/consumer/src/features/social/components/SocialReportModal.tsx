@@ -4,7 +4,7 @@ import {
   SOCIAL_REPORT_REASON_OPTIONS,
   type SocialReportReasonKey,
 } from "@micboxx/contracts";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function SocialReportModal({
   visible,

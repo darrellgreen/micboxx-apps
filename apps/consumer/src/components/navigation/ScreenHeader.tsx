@@ -10,7 +10,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useAuth } from "@/features/auth/provider";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const LOGO_HEIGHT = 28;
 const LOGO_WIDTH = 120;

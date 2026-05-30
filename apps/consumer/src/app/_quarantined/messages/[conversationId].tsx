@@ -20,7 +20,7 @@ import { ComposeBar } from "@/features/social/components/ComposeBar";
 import { MessageBubble } from "@/features/social/components/MessageBubble";
 import { sendDirectMessage } from "@/features/social/dm-service";
 import { useConversation } from "@/features/social/hooks/useConversation";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function ConversationScreen() {
   const params = useLocalSearchParams<{ conversationId?: string }>();

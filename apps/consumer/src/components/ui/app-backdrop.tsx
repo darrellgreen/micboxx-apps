@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const GRID_LINES = Array.from({ length: 8 }, (_, index) => ({
   key: `line-${index}`,

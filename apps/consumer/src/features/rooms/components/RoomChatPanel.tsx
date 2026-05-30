@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RoomChatMessage, RoomReactionEntry, RoomReactionType } from "@micboxx/contracts";
 import { RoomBumpCoinIcon } from "@/features/rooms/components/RoomBumpCoinIcon";
 import { RoomReactionsToolbar } from "@/features/rooms/components/RoomReactionsToolbar";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 import { ChatBubble } from "./ChatBubble";
 import { getMessageOpacity, shouldCompactWithPrevious } from "./chat-utils";

@@ -9,7 +9,7 @@ import type {
     DetailActionItem,
     RelatedLaneModel,
 } from "@/features/catalog/detail-models";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function DetailRouteHeader({ title }: { title: string }) {
   const router = useRouter();

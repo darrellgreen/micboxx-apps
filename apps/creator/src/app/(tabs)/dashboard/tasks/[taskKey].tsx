@@ -3,7 +3,7 @@ import { Text, StyleSheet } from "react-native";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { EmptyState, Panel, ScreenShell } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function DashboardTaskDetailScreen() {
   const { taskKey } = useLocalSearchParams<{ taskKey?: string }>();

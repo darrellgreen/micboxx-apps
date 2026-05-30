@@ -9,7 +9,7 @@ import {
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
 import { Panel, PillButton, ScreenShell, SectionTitle } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function PlanScreen() {
   const bootstrap = useCreatorBootstrap();

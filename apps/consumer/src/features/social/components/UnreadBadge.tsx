@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function UnreadBadge({ count }: { count: number }) {
   if (!count || count <= 0) {

@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface PlayerTopBarProps {
   onBack: () => void;

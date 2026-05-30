@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import type { RoomClockState, RoomClockTrackEntry } from "@micboxx/contracts";
 import { TrackWaveform } from "@/features/player/components/TrackWaveform";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function formatTime(seconds: number) {
   const safe = Math.max(0, Math.floor(seconds));

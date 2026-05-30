@@ -29,7 +29,7 @@ import {
   getRelationshipCue,
   resolveParticipantRole,
 } from "@/features/social/message-ui";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function ConversationScreen() {
   const params = useLocalSearchParams<{ conversationId?: string }>();

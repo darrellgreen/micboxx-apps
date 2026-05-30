@@ -12,7 +12,7 @@ import { useAuth } from "@/features/auth/provider";
 import { useLibraryDomains } from "@/features/library/useLibraryDomains";
 import type { LibraryTab } from "@/features/library/libraryTypes";
 import { formatRelativeTime } from "@/lib/formatters";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const tabs: { key: LibraryTab; label: string }[] = [
   { key: "all", label: "All" },

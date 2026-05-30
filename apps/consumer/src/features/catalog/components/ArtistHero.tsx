@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface ArtistHeroStat {
   key: string;

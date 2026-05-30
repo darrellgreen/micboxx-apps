@@ -14,7 +14,7 @@ import {
 } from "@/shared/ui/dashboard-primitives";
 import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
 import { formatRelativeTime } from "@/lib/formatters";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 type RoomFilter = "all" | "active" | "unvisited" | "artist_live";
 

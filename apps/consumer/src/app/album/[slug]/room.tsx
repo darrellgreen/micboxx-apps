@@ -16,7 +16,7 @@ import { RoomPresenceBar } from "@/features/rooms/components/RoomPresenceBar";
 import { useMobileRoom } from "@/features/rooms/hooks/useMobileRoom";
 import { LiveVideoTakeoverSurface } from "@/features/rooms/live-video/LiveVideoTakeoverSurface";
 import { useGetAlbumPageQuery } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function normalizeParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

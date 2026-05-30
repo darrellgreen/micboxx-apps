@@ -13,7 +13,7 @@ import {
 import { endActiveRoomMoment, getRoomLiveVideoHostToken } from "@/features/rooms/api";
 import type { RoomLiveVideoTokenResponse, RoomMomentState } from "@/features/rooms/types";
 import { CreatorApiError } from "@/shared/api/creator-dashboard";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const LIVEKIT_CAMERA_SOURCE = "camera";
 const LIVEKIT_CONNECTED_STATE = "connected";

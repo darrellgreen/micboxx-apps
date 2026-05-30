@@ -24,7 +24,7 @@ import {
   useGetCurrentEntitlementsQuery,
   useGetPublicSubscriptionPlansQuery,
 } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 type BillingPeriod = "monthly" | "annual";

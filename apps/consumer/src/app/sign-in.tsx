@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import { useAuth } from "@/features/auth/provider";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function SignInScreen() {
   const { session, isHydrating, isSigningIn, error, signIn, signOut } =

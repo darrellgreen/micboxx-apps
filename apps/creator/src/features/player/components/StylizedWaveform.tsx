@@ -6,7 +6,7 @@ import Animated, {
     type SharedValue,
 } from "react-native-reanimated";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 /* ─── Bar pattern generator ──────────────────────────────────────────────── */
 

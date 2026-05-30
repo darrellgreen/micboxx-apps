@@ -18,7 +18,7 @@ import { AnimatedPressable } from "@/components/ui/animated-pressable";
 import type { RegisterRequest } from "@micboxx/contracts";
 import { registerUserForVerification } from "@/features/auth/registration-api";
 import { ApiError } from "@/lib/api/client";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface SignupFormState {
   name: string;

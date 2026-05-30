@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { TrackWaveform } from "@/features/player/components/TrackWaveform";
 import { formatDuration } from "@/lib/formatters";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 interface PlayerTransportProps {
   playing: boolean;

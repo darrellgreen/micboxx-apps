@@ -12,7 +12,7 @@ import { CreatorBootstrapProvider } from "@/features/bootstrap/provider";
 import { registerRoomLiveKitGlobals } from "@/features/rooms/live-video/registerLiveKitGlobals";
 import { SocialAuthGate } from "@/features/social/SocialAuthGate";
 import { store } from "@/store/store";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const navigationTheme = {
   ...DarkTheme,

@@ -6,7 +6,7 @@ import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { buildPayoutReadinessSummary } from "@/features/revenue/insights";
 import { getCreatorUpgradeUrl } from "@/shared/api/external-links";
 import { KeyValueRow, Panel, ScreenShell } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function MonetizationScreen() {
   const bootstrap = useCreatorBootstrap();

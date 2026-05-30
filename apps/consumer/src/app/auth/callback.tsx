@@ -27,7 +27,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { notifyDeepLinkCallback } from "@/features/auth/api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 // On web this closes the auth popup; on native it's a no-op but harmless.
 WebBrowser.maybeCompleteAuthSession();

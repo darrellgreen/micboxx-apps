@@ -1,4 +1,4 @@
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 import {
     StyleSheet,
     Text,

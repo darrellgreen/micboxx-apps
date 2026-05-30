@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import type { RoomArtistPresenceState, RoomPinnedNoteState } from "@micboxx/contracts";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function ArtistDropInBanner({
   artistPresence,

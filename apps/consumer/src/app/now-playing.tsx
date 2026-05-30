@@ -25,7 +25,7 @@ import {
 import { useTrackSocialState } from "@/features/social/hooks/useTrackSocialState";
 import type { PlayerItem } from "@/features/player/types/player";
 import { useGetTrackPageQuery } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function NowPlayingScreen() {
   const router = useRouter();

@@ -14,7 +14,7 @@ import Animated, {
 import Svg, { Circle } from "react-native-svg";
 
 import { AnimatedPressable } from "@/components/ui/animated-pressable";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const BTN = 38;
 const RING_SIZE = BTN + 6;

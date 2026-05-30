@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function EQBar({ playing, index }: { playing: boolean; index: number }) {
   const peaks = [14, 9, 12];

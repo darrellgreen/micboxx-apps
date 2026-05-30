@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/features/auth/provider";
 import { InboxRow } from "@/features/social/components/InboxRow";
 import { useInbox } from "@/features/social/hooks/useInbox";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function MessagesInboxScreen() {
   const { session } = useAuth();

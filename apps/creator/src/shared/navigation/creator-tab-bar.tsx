@@ -22,7 +22,7 @@ import {
     CREATOR_TAB_ROUTE_NAMES,
     type CreatorTabKey,
 } from "@/shared/navigation/creator-tabs";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 const SHOW_CREATOR_TAB_LABELS = false;
 

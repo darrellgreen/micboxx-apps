@@ -3,7 +3,7 @@ import { Animated, Image, StyleSheet, Text, View } from "react-native";
 
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import type { RoomChatMessage } from "@micboxx/contracts";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 import { formatTime, getAvatarBackground, getInitials } from "./chat-utils";
 

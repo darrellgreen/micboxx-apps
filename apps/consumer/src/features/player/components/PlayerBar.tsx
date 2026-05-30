@@ -5,7 +5,7 @@ import { PlayerControls } from "@/features/player/components/PlayerControls";
 import { PlayerProgress } from "@/features/player/components/PlayerProgress";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { selectDisplaySubtitle } from "@/features/player/selectors";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export function PlayerBar() {
   const { currentItem } = useNowPlaying();

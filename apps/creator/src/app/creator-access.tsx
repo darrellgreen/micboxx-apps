@@ -9,7 +9,7 @@ import {
   getSupportUrl,
 } from "@/shared/api/external-links";
 import { ScreenShell, Panel, PillButton } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function CreatorAccessScreen() {
   const { session, signOut } = useAuth();

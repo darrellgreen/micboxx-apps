@@ -5,7 +5,7 @@ import { Text, StyleSheet, View } from "react-native";
 import type { DashboardTrack } from "@/contracts/creator";
 import { getTrackStatus, requeueTrack } from "@/shared/api/creator-dashboard";
 import { ErrorState, KeyValueRow, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function UploadProgressScreen() {
   const { jobId } = useLocalSearchParams<{ jobId?: string }>();

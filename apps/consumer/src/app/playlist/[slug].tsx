@@ -29,7 +29,7 @@ import {
     useGetDashboardPlaylistQuery,
     useGetPlaylistPageQuery,
 } from "@/store/micboxx-api";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 function normalizeParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;

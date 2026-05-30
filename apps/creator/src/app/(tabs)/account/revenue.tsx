@@ -22,7 +22,7 @@ import {
   ScreenShell,
   SectionTitle,
 } from "@/shared/ui/layout";
-import { tokens } from "@/theme/tokens";
+import { tokens } from "@micboxx/theme";
 
 export default function RevenueScreen() {
   const revenue = useCreatorBootstrap().analytics?.revenue;
