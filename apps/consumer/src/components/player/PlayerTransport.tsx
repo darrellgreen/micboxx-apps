@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { TrackWaveform } from "@/features/player/components/TrackWaveform";
-import { formatDuration } from "@/lib/formatters";
+import { formatDuration } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 interface PlayerTransportProps {

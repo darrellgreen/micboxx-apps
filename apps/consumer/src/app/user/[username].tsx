@@ -30,7 +30,7 @@ import {
 } from "@/features/catalog/detail-utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { env } from "@/config/env";
-import { formatCompactNumber } from "@/lib/formatters";
+import { formatCompactNumber } from "@micboxx/api";
 import { useGetUserPageQuery } from "@/store/micboxx-api";
 import { tokens } from "@micboxx/theme";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";

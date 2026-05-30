@@ -9,7 +9,7 @@ import {
     formatCompactNumber,
     formatCurrency,
     formatDuration,
-} from "@/lib/formatters";
+} from "@micboxx/api";
 
 import type { AccessCtaModel, RelatedLaneModel } from "./detail-models";
 import {

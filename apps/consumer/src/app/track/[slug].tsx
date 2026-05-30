@@ -44,7 +44,7 @@ import { useTrackSocialState } from "@/features/social/hooks/useTrackSocialState
 import {
   formatDuration,
   formatRelativeTime,
-} from "@/lib/formatters";
+} from "@micboxx/api";
 import { useGetTrackPageQuery } from "@/store/micboxx-api";
 import { tokens } from "@micboxx/theme";
 

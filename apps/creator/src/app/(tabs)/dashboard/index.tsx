@@ -10,7 +10,7 @@ import type {
 } from "@/contracts/creator";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreateEntryHref } from "@/features/bootstrap/routes";
-import { formatDuration } from "@/lib/formatters";
+import { formatDuration } from "@micboxx/api";
 import { ErrorState, ScreenShell } from "@/shared/ui/layout";
 import { tokens } from "@micboxx/theme";
 

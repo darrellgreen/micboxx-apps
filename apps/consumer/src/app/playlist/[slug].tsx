@@ -24,7 +24,7 @@ import {
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { env } from "@/config/env";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { formatDuration } from "@/lib/formatters";
+import { formatDuration } from "@micboxx/api";
 import {
     useGetDashboardPlaylistQuery,
     useGetPlaylistPageQuery,

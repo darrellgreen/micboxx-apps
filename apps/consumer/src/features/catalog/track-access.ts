@@ -1,6 +1,6 @@
 import type { MicboxxSession, PublicTrack } from "@micboxx/contracts";
 import { mapTrackToPlayerItem } from "@/features/player/mapper/playerItemMapper";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrency } from "@micboxx/api";
 
 import type { AccessCtaModel } from "./detail-models";
 

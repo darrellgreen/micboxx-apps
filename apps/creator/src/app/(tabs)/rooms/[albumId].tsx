@@ -42,7 +42,7 @@ import type {
     RoomQuestionSnapshotItem,
     RoomSupportSnapshot,
 } from "@/features/rooms/types";
-import { formatRelativeTime } from "@/lib/formatters";
+import { formatRelativeTime } from "@micboxx/api";
 import { CreatorApiError } from "@/shared/api/creator-dashboard";
 import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
 import { tokens } from "@micboxx/theme";

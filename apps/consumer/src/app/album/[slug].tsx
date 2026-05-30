@@ -21,7 +21,7 @@ import {
 } from "@/features/catalog/detail-utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { formatDuration } from "@/lib/formatters";
+import { formatDuration } from "@micboxx/api";
 import { useGetAlbumPageQuery } from "@/store/micboxx-api";
 import { tokens } from "@micboxx/theme";
 

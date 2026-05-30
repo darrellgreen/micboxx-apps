@@ -3,7 +3,7 @@ import { Text, View } from "react-native";
 
 import type { DashboardPlaylistSummary } from "@micboxx/contracts";
 import { getMyPlaylists } from "@/features/dashboard/api";
-import { formatDuration, formatRelativeTime } from "@/lib/formatters";
+import { formatDuration, formatRelativeTime } from "@micboxx/api";
 import {
   ChipTabs,
   ListHeader,

@@ -12,7 +12,7 @@ import {
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
 import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
-import { formatDuration, formatRelativeTime } from "@/lib/formatters";
+import { formatDuration, formatRelativeTime } from "@micboxx/api";
 
 type AlbumFilter = "all" | "published" | "scheduled" | "draft";
 

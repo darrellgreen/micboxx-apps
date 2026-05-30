@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@micboxx/contracts": "*",
+    "@micboxx/api": "*",
     "@micboxx/theme": "*",
     "@micboxx/ui": "*",
     "@config-plugins/react-native-webrtc": "13.0.0",

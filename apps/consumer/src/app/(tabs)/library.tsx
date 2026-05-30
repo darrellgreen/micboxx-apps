@@ -11,7 +11,7 @@ import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useAuth } from "@/features/auth/provider";
 import { useLibraryDomains } from "@/features/library/useLibraryDomains";
 import type { LibraryTab } from "@/features/library/libraryTypes";
-import { formatRelativeTime } from "@/lib/formatters";
+import { formatRelativeTime } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 const tabs: { key: LibraryTab; label: string }[] = [

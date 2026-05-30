@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import type { DirectMessage } from "@micboxx/contracts";
-import { formatRelativeTime } from "@/lib/formatters";
+import { formatRelativeTime } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 export function MessageBubble({

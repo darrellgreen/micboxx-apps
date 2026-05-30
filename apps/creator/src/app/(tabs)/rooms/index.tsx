@@ -13,7 +13,7 @@ import {
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
 import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
-import { formatRelativeTime } from "@/lib/formatters";
+import { formatRelativeTime } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 type RoomFilter = "all" | "active" | "unvisited" | "artist_live";

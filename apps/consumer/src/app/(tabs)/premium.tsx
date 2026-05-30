@@ -19,7 +19,7 @@ import type {
   PublicSubscriptionPlan,
 } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrency } from "@micboxx/api";
 import {
   useGetCurrentEntitlementsQuery,
   useGetPublicSubscriptionPlansQuery,

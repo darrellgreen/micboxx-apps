@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { AnimatedPressable } from "@micboxx/ui";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { formatDuration } from "@/lib/formatters";
+import { formatDuration } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 interface TrackCardProps {

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { formatCompactNumber } from "@/lib/formatters";
+import { formatCompactNumber } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 interface PlayerTrackInfoProps {

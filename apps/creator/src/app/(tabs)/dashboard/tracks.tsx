@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
 
 import type { DashboardTrackSummary } from "@/contracts/creator";
-import { formatDuration, formatRelativeTime } from "@/lib/formatters";
+import { formatDuration, formatRelativeTime } from "@micboxx/api";
 import { getMyTracks } from "@/shared/api/creator-dashboard";
 import {
   ChipTabs,

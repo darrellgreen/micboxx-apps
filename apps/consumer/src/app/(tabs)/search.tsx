@@ -24,7 +24,7 @@ import {
   resolveUserRoute,
 } from "@/features/catalog/detail-utils";
 import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
-import { formatDuration } from "@/lib/formatters";
+import { formatDuration } from "@micboxx/api";
 import {
   useGetDiscoverTracksQuery,
   useSearchCatalogQuery,

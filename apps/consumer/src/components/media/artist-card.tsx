@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { AnimatedPressable } from "@micboxx/ui";
 import { hapticSelection, hapticSuccess } from "@micboxx/ui";
 import type { PublicArtistSummary } from "@micboxx/contracts";
-import { formatCount } from "@/lib/formatters";
+import { formatCount } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 interface ArtistCardProps {

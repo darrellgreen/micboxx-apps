@@ -15,7 +15,7 @@ import Animated, {
 import { AnimatedPressable } from "@micboxx/ui";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import { resolveTrackRoute } from "@/features/catalog/detail-utils";
-import { formatDuration } from "@/lib/formatters";
+import { formatDuration } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 import { AnimatedEQ } from "./AnimatedEQ";
