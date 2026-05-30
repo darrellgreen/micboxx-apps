@@ -6,10 +6,14 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:consumer": "npm run start --workspace=@micboxx/consumer",
-    "dev:creator": "npm run start --workspace=@micboxx/creator",
+    "start:consumer": "npm run start --workspace=@micboxx/consumer",
+    "start:creator": "npm run start --workspace=@micboxx/creator",
+    "build:consumer": "cd apps/consumer && eas build",
+    "build:creator": "cd apps/creator && eas build",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "reset": "npm run clean && npm install"
   },
   "engines": {
     "node": ">=24 <25"
