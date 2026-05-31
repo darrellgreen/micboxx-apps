@@ -17,7 +17,9 @@ import { tokens } from "@micboxx/theme";
 import {
   configureMicboxxApi,
 } from "@micboxx/api";
+import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
+import { ConsoleAnalyticsAdapter } from "@/features/analytics/adapter";
 
 configureMicboxxApi({
   baseUrl: env.drupalBaseUrl,
@@ -28,6 +30,10 @@ configureMicboxxApi({
     return session?.accessToken ?? null;
   },
   isAuthSessionExpiredError,
+});
+
+configureMicboxxAnalytics({
+  provider: ConsoleAnalyticsAdapter,
 });
 
 const navigationTheme = {

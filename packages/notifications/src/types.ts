@@ -58,3 +58,24 @@ export interface RoomNotificationSourceAdapter {
   fetchRecent(limit: number): Promise<RoomNotification[]>;
   markAsRead(notificationId: number): Promise<void>;
 }
+
+export interface NotificationAdapter {
+  isSocialConfigured(): boolean;
+  subscribeToSocialNotifications(
+    userUid: string,
+    maxItems: number,
+    onData: (notifications: SocialNotification[]) => void,
+    onError: (error: Error) => void
+  ): () => void;
+  subscribeToUnreadCount(
+    userUid: string,
+    onCount: (count: number) => void
+  ): () => void;
+  fetchRoomNotifications(params: {
+    accessToken: string | null;
+    maxItems: number;
+  }): Promise<{ notifications: RoomNotification[] }>;
+  fetchRoomUnreadCount(params: {
+    accessToken: string | null;
+  }): Promise<number>;
+}

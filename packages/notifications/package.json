@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@micboxx/contracts": "*",
-    "@micboxx/api": "*"
+    "@micboxx/api": "*",
+    "react": "*"
   }
 }

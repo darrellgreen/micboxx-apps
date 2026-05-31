@@ -24,4 +24,5 @@ export interface AnalyticsProvider {
   trackEvent(eventName: string, properties?: Record<string, unknown>): void;
   identifyUser(userId: string, traits?: Record<string, unknown>): void;
   trackScreen(screenName: string, properties?: Record<string, unknown>): void;
+  resetUser(): void;
 }

@@ -25,7 +25,9 @@ import { tokens } from "@micboxx/theme";
 import {
   configureMicboxxApi,
 } from "@micboxx/api";
+import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
+import { ConsoleAnalyticsAdapter } from "@/features/analytics/adapter";
 
 if (env.sentryDsn) {
   Sentry.init({
@@ -48,6 +50,10 @@ configureMicboxxApi({
     return session?.accessToken ?? null;
   },
   isAuthSessionExpiredError,
+});
+
+configureMicboxxAnalytics({
+  provider: ConsoleAnalyticsAdapter,
 });
 
 registerMicboxxPlaybackService();

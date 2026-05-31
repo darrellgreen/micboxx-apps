@@ -92,10 +92,7 @@ export default function NotificationsScreen() {
                     </Text>
                   </View>
                   <Text style={styles.rowPreview} numberOfLines={2}>
-                    {item.trackTitle ??
-                      item.messagePreview ??
-                      item.commentPreview ??
-                      "Creator activity"}
+                    {item.preview ?? "Creator activity"}
                   </Text>
                 </View>
                 <View style={styles.rowMeta}>

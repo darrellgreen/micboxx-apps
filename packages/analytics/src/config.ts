@@ -1,6 +1,9 @@
 import type { AnalyticsProvider } from "./types";
+import { type AnalyticsEventName, PLAYER_ANALYTICS_EVENTS } from "./events";
 
 let analyticsProvider: AnalyticsProvider | null = null;
+
+const VALID_EVENT_NAMES = new Set<string>(Object.values(PLAYER_ANALYTICS_EVENTS));
 
 export interface AnalyticsConfiguration {
   provider: AnalyticsProvider;
@@ -18,7 +21,12 @@ export function configureMicboxxAnalytics(config: AnalyticsConfiguration): void 
   analyticsProvider = config.provider;
 }
 
-export function trackEvent(eventName: string, properties?: Record<string, unknown>): void {
+export function trackEvent(eventName: AnalyticsEventName, properties?: Record<string, unknown>): void {
+  if (!VALID_EVENT_NAMES.has(eventName)) {
+    console.warn(`Invalid analytics event name: ${eventName}. Suppressing event.`);
+    return;
+  }
+
   if (!analyticsProvider) {
     console.warn(`Analytics not configured. Suppressing event: ${eventName}`);
     return;
@@ -32,6 +40,13 @@ export function identifyUser(userId: string, traits?: Record<string, unknown>): 
     return;
   }
   analyticsProvider.identifyUser(userId, traits);
+}
+
+export function resetUser(): void {
+  if (!analyticsProvider) {
+    return;
+  }
+  analyticsProvider.resetUser();
 }
 
 export function trackScreen(screenName: string, properties?: Record<string, unknown>): void {

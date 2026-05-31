@@ -42,6 +42,7 @@ import {
 } from "@/features/bootstrap/routes";
 import { useInbox } from "@/features/social/hooks/useInbox";
 import { useNotifications } from "@/features/social/hooks/useNotifications";
+import type { NotificationItem } from "@micboxx/notifications";
 import {
   CreatorApiError,
   getCreatorAnalytics,
@@ -457,7 +458,7 @@ interface CreatorBootstrapContextValue {
   albumsSummary: DashboardAlbumList | null;
   audienceSummary: CreatorBootstrapSummary<
     UserConversationInboxItem,
-    SocialNotification
+    NotificationItem
   >["audienceSummary"];
   dashboardBuckets: CreatorBootstrapSummary["dashboardBuckets"];
   catalogReadiness: CreatorBootstrapSummary["catalogReadiness"];
