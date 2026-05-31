@@ -80,13 +80,7 @@ export function buildTrackAccessContext(
   };
 }
 
-function joinBaseUrl(baseUrl: string | null | undefined, path: string) {
-  if (!baseUrl) {
-    return null;
-  }
-
-  return `${baseUrl.replace(/\/$/, "")}${path}`;
-}
+import { joinBaseUrl } from "@micboxx/media";
 
 export function resolveTrackPlaybackState(
   track: PublicTrack,

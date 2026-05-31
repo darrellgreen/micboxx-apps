@@ -22,14 +22,7 @@ import {
     type TrackAccessContext,
 } from "./track-access";
 
-function joinBaseUrl(path: string) {
-  if (!env.micboxxWebBaseUrl) {
-    return null;
-  }
-
-  const baseUrl = env.micboxxWebBaseUrl.replace(/\/$/, "");
-  return `${baseUrl}${path}`;
-}
+import { joinBaseUrl } from "@micboxx/media";
 
 export function buildTrackAccessCtaModel(
   track: PublicTrack,
@@ -62,7 +55,7 @@ export function buildAlbumAccessCtaModel(
       ctaLabel: `Buy album ${formatCurrency(album.commerce.price, album.commerce.currency ?? "USD")}`,
       actionType: "open_checkout",
       destination: null,
-      handoffUrl: joinBaseUrl(album.href),
+      handoffUrl: joinBaseUrl(env.micboxxWebBaseUrl, album.href),
       refreshPolicy: "after_web_return",
       helperText: "Album checkout opens in the web flow and returns to mobile.",
     };

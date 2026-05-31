@@ -76,12 +76,6 @@ interface SummaryItem {
   tone?: "default" | "accent" | "warning";
 }
 
-const PROFILE_ROWS = [
-  "Public identity",
-  "Listener profile",
-  "Account details",
-  "Membership status",
-] as const;
 
 const HELP_ITEMS: SummaryItem[] = [
   {
@@ -626,49 +620,6 @@ export default function AccountDestinationScreen() {
       : false,
   ]);
 
-  const settingsActions = compactActions([
-    {
-      key: "notifications",
-      label: "Notifications",
-      subtitle: "See where account activity now lands.",
-      icon: "notifications-outline",
-      onPress: () => openDestination("notifications"),
-    },
-    session
-      ? {
-          key: "profile",
-          label: "Profile",
-          subtitle: "Move back to account identity and role details.",
-          icon: "person-circle-outline",
-          onPress: () => openDestination("profile"),
-        }
-      : {
-          key: "signin",
-          label: "Sign in",
-          subtitle: "Tie settings to a real account session.",
-          icon: "log-in-outline",
-          onPress: () => openRoute("/sign-in"),
-        },
-    {
-      key: "help",
-      label: "Help",
-      subtitle: "Open troubleshooting and support guidance.",
-      icon: "help-circle-outline",
-      onPress: () => openDestination("help"),
-    },
-    {
-      key: session ? "logout" : "home",
-      label: session ? "Logout" : "Back to Home",
-      subtitle: session
-        ? "End your MicBoxx session from settings."
-        : "Return to the main listening surface.",
-      icon: session ? "log-out-outline" : "home-outline",
-      onPress: session
-        ? () => void handleAuthAction()
-        : () => openRoute("/(tabs)/home"),
-      tone: session ? "danger" : "default",
-    },
-  ]);
 
   let content: ReactNode;
 
@@ -676,73 +627,9 @@ export default function AccountDestinationScreen() {
     case "profile":
       content = (
         <>
-          <View style={styles.panel}>
-            {session ? (
-              <>
-                <View style={styles.profileHeader}>
-                  <Avatar
-                    uri={session.user.avatarUrl}
-                    displayName={session.user.displayName}
-                    size={68}
-                  />
-                  <View style={styles.profileCopy}>
-                    <Text style={styles.profileName}>
-                      {session.user.displayName}
-                    </Text>
-                    <Text style={styles.profileHandle}>
-                      @{session.user.username}
-                    </Text>
-                    <Text style={styles.profileEmail}>
-                      {session.user.email}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.badgeRow}>
-                  <Pill
-                    label={getUserRoleLabel(session.user)}
-                    active
-                    variant="accent"
-                    style={styles.rolePill}
-                  />
-                  {isCreatorUser(session?.user) ? null : null}
-                </View>
-
-                <View style={styles.listWrap}>
-                  {PROFILE_ROWS.map((row) => (
-                    <InfoRow
-                      key={row}
-                      item={{
-                        key: row,
-                        label: row,
-                        subtitle: "",
-                        icon: "checkmark-circle-outline",
-                        tone: "accent",
-                      }}
-                      compact
-                    />
-                  ))}
-                </View>
-              </>
-            ) : (
-              <GuestState />
-            )}
-          </View>
+          {!session ? <GuestState /> : null}
 
           <ActionPanel title="Account routes" items={profileActions} />
-
-          <TrackPanel
-            title={session ? "Continue listening" : "Start with discovery"}
-            subtitle={
-              session
-                ? "Your profile can now hand you straight back into listening from the account surface."
-                : "Guests can still start from discovery, but the library becomes persistent once you sign in."
-            }
-            tracks={libraryTracks}
-            emptyText="No listening context yet. Use the Library tab to start one."
-            loading={session ? libraryLoading : publicTrackLoading}
-            player={player}
-          />
         </>
       );
       break;
@@ -890,7 +777,6 @@ export default function AccountDestinationScreen() {
               disabled={preferencesHydrating}
             />
           </View>
-          <ActionPanel title="Connected routes" items={settingsActions} />
         </>
       );
       break;
@@ -921,13 +807,15 @@ export default function AccountDestinationScreen() {
       >
         {slug !== "notifications" && (
           <View style={styles.heroCard}>
-            <View style={styles.heroIconWrap}>
-              <Ionicons
-                name={meta.icon}
-                size={26}
-                color={tokens.colors.textPrimary}
-              />
-            </View>
+            {slug !== "settings" && slug !== "profile" && (
+              <View style={styles.heroIconWrap}>
+                <Ionicons
+                  name={meta.icon}
+                  size={26}
+                  color={tokens.colors.textPrimary}
+                />
+              </View>
+            )}
             <Text style={styles.title}>{meta.title}</Text>
             <Text style={styles.subtitle}>{meta.subtitle}</Text>
             <Text style={styles.description}>
@@ -1949,9 +1837,7 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
+    backgroundColor: "transparent",
   },
   headerTitle: {
     flex: 1,
@@ -1974,11 +1860,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   heroCard: {
-    borderRadius: tokens.radii["2xl"],
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-    padding: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 0,
     alignItems: "flex-start",
     gap: 10,
   },
@@ -2006,11 +1889,8 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   panel: {
-    borderRadius: tokens.radii["2xl"],
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-    padding: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 0,
     gap: 14,
   },
   profileHeader: {
@@ -2184,9 +2064,6 @@ const styles = StyleSheet.create({
   purchasedList: {
     borderRadius: 8,
     overflow: "hidden",
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
   },
   purchasedGrid: {
     flexDirection: "row",
@@ -2197,11 +2074,8 @@ const styles = StyleSheet.create({
     width: "48%",
     minWidth: 140,
     flexGrow: 1,
-    borderRadius: 8,
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 0,
     gap: 6,
   },
   purchasedGridArtwork: {
@@ -2294,10 +2168,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
     minHeight: 260,
-    borderRadius: tokens.radii["2xl"],
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
     padding: 24,
   },
   purchasedEmptyIconWrap: {
@@ -2307,18 +2177,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
   },
   subscriptionCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    borderRadius: 8,
-    padding: 14,
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
+    paddingVertical: 14,
+    paddingHorizontal: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: tokens.colors.borderSubtle,
   },
   subscriptionIconWrap: {
     width: 50,
@@ -2327,8 +2194,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: tokens.colors.accentDim,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderAccent,
   },
   subscriptionCopy: {
     flex: 1,
@@ -2421,38 +2286,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 14,
     paddingVertical: 14,
-    borderRadius: tokens.radii.xl,
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
+    paddingHorizontal: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: tokens.colors.borderSubtle,
   },
-  actionRowAccent: {
-    borderColor: tokens.colors.borderAccent,
-    backgroundColor: tokens.colors.accentDim,
-  },
-  actionRowDanger: {
-    borderColor: "rgba(217,92,92,0.28)",
-  },
+  actionRowAccent: {},
+  actionRowDanger: {},
   actionIconWrap: {
     width: 38,
     height: 38,
     borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
+    backgroundColor: "transparent",
   },
-  actionIconWrapAccent: {
-    backgroundColor: "rgba(0,179,166,0.18)",
-    borderColor: tokens.colors.borderAccent,
-  },
-  actionIconWrapDanger: {
-    backgroundColor: "rgba(217,92,92,0.14)",
-    borderColor: "rgba(217,92,92,0.24)",
-  },
+  actionIconWrapAccent: {},
+  actionIconWrapDanger: {},
   actionCopy: {
     flex: 1,
     gap: 2,
@@ -2500,16 +2350,10 @@ const styles = StyleSheet.create({
   notificationStateCard: {
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 18,
     paddingVertical: 20,
-    borderRadius: tokens.radii.xl,
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
+    paddingHorizontal: 0,
   },
-  notificationStateCardError: {
-    borderColor: "rgba(217,92,92,0.22)",
-  },
+  notificationStateCardError: {},
   notifEmptyGate: {
     flex: 1,
     alignItems: "center",
@@ -2545,9 +2389,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
+    backgroundColor: "transparent",
   },
   notificationStateIconWrapError: {
     backgroundColor: "rgba(217,92,92,0.12)",
@@ -2652,10 +2494,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   trackCard: {
-    borderRadius: tokens.radii["2xl"],
-    backgroundColor: tokens.colors.bgApp,
     paddingVertical: 4,
-    ...tokens.shadows.md,
   },
   trackDivider: {
     height: StyleSheet.hairlineWidth,

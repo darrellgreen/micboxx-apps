@@ -12,6 +12,7 @@ import {
   getRecentlyPlayedTracks,
   getTrackPage,
 } from "@micboxx/api";
+import { normalizeMediaUrl } from "@micboxx/media";
 import type { LibraryFollowedArtist, LibraryPlaylist, LibraryRecentlyPlayedTrack, LibrarySavedTrack, LibraryState, LibrarySummary } from "@/features/library/libraryTypes";
 
 function timestampMs(value: unknown): number {
@@ -38,20 +39,7 @@ function lineKind(line: CommerceOrderLinePayload): "album" | "track" | null {
   return null;
 }
 
-function normalizeArtworkUrl(rawUrl: string | null | undefined): string | null {
-  if (!rawUrl) return null;
-  const trimmed = rawUrl.trim();
-  if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-
-  if (!env.drupalBaseUrl) return null;
-
-  try {
-    return new URL(trimmed, env.drupalBaseUrl).toString();
-  } catch {
-    return null;
-  }
-}
+// normalizeArtworkUrl removed in favor of normalizeMediaUrl
 
 function parseSnapshotTitle(snapshotTitle: string): {
   title: string;
@@ -86,7 +74,7 @@ function lineSnapshot(line: CommerceOrderLinePayload) {
   return {
     artistName: extended.snapshotArtistName ?? null,
     albumTitle: extended.snapshotAlbumTitle ?? null,
-    artwork: normalizeArtworkUrl(extended.snapshotArtworkUrl),
+    artwork: normalizeMediaUrl(env.drupalBaseUrl, extended.snapshotArtworkUrl),
   };
 }
 

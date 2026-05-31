@@ -250,11 +250,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: tokens.colors.bgSurface,
-    borderRadius: tokens.radii.xl,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-    padding: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 4,
   },
   profileCopy: { flex: 1, gap: 2 },
   profileName: {
@@ -287,11 +284,8 @@ const styles = StyleSheet.create({
   guestCard: {
     alignItems: "center",
     gap: 10,
-    backgroundColor: tokens.colors.bgSurface,
-    borderRadius: tokens.radii.xl,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-    padding: 28,
+    paddingVertical: 28,
+    paddingHorizontal: 4,
   },
   guestIconWrap: { marginBottom: 2 },
   guestTitle: {
@@ -321,17 +315,13 @@ const styles = StyleSheet.create({
 
   // Navigation
   navSection: {
-    backgroundColor: tokens.colors.bgSurface,
-    borderRadius: tokens.radii.xl,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-    overflow: "hidden",
+    // borderless & transparent container
   },
   navRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    paddingHorizontal: 18,
+    paddingHorizontal: 4,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: tokens.colors.borderSubtle,

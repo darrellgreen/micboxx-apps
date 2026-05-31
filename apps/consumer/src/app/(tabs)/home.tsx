@@ -69,7 +69,7 @@ const LANE_TITLE_PARTS: Record<string, { bold: string; light: string }> = {
   followed_artists: { bold: "Latest", light: "from artists you follow" },
   for_you: { bold: "For", light: "You" },
   editors_picks: { bold: "Editor's", light: "Picks" },
-  recently_played: { bold: "Recently", light: "Played" },
+  recently_played: { bold: "Continue", light: "Listening" },
   most_popular: { bold: "Most", light: "Popular" },
   new_music: { bold: "New", light: "Music" },
 };
@@ -452,17 +452,20 @@ export default function HomeScreen() {
       });
     }
 
-    // 6. Recently Played (auth-only, after shared lanes to match web order)
+    // 6. Recently Played / Continue Listening (only visible when logged in and has actual listening history)
     if (isLoggedIn) {
-      const recentDeduped = dedup(recentData?.tracks ?? [], seen, LANE_LIMIT);
-      if (recentDeduped.length) {
-        result.push({
-          key: "recently_played",
-          title: "Recently Played",
-          tracks: recentDeduped,
-          isPersonalized: true,
-          requiresAuth: true,
-        });
+      const recentTracks = recentData?.tracks ?? [];
+      if (recentTracks.length > 0) {
+        const recentDeduped = dedup(recentTracks, new Set(), LANE_LIMIT);
+        if (recentDeduped.length > 0) {
+          result.push({
+            key: "recently_played",
+            title: "Recently Played",
+            tracks: recentDeduped,
+            isPersonalized: true,
+            requiresAuth: true,
+          });
+        }
       }
     }
 
@@ -506,7 +509,9 @@ export default function HomeScreen() {
     if (releaseRooms.length > 0) {
       result.push({ type: "rooms", key: "__releaseRooms", rooms: releaseRooms });
     }
-    result.push(...lanes.map((lane) => ({
+    // Filter out recently_played from other lanes
+    const otherLanes = lanes.filter((lane) => lane.key !== "recently_played");
+    result.push(...otherLanes.map((lane) => ({
       type: "lane" as const,
       key: lane.key,
       lane,
@@ -516,6 +521,15 @@ export default function HomeScreen() {
         type: "trending",
         key: "__trending",
         artists: trendingArtists,
+      });
+    }
+    // Move recently_played (Continue Listening) to the absolute bottom of the page
+    const recentlyPlayedLane = lanes.find((lane) => lane.key === "recently_played");
+    if (recentlyPlayedLane) {
+      result.push({
+        type: "lane" as const,
+        key: "recently_played",
+        lane: recentlyPlayedLane,
       });
     }
     return result;
