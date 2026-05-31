@@ -47,6 +47,11 @@ export default function LibraryScreen() {
   if (!session) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
+        <ScreenHeader
+          title="Library"
+          subtitle="Saved music and purchases"
+          leftIcon="menu"
+        />
         <View style={styles.gate}>
           <Ionicons name="library-outline" size={44} color={tokens.colors.accent} />
           <Text style={styles.gateTitle}>Your library lives here</Text>
@@ -64,7 +69,11 @@ export default function LibraryScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScreenHeader />
+      <ScreenHeader
+        title="Library"
+        subtitle="Saved music and purchases"
+        leftIcon="menu"
+      />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <SectionHeader bold="Your" light="Library" />
 

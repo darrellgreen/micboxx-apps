@@ -126,10 +126,8 @@ export default function DashboardScreen() {
 
   return (
     <ScreenShell
-      title=""
-      subtitle=""
-      headerTitle="Dashboard"
-      headerSubtitle="Creator home"
+      title="Dashboard"
+      subtitle="Creator home"
       contentStyle={styles.screenContent}
     >
       {bootstrap.error ? (

@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import type { RoomLiveVideoTokenResponse } from "@micboxx/contracts";
-import { getRoomLiveVideoAudienceToken } from "@/features/rooms/api";
+import { getRoomLiveVideoAudienceToken } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 import type { LiveVideoTakeoverSurfaceProps } from "./types";

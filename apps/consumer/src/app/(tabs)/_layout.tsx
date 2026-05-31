@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { MicboxxTabBar } from "@/components/navigation/tab-bar";
+import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { tokens } from "@micboxx/theme";
 
 export default function TabsLayout() {
@@ -10,6 +12,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       initialRouteName="home"
+      tabBar={(props) => <MicboxxTabBar {...props} />}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: tokens.colors.textPrimary,
@@ -25,6 +28,9 @@ export default function TabsLayout() {
           fontSize: 10,
           fontWeight: "500",
         },
+        tabBarIconStyle: {
+          marginBottom: 4,
+        },
         tabBarIcon: ({ color, size }) => {
           if (route.name === "home") {
             return <Ionicons name="compass-outline" size={size} color={color} />;
@@ -33,7 +39,7 @@ export default function TabsLayout() {
             return <Ionicons name="search-outline" size={size} color={color} />;
           }
           if (route.name === "rooms") {
-            return <Ionicons name="radio-outline" size={size} color={color} />;
+            return <SoundwaveTabIcon size={size} color={color} />;
           }
           if (route.name === "premium") {
             return <Ionicons name="diamond-outline" size={size} color={color} />;

@@ -9,5 +9,11 @@
   },
   "devDependencies": {
     "typescript": "~5.9.0"
+  },
+  "peerDependencies": {
+    "@reduxjs/toolkit": "^2.0.0"
+  },
+  "dependencies": {
+    "@micboxx/contracts": "*"
   }
 }

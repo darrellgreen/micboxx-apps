@@ -5,7 +5,7 @@ import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
 import { mapTrackListToPlayerItems } from "@/features/player/mapper/playerItemMapper";
-import type { QueueContext } from "@/features/player/types/player";
+import type { QueueContext } from "@micboxx/contracts";
 
 type MappableTrack = PublicTrack | PublicTrackSummary;
 type PlaybackAccessOptions = Parameters<typeof mapTrackListToPlayerItems>[1];

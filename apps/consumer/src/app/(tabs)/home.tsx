@@ -28,7 +28,7 @@ import {
   useGetPopularTracksQuery,
   useGetPublicRoomsQuery,
   useGetRecentlyPlayedQuery,
-} from "@/store/micboxx-api";
+} from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
@@ -607,7 +607,7 @@ export default function HomeScreen() {
   if (isSettlingInitialData) {
     return (
       <SafeAreaView style={s.safe} edges={["top"]}>
-        <ScreenHeader />
+        <ScreenHeader leftIcon="menu" />
         <View style={s.scrollContent}>
           {[1, 2].map((lane) => (
             <View key={lane} style={lane > 1 ? s.laneGap : undefined}>
@@ -648,7 +648,7 @@ export default function HomeScreen() {
   if (!hasAnyContent && hasStartupError) {
     return (
       <SafeAreaView style={s.safe} edges={["top"]}>
-        <ScreenHeader />
+        <ScreenHeader leftIcon="menu" />
         <View style={s.loadingWrap}>
           <Text style={s.emptyText}>Unable to load home right now</Text>
           <AnimatedPressable
@@ -667,7 +667,7 @@ export default function HomeScreen() {
   if (!hasAnyContent) {
     return (
       <SafeAreaView style={s.safe} edges={["top"]}>
-        <ScreenHeader />
+        <ScreenHeader leftIcon="menu" />
         <View style={s.loadingWrap}>
           <Text style={s.emptyText}>Nothing to show yet</Text>
         </View>
@@ -677,7 +677,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={["top"]}>
-      <ScreenHeader />
+      <ScreenHeader leftIcon="menu" />
       <FlatList
         data={homeSections}
         keyExtractor={extractKey}

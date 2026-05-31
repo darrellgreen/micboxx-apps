@@ -14,7 +14,7 @@ import {
   setEngineRepeatMode,
 } from "@/features/player/engine/trackPlayer/service";
 import { setupTrackPlayer } from "@/features/player/engine/trackPlayer/setup";
-import type { PlayerEngineAdapter } from "@/features/player/engine/types";
+import type { PlayerEngineAdapter } from "@micboxx/contracts";
 
 const nativeTrackPlayerAdapter: PlayerEngineAdapter = {
   async setup(options) {

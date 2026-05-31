@@ -17,7 +17,7 @@ import {
   resendRegistrationCode,
   verifyRegistrationCode,
 } from "@/features/auth/registration-api";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 function firstParam(value: string | string[] | undefined): string {

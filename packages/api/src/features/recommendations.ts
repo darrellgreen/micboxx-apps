@@ -1,17 +1,18 @@
-import { env, shouldUseLocalWebFixtures } from "@/config/env";
+import { getMicboxxApiConfig } from "../config";
 import type { DiscoverPersonalizedResponse, ForYouResponse } from "@micboxx/contracts";
-import { apiFetch } from "@/lib/api/client";
-import { mockForYou } from "@/lib/mock-data";
+import { apiFetch } from "../client";
+import { mockForYou } from "../mock-data";
 
 export async function getForYouRecommendations(accessToken?: string | null): Promise<ForYouResponse> {
-  if (shouldUseLocalWebFixtures() || !env.micboxxWebBaseUrl) {
+  const config = getMicboxxApiConfig();
+  if (config.useFixtures || !config.webBaseUrl) {
     return mockForYou;
   }
 
   return apiFetch<{ items: ForYouResponse["items"]; nextCursor: string | null; surface: string; meta: ForYouResponse["meta"] }>(
     "/api/recommendations/for-you?limit=8&surface=discover_for_you",
     {
-      baseUrl: env.micboxxWebBaseUrl,
+      baseUrl: config.webBaseUrl,
       accessToken,
     },
   );
@@ -20,7 +21,8 @@ export async function getForYouRecommendations(accessToken?: string | null): Pro
 export async function getDiscoverPersonalized(
   accessToken?: string | null,
 ): Promise<DiscoverPersonalizedResponse> {
-  if (!env.micboxxWebBaseUrl) {
+  const config = getMicboxxApiConfig();
+  if (!config.webBaseUrl) {
     return {
       forYou: {
         items: mockForYou.items.map((item) => ({
@@ -39,7 +41,7 @@ export async function getDiscoverPersonalized(
       followedArtistFeed?: DiscoverPersonalizedResponse["followedArtistFeed"];
     };
   }>("/api/discover/personalized?limit=8&trackLimit=5", {
-    baseUrl: env.micboxxWebBaseUrl,
+    baseUrl: config.webBaseUrl,
     accessToken,
   });
 

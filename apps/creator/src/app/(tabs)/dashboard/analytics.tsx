@@ -2,8 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, {
   Circle,
   Defs,
@@ -14,11 +13,10 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import type { DashboardAnalyticsPeriod } from "@/contracts/creator";
 import { AnimatedPressable } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { ErrorState, Panel } from "@/shared/ui/layout";
+import { ErrorState, Panel, ScreenShell } from "@/shared/ui/layout";
 import { tokens } from "@micboxx/theme";
 
 const PERIOD_OPTIONS: DashboardAnalyticsPeriod[] = ["7d", "30d", "90d"];
@@ -237,20 +235,18 @@ export default function DashboardAnalyticsScreen() {
 
   if (!analytics) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.headerWrap}>
-            <ScreenHeader
-              title="Analytics"
-              subtitle="Performance, release momentum, and revenue signals"
-            />
-          </View>
-          <Panel
-            title="Analytics unavailable"
-            description="Live analytics has not loaded yet. Check your session and backend connectivity."
-          />
-        </ScrollView>
-      </SafeAreaView>
+      <ScreenShell
+        title=""
+        subtitle=""
+        headerTitle="Analytics"
+        headerSubtitle="Performance insights"
+        contentStyle={styles.screenContent}
+      >
+        <Panel
+          title="Analytics unavailable"
+          description="Live analytics has not loaded yet. Check your session and backend connectivity."
+        />
+      </ScreenShell>
     );
   }
 
@@ -270,14 +266,13 @@ export default function DashboardAnalyticsScreen() {
   const planIsLocked = analytics.revenue?.sellingLocked ?? false;
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.headerWrap}>
-          <ScreenHeader
-            title="Analytics"
-            subtitle="Performance, release momentum, and revenue signals"
-          />
-        </View>
+    <ScreenShell
+      title=""
+      subtitle=""
+      headerTitle="Analytics"
+      headerSubtitle="Performance insights"
+      contentStyle={styles.screenContent}
+    >
         {bootstrap.error ? (
           <ErrorState message={bootstrap.error} onRetry={() => void bootstrap.refetch()} />
         ) : null}
@@ -888,23 +883,12 @@ export default function DashboardAnalyticsScreen() {
             />
           </View>
         )}
-      </ScrollView>
-    </SafeAreaView>
+    </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
-  headerWrap: {
-    paddingHorizontal: 4,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 120,
+  screenContent: {
     gap: 16,
   },
   heroShell: {

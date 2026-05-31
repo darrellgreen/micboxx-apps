@@ -8,8 +8,10 @@
   "scripts": {
     "start:consumer": "npm run start --workspace=@micboxx/consumer",
     "start:creator": "npm run start --workspace=@micboxx/creator",
-    "build:consumer": "cd apps/consumer && eas build",
-    "build:creator": "cd apps/creator && eas build",
+    "build:consumer": "cd apps/consumer && npx eas-cli build",
+    "build:creator": "cd apps/creator && npx eas-cli build",
+    "build:dev:consumer": "cd apps/consumer && npx eas-cli build --profile development --platform ios",
+    "build:dev:creator": "cd apps/creator && npx eas-cli build --profile development --platform ios",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
@@ -18,8 +20,16 @@
   "overrides": {
     "@types/react": "~19.1.0"
   },
-
   "engines": {
     "node": ">=24 <25"
+  },
+  "dependencies": {
+    "@react-native/virtualized-lists": "0.81.5",
+    "expo-application": "^56.0.3",
+    "expo-crypto": "~13.0.2",
+    "expo-keep-awake": "^56.0.3",
+    "memoize-one": "^6.0.0",
+    "semver": "^7.8.1",
+    "ws": "^8.21.0"
   }
 }

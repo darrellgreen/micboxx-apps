@@ -7,12 +7,28 @@ import { Provider } from "react-redux";
 
 import { AccountDrawerProvider } from "@/components/navigation/account-drawer";
 import { AppBackdrop } from "@micboxx/ui";
+import { env } from "@/config/env";
 import { AuthProvider } from "@/features/auth/provider";
 import { CreatorBootstrapProvider } from "@/features/bootstrap/provider";
 import { registerRoomLiveKitGlobals } from "@/features/rooms/live-video/registerLiveKitGlobals";
 import { SocialAuthGate } from "@/features/social/SocialAuthGate";
 import { store } from "@/store/store";
 import { tokens } from "@micboxx/theme";
+import {
+  configureMicboxxApi,
+} from "@micboxx/api";
+import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
+
+configureMicboxxApi({
+  baseUrl: env.drupalBaseUrl,
+  webBaseUrl: env.micboxxWebBaseUrl,
+  useFixtures: env.drupalBaseUrl.length === 0,
+  getToken: async () => {
+    const session = await ensureFreshSession();
+    return session?.accessToken ?? null;
+  },
+  isAuthSessionExpiredError,
+});
 
 const navigationTheme = {
   ...DarkTheme,

@@ -27,15 +27,15 @@ export function PlayerArtworkRing({ artworkUrl }: PlayerArtworkRingProps) {
         style={s.artworkRing}
       >
         <View style={s.artworkInner}>
-          <Image
-            source={
-              artworkUrl
-                ? { uri: artworkUrl }
-                : require("../../../assets/images/icon.png")
-            }
-            style={s.artworkImg}
-            contentFit="cover"
-          />
+          {artworkUrl ? (
+            <Image
+              source={{ uri: artworkUrl }}
+              style={s.artworkImg}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={[s.artworkImg, s.artworkFallback]} />
+          )}
         </View>
       </LinearGradient>
     </View>
@@ -62,4 +62,5 @@ const s = StyleSheet.create({
     backgroundColor: tokens.colors.bgElevated,
   },
   artworkImg: { width: "100%", height: "100%" },
+  artworkFallback: { backgroundColor: tokens.colors.panelStrong },
 });

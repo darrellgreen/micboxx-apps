@@ -106,7 +106,12 @@ export default function UploadTrackScreen() {
   }
 
   return (
-    <ScreenShell title="Upload track" subtitle="Album-first upload flow using the live creator dashboard endpoint.">
+    <ScreenShell
+      title=""
+      subtitle=""
+      headerTitle="Upload track"
+      headerSubtitle="Add a track to an album"
+    >
       <Panel title="Track upload">
         <Field label="Title">
           <TextField value={title} onChangeText={setTitle} placeholder="Track title" />

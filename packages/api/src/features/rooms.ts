@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { getMicboxxApiConfig } from "../config";
 import type {
     PublicRoomDiscoveryFilter,
     PublicRoomList,
@@ -15,11 +15,7 @@ import type {
     RoomSupportStatusResult,
     RoomTimeMachineResponse,
 } from "@micboxx/contracts";
-import {
-    ensureFreshSession,
-    isAuthSessionExpiredError,
-} from "@/features/auth/api";
-import { ApiError, apiFetch } from "@/lib/api/client";
+import { ApiError, apiFetch } from "../client";
 
 function createClientMessageId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -30,14 +26,15 @@ function createClientMessageId(): string {
 }
 
 function resolveWebProxyBaseUrl(): string {
-  const configured = env.micboxxWebBaseUrl.trim();
+  const config = getMicboxxApiConfig();
+  const configured = config.webBaseUrl?.trim() ?? "";
   if (!configured) {
     return "";
   }
 
   try {
     const webUrl = new URL(configured);
-    const drupalUrl = new URL(env.drupalBaseUrl);
+    const drupalUrl = new URL(config.baseUrl);
     const webIsLoopback = webUrl.hostname === "localhost" || webUrl.hostname === "127.0.0.1";
     const drupalIsLan = drupalUrl.hostname !== "localhost" && drupalUrl.hostname !== "127.0.0.1";
 
@@ -84,13 +81,14 @@ async function getAccessToken(
   accessToken?: string | null,
   options?: { allowAnonymousOnExpiredSession?: boolean },
 ) {
+  const config = getMicboxxApiConfig();
   try {
-    const session = await ensureFreshSession();
-    return session?.accessToken ?? accessToken ?? null;
+    const sessionToken = await config.getToken();
+    return sessionToken ?? accessToken ?? null;
   } catch (error) {
     if (
       options?.allowAnonymousOnExpiredSession &&
-      isAuthSessionExpiredError(error)
+      config.isAuthSessionExpiredError?.(error)
     ) {
       return null;
     }
@@ -307,6 +305,103 @@ export async function getRoomActivity(input: {
     `/v1/rooms/${encodeURIComponent(String(input.roomId))}/activity?${params.toString()}`,
   );
   return data.room_activity;
+}
+
+export type RoomNotification = {
+  notification_id: number;
+  notification_type: string;
+  title: string;
+  body: string;
+  target_url: string;
+  payload_json?: {
+    reward_key?: string;
+    reward_award_id?: number;
+    [key: string]: unknown;
+  };
+  created: number;
+  read_at: number | null;
+  delivery_state: string;
+};
+
+export type RoomNotificationsResponse = {
+  notifications: RoomNotification[];
+  meta?: {
+    total?: number;
+    unread?: number;
+  };
+};
+
+export function isRoomRewardNotification(
+  notification: Pick<RoomNotification, "notification_type">,
+): boolean {
+  if (notification.notification_type === "room_reward_awarded") {
+    return true;
+  }
+
+  return notification.notification_type.startsWith("room_reward_");
+}
+
+export async function getRoomNotifications(input?: {
+  limit?: number;
+  accessToken?: string | null;
+}): Promise<RoomNotificationsResponse> {
+  const params = new URLSearchParams();
+  params.set("limit", String(input?.limit ?? 12));
+  const accessToken = await getAccessToken(input?.accessToken);
+  const webProxyBaseUrl = resolveWebProxyBaseUrl();
+
+  if (webProxyBaseUrl) {
+    try {
+      const response = await apiFetch<RoomNotificationsResponse>(
+        `/api/public/rooms/notifications?${params.toString()}`,
+        {
+          accessToken,
+          baseUrl: webProxyBaseUrl,
+        },
+      );
+
+      if (response.notifications.length > 0) {
+        return response;
+      }
+    } catch {
+      // Fall back to Drupal directly when the web bridge is unavailable.
+    }
+  }
+
+  return apiFetch<RoomNotificationsResponse>(
+    `/v1/rooms/notifications?${params.toString()}`,
+    {
+      accessToken,
+    },
+  );
+}
+
+export async function markRoomNotificationRead(input: {
+  notificationId: number | string;
+  accessToken?: string | null;
+}): Promise<Record<string, never>> {
+  const accessToken = await getAccessToken(input.accessToken);
+  const notificationId = encodeURIComponent(String(input.notificationId));
+  const webProxyBaseUrl = resolveWebProxyBaseUrl();
+
+  if (webProxyBaseUrl) {
+    return apiFetch<Record<string, never>>(
+      `/api/public/rooms/notifications/${notificationId}/read`,
+      {
+        method: "POST",
+        accessToken,
+        baseUrl: webProxyBaseUrl,
+      },
+    );
+  }
+
+  return apiFetch<Record<string, never>>(
+    `/v1/rooms/notifications/${notificationId}/read`,
+    {
+      method: "POST",
+      accessToken,
+    },
+  );
 }
 
 export async function getRoomTimeMachine(

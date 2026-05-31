@@ -3,7 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { authReducer } from "@/features/auth/auth-slice";
 import { playerReducer } from "@/features/player/player-slice";
 import { socialAuthReducer } from "@/features/social/social-auth-slice";
-import { micboxxApi } from "@/store/micboxx-api";
+import { micboxxApi } from "@micboxx/api";
 
 export const store = configureStore({
   reducer: {

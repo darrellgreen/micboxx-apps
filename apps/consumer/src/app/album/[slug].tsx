@@ -22,7 +22,7 @@ import { joinMetaParts } from "@micboxx/utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { formatDuration } from "@micboxx/api";
-import { useGetAlbumPageQuery } from "@/store/micboxx-api";
+import { useGetAlbumPageQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 export default function AlbumDetailScreen() {
@@ -166,7 +166,7 @@ export default function AlbumDetailScreen() {
                 {
                   key: "room",
                   label: "Room",
-                  icon: "radio-outline",
+                  customIcon: "soundwave",
                   onPress: () => router.push(`/album/${encodeURIComponent(album.slug)}/room` as never),
                 },
                 accessCta && accessCta.actionType === "open_checkout"

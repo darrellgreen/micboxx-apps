@@ -153,17 +153,8 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
     const items: DrawerItem[] = [];
 
     items.push({
-      key: "purchases",
-      label: "Purchases",
-      subtitle: "Owned music",
-      icon: "bag-handle-outline",
-      onPress: () => openAccountDestination("purchases"),
-      requiresAuth: true,
-    });
-
-    items.push({
       key: "subscription",
-      label: "Subscription",
+      label: "Subscriptions",
       icon: "card-outline",
       onPress: () => openAccountDestination("subscription"),
       requiresAuth: true,

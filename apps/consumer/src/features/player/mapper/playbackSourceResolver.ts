@@ -1,7 +1,7 @@
 import type {
     PlaybackAuthorization,
     PlayerItem,
-} from "@/features/player/types/player";
+} from "@micboxx/contracts";
 
 export function resolvePlaybackAuthorization(
   item: Omit<PlayerItem, "authorization">,

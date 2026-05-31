@@ -17,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AnimatedPressable } from "@micboxx/ui";
 import type { RegisterRequest } from "@micboxx/contracts";
 import { registerUserForVerification } from "@/features/auth/registration-api";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 interface SignupFormState {

@@ -2,14 +2,19 @@ import { onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
+import { getRoomNotifications } from "@micboxx/api";
 import { getNotificationsCollection } from "@/features/social/firestore";
 import { useAppSelector } from "@/store/hooks";
 
 export function useUnreadNotificationCount() {
   const firebaseUid = useAppSelector((state) => state.socialAuth.firebaseUid);
   const socialStatus = useAppSelector((state) => state.socialAuth.status);
+  const accessToken = useAppSelector(
+    (state) => state.auth.session?.accessToken ?? null,
+  );
   const firebaseConfigured = isFirebaseConfigured();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [socialUnreadCount, setSocialUnreadCount] = useState(0);
+  const [roomUnreadCount, setRoomUnreadCount] = useState(0);
 
   useEffect(() => {
     if (
@@ -17,7 +22,7 @@ export function useUnreadNotificationCount() {
       socialStatus !== "authenticated" ||
       !firebaseConfigured
     ) {
-      setUnreadCount(0);
+      setSocialUnreadCount(0);
       return;
     }
 
@@ -30,7 +35,7 @@ export function useUnreadNotificationCount() {
     const unsubscribe = onSnapshot(
       unreadQuery,
       (snapshot) => {
-        setUnreadCount(snapshot.size);
+        setSocialUnreadCount(snapshot.size);
       },
       () => undefined,
     );
@@ -38,5 +43,48 @@ export function useUnreadNotificationCount() {
     return unsubscribe;
   }, [firebaseConfigured, firebaseUid, socialStatus]);
 
-  return unreadCount;
+  useEffect(() => {
+    if (!accessToken) {
+      setRoomUnreadCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchRoomUnreadCount = async () => {
+      try {
+        const response = await getRoomNotifications({
+          limit: 40,
+          accessToken,
+        });
+        if (!cancelled) {
+          const unread =
+            typeof response.meta?.unread === "number"
+              ? response.meta.unread
+              : response.notifications.filter(
+                  (notification) =>
+                    !notification.read_at &&
+                    notification.delivery_state !== "read",
+                ).length;
+          setRoomUnreadCount(unread);
+        }
+      } catch {
+        if (!cancelled) {
+          setRoomUnreadCount(0);
+        }
+      }
+    };
+
+    void fetchRoomUnreadCount();
+    const intervalId = setInterval(() => {
+      void fetchRoomUnreadCount();
+    }, 20000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [accessToken]);
+
+  return socialUnreadCount + roomUnreadCount;
 }

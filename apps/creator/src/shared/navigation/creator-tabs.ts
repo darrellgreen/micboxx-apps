@@ -1,5 +1,3 @@
-import type { Ionicons } from "@expo/vector-icons";
-
 export const CREATOR_TAB_ORDER = [
   "dashboard",
   "catalog",
@@ -22,7 +20,7 @@ export const CREATOR_TAB_META: Record<
   CreatorTabKey,
   {
     title: string;
-    icon: keyof typeof Ionicons.glyphMap;
+    icon: string;
   }
 > = {
   dashboard: {
@@ -43,6 +41,6 @@ export const CREATOR_TAB_META: Record<
   },
   rooms: {
     title: "Rooms",
-    icon: "radio-outline",
+    icon: "soundwave",
   },
 };

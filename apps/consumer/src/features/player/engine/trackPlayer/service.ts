@@ -3,11 +3,11 @@ import { requireTrackPlayerBundle } from "@/features/player/engine/trackPlayer/r
 import type {
   EngineNowPlaying,
   EngineTrack,
-} from "@/features/player/engine/types";
+} from "@micboxx/contracts";
 import type {
   PlaybackPositionState,
   PlayerItem,
-} from "@/features/player/types/player";
+} from "@micboxx/contracts";
 
 function mapEngineState(state: string): EngineNowPlaying["state"] {
   switch (state) {

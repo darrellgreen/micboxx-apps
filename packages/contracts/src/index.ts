@@ -15,3 +15,4 @@ export * from './micboxx';
 export * from './registration';
 export * from './rooms';
 export * from './social';
+export * from './player';

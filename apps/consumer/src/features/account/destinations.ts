@@ -55,19 +55,19 @@ export const ACCOUNT_DESTINATIONS: Record<
   },
   purchases: {
     title: "Purchases",
-    subtitle: "Owned music, receipts, and purchase history",
+    subtitle: "Owned tracks, albums, and receipts",
     icon: "bag-handle-outline",
     signedInDescription:
-      "Use purchases as your commerce hub for owned music, receipts, and routes into purchasable catalog surfaces.",
+      "Use purchases for owned tracks, albums, receipts, and paid catalog access.",
     guestDescription:
       "Sign in to connect owned purchases and paid catalog access to your MicBoxx account.",
   },
   subscription: {
-    title: "Subscription",
-    subtitle: "Membership, plan status, and billing",
+    title: "Subscriptions",
+    subtitle: "Membership, plan status, and access",
     icon: "card-outline",
     signedInDescription:
-      "Use subscription to manage premium listening access and the routes connected to your membership state.",
+      "Use subscriptions to manage membership, plan status, and premium listening access.",
     guestDescription:
       "Sign in to connect premium listening and subscription controls to your account.",
   },

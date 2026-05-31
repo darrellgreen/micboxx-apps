@@ -45,7 +45,7 @@ import {
   formatDuration,
   formatRelativeTime,
 } from "@micboxx/api";
-import { useGetTrackPageQuery } from "@/store/micboxx-api";
+import { useGetTrackPageQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 export default function TrackDetailScreen() {

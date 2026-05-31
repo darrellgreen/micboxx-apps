@@ -10,11 +10,11 @@ import type {
     EngineTrack,
     MicBoxxPlayerEvent,
     PlayerEngineAdapter,
-} from "@/features/player/engine/types";
+} from "@micboxx/contracts";
 import type {
     PlaybackPositionState,
     PlayerItem,
-} from "@/features/player/types/player";
+} from "@micboxx/contracts";
 
 /**
  * Expo-Audio–backed engine adapter for Expo Go / dev-client environments

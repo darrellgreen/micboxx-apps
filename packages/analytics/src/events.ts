@@ -9,11 +9,3 @@ export const PLAYER_ANALYTICS_EVENTS = {
 
 export type AnalyticsEventName =
   (typeof PLAYER_ANALYTICS_EVENTS)[keyof typeof PLAYER_ANALYTICS_EVENTS];
-
-// Simple payload type that avoids importing QueueContext which is app-specific
-export interface PlayerAnalyticsPayload {
-  trackId: string | null;
-  sourceKind?: string | null;
-  queueContextType?: string | null;
-  currentPositionSec?: number;
-}

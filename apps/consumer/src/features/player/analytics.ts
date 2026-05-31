@@ -1,7 +1,7 @@
 import {
   type AnalyticsEventName,
   type PlayerAnalyticsPayload,
-} from "@micboxx/utils";
+} from "@micboxx/analytics";
 
 export interface PlayerAnalyticsSink {
   emit(event: AnalyticsEventName, payload: PlayerAnalyticsPayload): void;

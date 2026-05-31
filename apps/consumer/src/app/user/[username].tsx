@@ -32,7 +32,7 @@ import { joinMetaParts } from "@micboxx/utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
 import { env } from "@/config/env";
 import { formatCompactNumber } from "@micboxx/api";
-import { useGetUserPageQuery } from "@/store/micboxx-api";
+import { useGetUserPageQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { useUserFollowState } from "@/features/social/hooks/useUserFollowState";

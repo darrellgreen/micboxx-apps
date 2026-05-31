@@ -23,8 +23,8 @@ import {
   selectHasPrevious,
 } from "@/features/player/selectors";
 import { useTrackSocialState } from "@/features/social/hooks/useTrackSocialState";
-import type { PlayerItem } from "@/features/player/types/player";
-import { useGetTrackPageQuery } from "@/store/micboxx-api";
+import type { PlayerItem } from "@micboxx/contracts";
+import { useGetTrackPageQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 export default function NowPlayingScreen() {

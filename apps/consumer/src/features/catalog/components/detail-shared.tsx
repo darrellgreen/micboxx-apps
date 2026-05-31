@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import type {
     DetailActionBarProps,
     DetailActionItem,
@@ -156,17 +157,30 @@ function ActionButton({
         pressed && !item.disabled && styles.pressed,
       ]}
     >
-      <Ionicons
-        name={item.icon}
-        size={15}
-        color={
-          emphasis === "primary"
-            ? tokens.colors.bgApp
-            : emphasis === "danger"
-              ? tokens.colors.danger
-              : tokens.colors.textPrimary
-        }
-      />
+      {item.customIcon === "soundwave" ? (
+        <SoundwaveTabIcon
+          size={15}
+          color={
+            emphasis === "primary"
+              ? tokens.colors.bgApp
+              : emphasis === "danger"
+                ? tokens.colors.danger
+                : tokens.colors.textPrimary
+          }
+        />
+      ) : (
+        <Ionicons
+          name={item.icon ?? "ellipse-outline"}
+          size={15}
+          color={
+            emphasis === "primary"
+              ? tokens.colors.bgApp
+              : emphasis === "danger"
+                ? tokens.colors.danger
+                : tokens.colors.textPrimary
+          }
+        />
+      )}
       <Text
         style={[
           styles.actionLabel,

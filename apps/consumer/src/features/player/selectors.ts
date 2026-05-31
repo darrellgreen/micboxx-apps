@@ -1,5 +1,5 @@
 import type { PlayerProviderState } from "@/features/player/store";
-import type { PlayerItem } from "@/features/player/types/player";
+import type { PlayerItem } from "@micboxx/contracts";
 
 export function selectActiveItem(state: PlayerProviderState): PlayerItem | null {
   return state.nowPlaying.currentItem;

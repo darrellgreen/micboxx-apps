@@ -3,9 +3,15 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { CommerceOrderHistoryEntry, CommerceOrderLinePayload } from "@micboxx/contracts";
 import type { PublicArtistPage, PublicTrackPage, PublicTrackSummary } from "@micboxx/contracts";
+import { env } from "@/config/env";
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
-import { getArtistPage, getRecentlyPlayedTracks, getTrackPage } from "@/features/catalog/api";
-import { getMyPlaylists, getOrderHistory } from "@/features/dashboard/api";
+import {
+  getArtistPage,
+  getMyPlaylists,
+  getOrderHistory,
+  getRecentlyPlayedTracks,
+  getTrackPage,
+} from "@micboxx/api";
 import type { LibraryFollowedArtist, LibraryPlaylist, LibraryRecentlyPlayedTrack, LibrarySavedTrack, LibraryState, LibrarySummary } from "@/features/library/libraryTypes";
 
 function timestampMs(value: unknown): number {
@@ -32,22 +38,82 @@ function lineKind(line: CommerceOrderLinePayload): "album" | "track" | null {
   return null;
 }
 
+function normalizeArtworkUrl(rawUrl: string | null | undefined): string | null {
+  if (!rawUrl) return null;
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  if (!env.drupalBaseUrl) return null;
+
+  try {
+    return new URL(trimmed, env.drupalBaseUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
+function parseSnapshotTitle(snapshotTitle: string): {
+  title: string;
+  artistName: string | null;
+} {
+  const normalized = snapshotTitle.trim();
+  if (!normalized) {
+    return { title: "", artistName: null };
+  }
+
+  const separatorIndex = normalized.indexOf(" - ");
+  if (separatorIndex <= 0) {
+    return { title: normalized, artistName: null };
+  }
+
+  const artistName = normalized.slice(0, separatorIndex).trim();
+  const title = normalized.slice(separatorIndex + 3).trim();
+
+  return {
+    title: title || normalized,
+    artistName: artistName || null,
+  };
+}
+
+function lineSnapshot(line: CommerceOrderLinePayload) {
+  const extended = line as CommerceOrderLinePayload & {
+    snapshotArtistName?: string | null;
+    snapshotAlbumTitle?: string | null;
+    snapshotArtworkUrl?: string | null;
+  };
+
+  return {
+    artistName: extended.snapshotArtistName ?? null,
+    albumTitle: extended.snapshotAlbumTitle ?? null,
+    artwork: normalizeArtworkUrl(extended.snapshotArtworkUrl),
+  };
+}
+
 function deriveOwned(orders: CommerceOrderHistoryEntry[]) {
   const albums = new Map<string, LibraryState["ownedAlbums"][number]>();
   const tracks = new Map<string, LibraryState["ownedTracks"][number]>();
 
-  orders.forEach((order) => {
+  const completedOrders = orders.filter((order) => {
+    const status = order.status?.toLowerCase() ?? "";
+    return status === "paid" || status === "fulfilled" || status === "completed";
+  });
+
+  completedOrders.forEach((order) => {
     const acquiredAt = order.timestamps.fulfilledAt || order.timestamps.paidAt || order.timestamps.createdAt;
     order.lines.forEach((line) => {
       const kind = lineKind(line);
+      const parsedSnapshot = parseSnapshotTitle(line.snapshotTitle || "");
+      const snapshot = lineSnapshot(line);
+
       if (kind === "album") {
         albums.set(line.sellableUuid || line.sellableId, {
           id: String(line.sellableId),
           uuid: line.sellableUuid,
           type: "album",
-          title: line.snapshotTitle,
-          artistName: "",
-          artwork: null,
+          title: parsedSnapshot.title || "Untitled Album",
+          artistName: snapshot.artistName ?? parsedSnapshot.artistName ?? "Unknown Artist",
+          artwork: snapshot.artwork,
           acquiredAt,
           orderId: order.id,
         });
@@ -57,10 +123,10 @@ function deriveOwned(orders: CommerceOrderHistoryEntry[]) {
           id: String(line.sellableId),
           uuid: line.sellableUuid,
           type: "track",
-          title: line.snapshotTitle,
-          artistName: "",
-          albumTitle: null,
-          artwork: null,
+          title: parsedSnapshot.title || "Untitled Track",
+          artistName: snapshot.artistName ?? parsedSnapshot.artistName ?? "Unknown Artist",
+          albumTitle: snapshot.albumTitle,
+          artwork: snapshot.artwork,
           acquiredAt,
           orderId: order.id,
         });

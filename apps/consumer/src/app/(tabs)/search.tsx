@@ -12,6 +12,7 @@ import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SectionHeader, TrackRow } from "@/components/discover";
+import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { ArtistCard } from "@micboxx/media";
 import { GenreCard } from "@micboxx/media";
 import { AnimatedPressable } from "@micboxx/ui";
@@ -28,7 +29,7 @@ import { formatDuration } from "@micboxx/api";
 import {
   useGetDiscoverTracksQuery,
   useSearchCatalogQuery,
-} from "@/store/micboxx-api";
+} from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 const AUTOCOMPLETE_DELAY_MS = 350;
@@ -74,14 +75,17 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      <ScreenHeader
+        title="Search"
+        subtitle="Find music and artists"
+        leftIcon="menu"
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <SectionHeader bold="Search" light="Catalog" />
-
         <View
           style={[
             styles.inputRow,

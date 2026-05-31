@@ -14,9 +14,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SectionHeader } from "@/components/discover";
+import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import type { PublicRoomSummary } from "@micboxx/contracts";
-import { useGetPublicRoomsQuery } from "@/store/micboxx-api";
+import { useGetPublicRoomsQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 function roomKey(room: PublicRoomSummary): string {
@@ -108,7 +109,11 @@ export default function RoomsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScreenHeader />
+      <ScreenHeader
+        title="Rooms"
+        subtitle="Live release spaces"
+        leftIcon="menu"
+      />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -152,11 +157,7 @@ export default function RoomsScreen() {
 
         {!isLoading && !hasError && !hasRooms ? (
           <View style={styles.statusCard}>
-            <Ionicons
-              name="radio-outline"
-              size={28}
-              color={tokens.colors.accent}
-            />
+            <SoundwaveTabIcon size={28} color={tokens.colors.accent} />
             <Text style={styles.statusTitle}>No public Rooms right now</Text>
             <Text style={styles.statusText}>
               Rooms will appear here as listeners open releases and real
@@ -213,7 +214,7 @@ function RoomSection({
   return (
     <View style={styles.section}>
       <View style={styles.sectionTitleRow}>
-        <Ionicons name="radio-outline" size={15} color={tokens.colors.accentLight} />
+        <SoundwaveTabIcon size={15} color={tokens.colors.accentLight} />
         <Text style={styles.sectionTitle}>{title}</Text>
       </View>
       <View style={styles.list}>
@@ -297,7 +298,7 @@ function RoomCard({
 
       <View style={styles.cardTop}>
         <View style={styles.roomBadge}>
-          <Ionicons name="radio-outline" size={12} color={tokens.colors.accentLight} />
+          <SoundwaveTabIcon size={12} color={tokens.colors.accentLight} />
           <Text style={styles.roomBadgeText}>Room</Text>
         </View>
         {showPrimaryBadge ? (

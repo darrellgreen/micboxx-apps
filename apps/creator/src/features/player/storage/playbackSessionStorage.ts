@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import type { PersistedPlaybackSession } from "@/features/player/types/player";
+import type { PersistedPlaybackSession } from "@micboxx/contracts";
 
 const STORAGE_KEY = "micboxx.mobile.player.session";
 let persistTimer: ReturnType<typeof setTimeout> | null = null;

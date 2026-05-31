@@ -2,12 +2,18 @@
  * @micboxx/api
  *
  * Shared API utilities for the MicBoxx platform.
- * Contains formatting helpers used across both apps.
- *
- * Note: The core apiFetch() client remains in each app's src/lib/api/client.ts
- * because it depends on app-specific environment configuration.
+ * Contains shared API clients, RTK Query hooks, fixtures, and formatting
+ * helpers used across both apps.
  */
 
+export * from "./micboxx-api";
+export * from "./config";
+export * from "./client";
+export * from "./features/catalog";
+export * from "./features/dashboard";
+export * from "./features/recommendations";
+export * from "./features/rooms";
+export * from "./mock-data";
 export {
   formatDuration,
   formatCount,

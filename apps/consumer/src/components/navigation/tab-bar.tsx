@@ -9,7 +9,6 @@ import { StyleSheet, View } from "react-native";
 import Animated, {
     Easing,
     interpolate,
-    interpolateColor,
     useAnimatedStyle,
     useSharedValue,
     withTiming,
@@ -17,6 +16,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@micboxx/ui";
+import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { tokens } from "@micboxx/theme";
 
 const LABEL_MAP: Record<string, string> = {
@@ -26,6 +26,9 @@ const LABEL_MAP: Record<string, string> = {
   premium: "Premium",
   account: "Account",
 };
+const TAB_ICON_SIZE = 28;
+const TAB_BAR_HEIGHT = 60;
+const TRACK_LISTING_SURFACE = "rgba(255,255,255,0.035)";
 
 export function MicboxxTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -58,7 +61,7 @@ export function MicboxxTabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: insets.bottom + 8 }]}>
+    <View style={[styles.wrapper, { paddingBottom: Math.max(4, insets.bottom) }]}>
       <BlurView intensity={70} tint="dark" style={styles.blur}>
         <View style={styles.bar}>
           <View style={styles.tabGroup}>{visibleRoutes.map(renderTab)}</View>
@@ -89,18 +92,8 @@ function TabButton({
   const iconStyle = useAnimatedStyle(() => ({
     opacity: interpolate(focusProgress.value, [0, 1], [0.66, 1]),
     transform: [
-      { translateY: interpolate(focusProgress.value, [0, 1], [0, -1]) },
+      { translateY: interpolate(focusProgress.value, [0, 1], [0, -0.5]) },
     ],
-  }));
-
-  const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(
-      focusProgress.value,
-      [0, 1],
-      ["rgba(216, 223, 238, 0.52)", "#F5F8FF"],
-    ),
-    opacity: interpolate(focusProgress.value, [0, 1], [0.85, 1]),
-    transform: [{ translateY: interpolate(focusProgress.value, [0, 1], [0, -1]) }],
   }));
 
   return (
@@ -108,7 +101,7 @@ function TabButton({
       <Animated.View style={iconStyle}>
         <TabIcon routeName={routeName} focused={focused} />
       </Animated.View>
-      <Animated.Text style={[styles.label, labelStyle]}>
+      <Animated.Text style={styles.label}>
         {LABEL_MAP[routeName] ?? routeName}
       </Animated.Text>
     </AnimatedPressable>
@@ -125,19 +118,19 @@ function TabIcon({
   const color = focused ? "#F5F8FF" : "rgba(216, 223, 238, 0.52)";
 
   if (routeName === "search") {
-    return <Ionicons name="search-outline" size={20} color={color} />;
+    return <Ionicons name="search-outline" size={TAB_ICON_SIZE} color={color} />;
   }
   if (routeName === "rooms") {
-    return <Ionicons name="radio-outline" size={20} color={color} />;
+    return <SoundwaveTabIcon size={TAB_ICON_SIZE} color={color} />;
   }
   if (routeName === "premium") {
-    return <Ionicons name="diamond-outline" size={20} color={color} />;
+    return <Ionicons name="diamond-outline" size={TAB_ICON_SIZE} color={color} />;
   }
   if (routeName === "account") {
-    return <Ionicons name="person-circle-outline" size={20} color={color} />;
+    return <Ionicons name="person-circle-outline" size={TAB_ICON_SIZE} color={color} />;
   }
 
-  return <Ionicons name="compass-outline" size={20} color={color} />;
+  return <Ionicons name="compass-outline" size={TAB_ICON_SIZE} color={color} />;
 }
 
 const styles = StyleSheet.create({
@@ -152,15 +145,14 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(136, 152, 193, 0.18)",
-    backgroundColor: "rgba(17, 24, 48, 0.72)",
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: TRACK_LISTING_SURFACE,
   },
   bar: {
     flexDirection: "row",
     alignItems: "center",
-    height: tokens.tabBar.height + 2,
+    height: TAB_BAR_HEIGHT,
     paddingHorizontal: 10,
-    paddingBottom: 10,
   },
   sideGroup: {
     flex: 1,
@@ -169,10 +161,11 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    height: "100%",
+    minHeight: TAB_BAR_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 4,
+    paddingBottom: 2,
   },
   label: {
     color: "rgba(216, 223, 238, 0.52)",

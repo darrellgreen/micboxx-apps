@@ -22,6 +22,10 @@ import { registerRoomLiveKitGlobals } from "@/features/rooms/live-video/register
 import { SocialAuthGate } from "@/features/social/SocialAuthGate";
 import { store } from "@/store/store";
 import { tokens } from "@micboxx/theme";
+import {
+  configureMicboxxApi,
+} from "@micboxx/api";
+import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
 
 if (env.sentryDsn) {
   Sentry.init({
@@ -34,6 +38,17 @@ if (env.sentryDsn) {
     debug: __DEV__,
   });
 }
+
+configureMicboxxApi({
+  baseUrl: env.drupalBaseUrl,
+  webBaseUrl: env.micboxxWebBaseUrl,
+  useFixtures: env.drupalBaseUrl.length === 0,
+  getToken: async () => {
+    const session = await ensureFreshSession();
+    return session?.accessToken ?? null;
+  },
+  isAuthSessionExpiredError,
+});
 
 registerMicboxxPlaybackService();
 registerRoomLiveKitGlobals();

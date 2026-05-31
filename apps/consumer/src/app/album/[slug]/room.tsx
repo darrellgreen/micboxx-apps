@@ -15,7 +15,7 @@ import { RoomNowPlaying } from "@/features/rooms/components/RoomNowPlaying";
 import { RoomPresenceBar } from "@/features/rooms/components/RoomPresenceBar";
 import { useMobileRoom } from "@/features/rooms/hooks/useMobileRoom";
 import { LiveVideoTakeoverSurface } from "@/features/rooms/live-video/LiveVideoTakeoverSurface";
-import { useGetAlbumPageQuery } from "@/store/micboxx-api";
+import { useGetAlbumPageQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 function normalizeParam(value: string | string[] | undefined) {

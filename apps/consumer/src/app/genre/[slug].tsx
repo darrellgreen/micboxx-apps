@@ -20,7 +20,7 @@ import { formatDuration } from "@micboxx/api";
 import {
   useGetDiscoverTracksQuery,
   useSearchCatalogQuery,
-} from "@/store/micboxx-api";
+} from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 function formatGenreLabel(slug: string) {

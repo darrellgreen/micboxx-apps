@@ -3,7 +3,7 @@ import type {
   PlaybackPositionState,
   PlayerItem,
   PlayerQueueState,
-} from "@/features/player/types/player";
+} from "@micboxx/contracts";
 
 export interface PlayerProviderState {
   initialized: boolean;

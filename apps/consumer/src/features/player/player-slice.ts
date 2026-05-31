@@ -10,7 +10,7 @@ import type {
   PlaybackPositionState,
   PlayerItem,
   PlayerQueueState,
-} from "@/features/player/types/player";
+} from "@micboxx/contracts";
 
 export interface PlayerSliceState {
   initialized: boolean;

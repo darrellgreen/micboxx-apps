@@ -21,7 +21,7 @@ import { InboxRow } from "@/features/social/components/InboxRow";
 import { getOrCreateConversation } from "@/features/social/dm-service";
 import { useInbox } from "@/features/social/hooks/useInbox";
 import { useSocialSessionGate } from "@/features/social/hooks/useSocialSessionGate";
-import { useSearchCatalogQuery } from "@/store/micboxx-api";
+import { useSearchCatalogQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 const AUTOCOMPLETE_DELAY_MS = 250;

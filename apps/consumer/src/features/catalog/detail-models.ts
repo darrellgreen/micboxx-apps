@@ -64,7 +64,8 @@ export type DetailActionTone = "primary" | "secondary" | "ghost" | "danger";
 export interface DetailActionItem {
   key: string;
   label: string;
-  icon: ComponentProps<typeof Ionicons>["name"];
+  icon?: ComponentProps<typeof Ionicons>["name"];
+  customIcon?: "soundwave";
   tone?: DetailActionTone;
   disabled?: boolean;
   onPress: () => void | Promise<void>;

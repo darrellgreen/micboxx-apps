@@ -45,17 +45,17 @@ import {
     getTrackPage,
     getTrendingArtists,
     searchCatalog,
-} from "@/features/catalog/api";
+} from "./features/catalog";
 import {
     getCurrentEntitlements,
     getDashboardPlaylist,
     getMyPlaylists,
     getPublicSubscriptionPlans,
-} from "@/features/dashboard/api";
+} from "./features/dashboard";
 import {
     getDiscoverPersonalized,
     getForYouRecommendations,
-} from "@/features/recommendations/api";
+} from "./features/recommendations";
 import {
     enterRoom,
     getPublicRooms,
@@ -72,7 +72,7 @@ import {
     submitRoomQuestion,
     voteRoomPoll,
     voteRoomQuestion,
-} from "@/features/rooms/api";
+} from "./features/rooms";
 
 type MicboxxApiError = {
   message: string;

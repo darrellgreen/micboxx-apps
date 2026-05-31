@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { getMicboxxApiConfig } from "./config";
 
 interface Envelope<T> {
   data?: T;
@@ -24,9 +24,11 @@ export async function apiFetch<T>(
     baseUrl?: string;
   },
 ): Promise<T> {
-  const baseUrl = init?.baseUrl ?? env.drupalBaseUrl;
+  const config = getMicboxxApiConfig();
+  const baseUrl = init?.baseUrl ?? config.baseUrl;
+
   if (!baseUrl) {
-    throw new ApiError("Missing EXPO_PUBLIC_DRUPAL_BASE_URL.", 500);
+    throw new ApiError("Missing base URL in configuration.", 500);
   }
 
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}${path}`, {
@@ -34,7 +36,9 @@ export async function apiFetch<T>(
     signal: init?.signal,
     headers: {
       accept: "application/json",
-      ...(init?.body ? { "content-type": "application/json" } : null),
+      ...(init?.body && !(init.body instanceof FormData)
+        ? { "content-type": "application/json" }
+        : null),
       ...(init?.accessToken
         ? { authorization: `Bearer ${init.accessToken}` }
         : null),

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import {
@@ -20,12 +21,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
+import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { Avatar } from "@micboxx/ui";
 import { Pill } from "@micboxx/ui";
 import { ShimmerPlaceholder } from "@micboxx/ui";
 import { getFirebaseClientDb } from "@/config/firebase";
 import type { PublicTrackSummary } from "@micboxx/contracts";
-import type { SocialNotification } from "@micboxx/contracts";
 import {
   ACCOUNT_DESTINATIONS,
   getUserRoleLabel,
@@ -34,19 +35,29 @@ import {
 } from "@/features/account/destinations";
 import { useAccountPreferences } from "@/features/account/provider";
 import { useAuth } from "@/features/auth/provider";
-import { UnreadBadge } from "@/features/social/components/UnreadBadge";
-import { useNotifications } from "@/features/social/hooks/useNotifications";
-import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
-import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
+import type {
+  LibraryOwnedAlbum,
+  LibraryOwnedTrack,
+} from "@/features/library/libraryTypes";
+import { useLibraryDomains } from "@/features/library/useLibraryDomains";
 import {
+  markRoomNotificationRead,
+  useGetCurrentEntitlementsQuery,
   useGetDiscoverTracksQuery,
   useGetPopularTracksQuery,
   useGetRecentlyPlayedQuery,
-} from "@/store/micboxx-api";
+} from "@micboxx/api";
+import type { EntitlementState } from "@micboxx/contracts";
+import { useNotifications } from "@/features/social/hooks/useNotifications";
+import { NotificationItem } from "@micboxx/notifications";
+import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
 import { tokens } from "@micboxx/theme";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 type PlayerSurface = ReturnType<typeof useDiscoverPlayer>;
+type PurchasedView = "tracks" | "albums";
+type PurchasedSort = "recent" | "oldest" | "alpha";
+type PurchasedLayout = "list" | "grid";
 
 interface ActionItem {
   key: string;
@@ -71,33 +82,6 @@ const PROFILE_ROWS = [
   "Account details",
   "Membership status",
 ] as const;
-
-const PURCHASE_ITEMS: SummaryItem[] = [
-  {
-    key: "purchase-actions",
-    label: "Purchase actions",
-    subtitle:
-      "Use this destination for checkout entry points and commerce-related listening routes.",
-    icon: "bag-check-outline",
-    tone: "accent",
-  },
-  {
-    key: "catalog",
-    label: "Purchasable catalog",
-    subtitle:
-      "Browse tracks that can be purchased from the preview rows and actions below.",
-    icon: "albums-outline",
-  },
-  {
-    key: "membership",
-    label: "Subscription stays separate",
-    subtitle:
-      "Recurring membership access is separated from purchases so the route stays clear.",
-    icon: "card-outline",
-  },
-] as const;
-
-
 
 const HELP_ITEMS: SummaryItem[] = [
   {
@@ -196,55 +180,63 @@ function formatRelativeDate(value: string | null): string {
   return formatUnit(Math.round(diffMs / minute), "minute");
 }
 
-function getNotificationIconName(
-  type: SocialNotification["type"],
-): IoniconName {
-  if (type === "direct_message") {
-    return "mail-outline";
+type NotificationIconMeta = {
+  icon: IoniconName | "soundwave";
+  color: string;
+  backgroundColor: string;
+};
+
+function getNotificationIconMeta(
+  notification: NotificationItem,
+): NotificationIconMeta {
+  if (
+    notification.source === "room" &&
+    notification.roomType === "room-reward"
+  ) {
+    return {
+      icon: "ribbon-outline",
+      color: "#fde68a",
+      backgroundColor: "rgba(252,211,77,0.15)",
+    };
   }
 
-  if (type === "follow") {
-    return "person-add-outline";
-  }
-
-  if (type === "track_comment") {
-    return "chatbubble-ellipses-outline";
-  }
-
-  return "heart-outline";
-}
-
-function describeNotification(notification: SocialNotification): string {
-  const actor =
-    notification.actorDisplayName ?? notification.actorUsername ?? "Someone";
-
-  if (notification.type === "follow") {
-    return `${actor} followed you`;
+  if (notification.type === "room") {
+    return {
+      icon: "soundwave",
+      color: "#6ee7b7",
+      backgroundColor: "rgba(52,211,153,0.15)",
+    };
   }
 
   if (notification.type === "direct_message") {
-    return `${actor} sent you a message`;
+    return {
+      icon: "chatbubble-ellipses-outline",
+      color: "#f0abfc",
+      backgroundColor: "rgba(232,121,249,0.15)",
+    };
+  }
+
+  if (notification.type === "follow") {
+    return {
+      icon: "person-add-outline",
+      color: "#7dd3fc",
+      backgroundColor: "rgba(56,189,248,0.15)",
+    };
   }
 
   if (notification.type === "track_comment") {
-    if (notification.trackTitle) {
-      return `${actor} commented on your track ${notification.trackTitle}`;
-    }
-
-    return `${actor} commented on your track`;
+    return {
+      icon: "chatbubble-ellipses-outline",
+      color: "#6ee7b7",
+      backgroundColor: "rgba(52,211,153,0.15)",
+    };
   }
 
-  if (notification.trackTitle) {
-    return `${actor} liked your track ${notification.trackTitle}`;
-  }
-
-  return `${actor} liked your track`;
-}
-
-function getNotificationPreview(
-  notification: SocialNotification,
-): string | null {
-  return notification.messagePreview ?? notification.commentPreview ?? null;
+  return {
+    icon: "heart-outline",
+    color: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentDim,
+  };
 }
 
 function normalizeNotificationPath(href: string | null): string | null {
@@ -265,11 +257,19 @@ function normalizeNotificationPath(href: string | null): string | null {
 }
 
 function resolveNotificationRoute(
-  notification: SocialNotification,
+  notification: NotificationItem,
 ): string | null {
   const path = normalizeNotificationPath(notification.href);
 
   if (path) {
+    if (path.startsWith("/room/")) {
+      return path;
+    }
+
+    if (path.startsWith("/rooms/")) {
+      return path.replace(/^\/rooms\//, "/room/");
+    }
+
     if (path.startsWith("/messages/")) {
       return path;
     }
@@ -279,6 +279,14 @@ function resolveNotificationRoute(
     }
 
     if (path.startsWith("/track/")) {
+      return path;
+    }
+
+    if (path.startsWith("/albums/")) {
+      return path.replace(/^\/albums\//, "/album/");
+    }
+
+    if (path.startsWith("/album/")) {
       return path;
     }
 
@@ -295,15 +303,109 @@ function resolveNotificationRoute(
     }
   }
 
-  if (notification.type === "direct_message" && notification.conversationId) {
-    return `/messages/${notification.conversationId}`;
+  if (notification.source === "room") {
+    return null;
   }
 
-  if (notification.type === "follow" && notification.actorUsername) {
-    return `/user/${encodeURIComponent(notification.actorUsername)}`;
+  const socialNotification = notification.raw;
+
+  if (
+    socialNotification.type === "direct_message" &&
+    socialNotification.conversationId
+  ) {
+    return `/messages/${socialNotification.conversationId}`;
+  }
+
+  if (
+    socialNotification.type === "follow" &&
+    socialNotification.actorUsername
+  ) {
+    return `/user/${encodeURIComponent(socialNotification.actorUsername)}`;
   }
 
   return null;
+}
+
+function formatShortDate(secondsValue: number | null | undefined): string | null {
+  if (!secondsValue) {
+    return null;
+  }
+
+  return new Date(secondsValue * 1000).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function resolveEntitlementStatus(
+  entitlement: EntitlementState | null | undefined,
+): "active" | "grace" | "lapsed" | "none" {
+  if (!entitlement) return "none";
+  const status = entitlement.status.toLowerCase();
+  if (status === "active") return "active";
+  if (status.includes("grace")) return "grace";
+  if (
+    status.includes("cancel") ||
+    status.includes("expired") ||
+    status.includes("lapsed")
+  ) {
+    return "lapsed";
+  }
+
+  return "active";
+}
+
+function formatSubscriptionStatus(status: string): string {
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function sortPurchasedTracks(
+  tracks: LibraryOwnedTrack[],
+  sortBy: PurchasedSort,
+): LibraryOwnedTrack[] {
+  const next = [...tracks];
+
+  if (sortBy === "alpha") {
+    next.sort((a, b) => a.title.localeCompare(b.title));
+    return next;
+  }
+
+  next.sort((a, b) =>
+    sortBy === "oldest"
+      ? a.acquiredAt - b.acquiredAt
+      : b.acquiredAt - a.acquiredAt,
+  );
+
+  return next;
+}
+
+function sortPurchasedAlbums(
+  albums: LibraryOwnedAlbum[],
+  sortBy: PurchasedSort,
+): LibraryOwnedAlbum[] {
+  const next = [...albums];
+
+  if (sortBy === "alpha") {
+    next.sort((a, b) => a.title.localeCompare(b.title));
+    return next;
+  }
+
+  next.sort((a, b) =>
+    sortBy === "oldest"
+      ? a.acquiredAt - b.acquiredAt
+      : b.acquiredAt - a.acquiredAt,
+  );
+
+  return next;
+}
+
+function getPurchasedSortLabel(sortBy: PurchasedSort): string {
+  if (sortBy === "oldest") return "Oldest Added";
+  if (sortBy === "alpha") return "Title A-Z";
+  return "Recently Added";
 }
 
 export default function AccountDestinationScreen() {
@@ -311,6 +413,10 @@ export default function AccountDestinationScreen() {
   const slug = typeof params.slug === "string" ? params.slug : undefined;
   const isValidDestination = isAccountDestinationSlug(slug);
   const { session, signOut } = useAuth();
+  const [purchasedView, setPurchasedView] = useState<PurchasedView>("tracks");
+  const [purchasedSort, setPurchasedSort] = useState<PurchasedSort>("recent");
+  const [purchasedLayout, setPurchasedLayout] =
+    useState<PurchasedLayout>("list");
   const {
     preferences,
     isHydrating: preferencesHydrating,
@@ -325,14 +431,22 @@ export default function AccountDestinationScreen() {
   const player = useDiscoverPlayer();
 
   const accessToken = session?.accessToken ?? null;
+  const { state: libraryState, summary: librarySummary } = useLibraryDomains(
+    slug === "purchases" ? accessToken : null,
+    slug === "purchases" ? (session?.user.uuid ?? null) : null,
+  );
+  const {
+    data: entitlement,
+    isLoading: entitlementLoading,
+    error: entitlementError,
+  } = useGetCurrentEntitlementsQuery(
+    { accessToken },
+    { skip: !session || slug !== "subscription" },
+  );
   const needsRecentTracks =
     isValidDestination && (slug === "profile" || slug === "library");
   const needsCatalogTracks =
-    isValidDestination &&
-    (slug === "profile" ||
-      slug === "library" ||
-      slug === "purchases" ||
-      slug === "subscription");
+    isValidDestination && (slug === "profile" || slug === "library");
   const { data: recentData, isLoading: recentLoading } =
     useGetRecentlyPlayedQuery(
       { accessToken },
@@ -373,22 +487,6 @@ export default function AccountDestinationScreen() {
   const libraryTracks = recentTracks.length
     ? recentTracks.slice(0, 4)
     : trackPool.slice(0, 4);
-  const subscriptionTracks = (
-    trackPool.filter((track) => track.isSubscriberOnly).length
-      ? trackPool.filter((track) => track.isSubscriberOnly)
-      : trackPool
-  ).slice(0, 4);
-  const purchasableTracks = (
-    trackPool.filter(
-      (track) =>
-        track.commerce?.isPurchasable || Boolean(track.commerce?.price),
-    ).length
-      ? trackPool.filter(
-          (track) =>
-            track.commerce?.isPurchasable || Boolean(track.commerce?.price),
-        )
-      : trackPool
-  ).slice(0, 4);
   const publicTrackLoading =
     (popularLoading || discoverLoading) && !trackPool.length;
   const libraryLoading = Boolean(
@@ -451,7 +549,7 @@ export default function AccountDestinationScreen() {
     },
     {
       key: "subscription",
-      label: "Subscription",
+      label: "Subscriptions",
       subtitle: "See listening access and membership routes.",
       icon: "card-outline",
       onPress: () => openDestination("subscription"),
@@ -491,93 +589,6 @@ export default function AccountDestinationScreen() {
           onPress: () => openRoute("/sign-in"),
         },
   ]);
-
-  const purchaseActions = compactActions([
-    {
-      key: "catalog-picks",
-      label: "Catalog picks",
-      subtitle:
-        "Use the Library tab as the active playlist and catalog entry point.",
-      icon: "albums-outline",
-      onPress: () => openRoute("/(tabs)/library"),
-      tone: "accent",
-    },
-    {
-      key: "library",
-      label: "Library",
-      subtitle: "Move between purchased music and your listening hub.",
-      icon: "library-outline",
-      onPress: () => openDestination("library"),
-    },
-    {
-      key: "subscription",
-      label: "Subscription",
-      subtitle: "Membership access stays separate from one-off purchases.",
-      icon: "card-outline",
-      onPress: () => openDestination("subscription"),
-    },
-    session
-      ? {
-          key: "profile",
-          label: "Profile",
-          subtitle: "Keep account identity and commerce routes connected.",
-          icon: "person-circle-outline",
-          onPress: () => openDestination("profile"),
-        }
-      : {
-          key: "signin",
-          label: "Sign in",
-          subtitle:
-            "Owned purchases only make sense once the route is tied to your account.",
-          icon: "log-in-outline",
-          onPress: () => openRoute("/sign-in"),
-        },
-  ]);
-
-  const subscriptionActions = compactActions([
-    {
-      key: "premium-library",
-      label: "Discover premium tracks",
-      subtitle: "Use the Library feed to move through catalog access quickly.",
-      icon: "sparkles-outline",
-      onPress: () => openRoute("/(tabs)/library"),
-      tone: "accent",
-    },
-    {
-      key: "library",
-      label: "Library",
-      subtitle:
-        "Return to the listening surfaces that benefit from premium access.",
-      icon: "library-outline",
-      onPress: () => openDestination("library"),
-    },
-    {
-      key: "settings",
-      label: "Membership settings",
-      subtitle:
-        "Use settings for preference changes while plan controls expand.",
-      icon: "settings-outline",
-      onPress: () => openDestination("settings"),
-    },
-    session
-      ? {
-          key: "profile",
-          label: "Profile",
-          subtitle: "Verify the account and role behind your membership state.",
-          icon: "person-circle-outline",
-          onPress: () => openDestination("profile"),
-        }
-      : {
-          key: "signin",
-          label: "Sign in",
-          subtitle:
-            "Subscription access is tied to a signed-in MicBoxx account.",
-          icon: "log-in-outline",
-          onPress: () => openRoute("/sign-in"),
-        },
-  ]);
-
-
 
   const helpActions = compactActions([
     session
@@ -784,45 +795,40 @@ export default function AccountDestinationScreen() {
       break;
 
     case "purchases":
-      content = (
-        <>
-          <SummaryPanel
-            title="Commerce hub"
-            description="Use this route for purchase actions and commerce-ready listening."
-            items={PURCHASE_ITEMS}
-          />
-          <TrackPanel
-            title="Previewable catalog picks"
-            subtitle="Browse purchasable catalog picks and continue into checkout when a release offers it."
-            tracks={purchasableTracks}
-            emptyText="No catalog picks are available yet. Open the Library tab to keep exploring."
-            loading={publicTrackLoading}
-            player={player}
-          />
-          <ActionPanel title="Commerce routes" items={purchaseActions} />
-          {!session ? <GuestState /> : null}
-        </>
+      content = session ? (
+        renderPurchasesPanel({
+          albums: libraryState.ownedAlbums,
+          tracks: libraryState.ownedTracks,
+          loading: libraryState.isLoading,
+          error: libraryState.error,
+          totalCount:
+            librarySummary.ownedAlbumCount + librarySummary.ownedTrackCount,
+          view: purchasedView,
+          onViewChange: setPurchasedView,
+          sortBy: purchasedSort,
+          onSortChange: setPurchasedSort,
+          layoutMode: purchasedLayout,
+          onLayoutModeChange: setPurchasedLayout,
+        })
+      ) : (
+        <GuestState message="Sign in to see tracks and albums you own." />
       );
       break;
 
     case "subscription":
-      content = (
-        <>
-          <TrackPanel
-            title="Premium listening"
-            subtitle={
-              session
-                ? "Subscriber-only or premium-adjacent tracks surface here so subscription is more than a static title."
-                : "Sign in to tie premium access to your account, then come back here for membership context."
-            }
-            tracks={subscriptionTracks}
-            emptyText="No premium picks are visible yet. Browse the catalog and revisit this route."
-            loading={publicTrackLoading}
-            player={player}
-          />
-          <ActionPanel title="Membership routes" items={subscriptionActions} />
-          {!session ? <GuestState /> : null}
-        </>
+      content = session ? (
+        renderSubscriptionPanel({
+          entitlement,
+          loading: entitlementLoading,
+          error:
+            entitlementError &&
+            "message" in entitlementError &&
+            typeof entitlementError.message === "string"
+              ? entitlementError.message
+              : null,
+        })
+      ) : (
+        <GuestState message="Sign in to see your current subscription level." />
       );
       break;
 
@@ -956,6 +962,440 @@ function GuestState({
           <Ionicons name="log-in-outline" size={18} color="#fff" />
           <Text style={styles.primaryButtonLabel}>Sign In</Text>
         </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function renderPurchasesPanel({
+  albums,
+  tracks,
+  loading,
+  error,
+  totalCount,
+  view,
+  onViewChange,
+  sortBy,
+  onSortChange,
+  layoutMode,
+  onLayoutModeChange,
+}: {
+  albums: LibraryOwnedAlbum[];
+  tracks: LibraryOwnedTrack[];
+  loading: boolean;
+  error: string | null;
+  totalCount: number;
+  view: PurchasedView;
+  onViewChange: (view: PurchasedView) => void;
+  sortBy: PurchasedSort;
+  onSortChange: (sortBy: PurchasedSort) => void;
+  layoutMode: PurchasedLayout;
+  onLayoutModeChange: (layoutMode: PurchasedLayout) => void;
+}) {
+  if (loading) {
+    return (
+      <View style={styles.panel}>
+        <View style={styles.loadingRow}>
+          <ActivityIndicator color={tokens.colors.accent} />
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.panel}>
+        <Text style={styles.sectionTitle}>Unable to load purchases</Text>
+        <Text style={styles.description}>{error}</Text>
+      </View>
+    );
+  }
+
+  const sortedTracks = sortPurchasedTracks(tracks, sortBy);
+  const sortedAlbums = sortPurchasedAlbums(albums, sortBy);
+  const tabs: { id: PurchasedView; label: string; count: number }[] = [
+    { id: "tracks", label: "Tracks", count: tracks.length },
+    { id: "albums", label: "Albums", count: albums.length },
+  ];
+  const activeCount = view === "tracks" ? sortedTracks.length : sortedAlbums.length;
+  const isGridLayout = layoutMode === "grid";
+
+  return (
+    <View style={styles.purchasedPage}>
+      <View style={styles.purchasedTabs}>
+        {tabs.map((tab) => {
+          const selected = view === tab.id;
+
+          return (
+            <Pressable
+              key={tab.id}
+              onPress={() => onViewChange(tab.id)}
+              style={({ pressed }: { pressed: boolean }) => [
+                styles.purchasedTab,
+                selected && styles.purchasedTabActive,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.purchasedTabLabel,
+                  selected && styles.purchasedTabLabelActive,
+                ]}
+              >
+                {tab.label}
+              </Text>
+              <Text
+                style={[
+                  styles.purchasedTabCount,
+                  selected && styles.purchasedTabLabelActive,
+                ]}
+              >
+                {tab.count}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={styles.purchasedToolbar}>
+        <View style={styles.purchasedTitleRow}>
+          <Text style={styles.purchasedViewTitle}>
+            {view === "tracks" ? "Tracks" : "Albums"}
+          </Text>
+          <View style={styles.countPill}>
+            <Text style={styles.countPillText}>{activeCount}</Text>
+          </View>
+        </View>
+
+        <View style={styles.purchasedControlRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.purchasedSortOptions}
+          >
+            {(["recent", "oldest", "alpha"] as const).map((option) => {
+              const selected = sortBy === option;
+
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => onSortChange(option)}
+                  style={({ pressed }: { pressed: boolean }) => [
+                    styles.purchasedSortChip,
+                    selected && styles.purchasedSortChipActive,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.purchasedSortLabel,
+                      selected && styles.purchasedSortLabelActive,
+                    ]}
+                  >
+                    {getPurchasedSortLabel(option)}
+                  </Text>
+                  {selected ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={13}
+                      color={tokens.colors.accentLight}
+                    />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.purchasedLayoutToggle}>
+            <Pressable
+              onPress={() => onLayoutModeChange("list")}
+              style={({ pressed }: { pressed: boolean }) => [
+                styles.purchasedLayoutButton,
+                layoutMode === "list" && styles.purchasedLayoutButtonActive,
+                pressed && styles.pressed,
+              ]}
+              accessibilityLabel="Show list view"
+            >
+              <Ionicons
+                name="list-outline"
+                size={18}
+                color={
+                  layoutMode === "list"
+                    ? tokens.colors.accentLight
+                    : tokens.colors.textSecondary
+                }
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => onLayoutModeChange("grid")}
+              style={({ pressed }: { pressed: boolean }) => [
+                styles.purchasedLayoutButton,
+                layoutMode === "grid" && styles.purchasedLayoutButtonActive,
+                pressed && styles.pressed,
+              ]}
+              accessibilityLabel="Show grid view"
+            >
+              <Ionicons
+                name="grid-outline"
+                size={18}
+                color={
+                  layoutMode === "grid"
+                    ? tokens.colors.accentLight
+                    : tokens.colors.textSecondary
+                }
+              />
+            </Pressable>
+          </View>
+        </View>
+      </View>
+
+      {view === "tracks" ? (
+        sortedTracks.length > 0 ? (
+          isGridLayout ? (
+            <PurchasedGrid>
+              {sortedTracks.map((track) => (
+                <PurchasedGridCard
+                  key={`track-grid-${track.uuid || track.id}`}
+                  title={track.title}
+                  subtitle={track.artistName}
+                  meta={`Acquired ${formatShortDate(track.acquiredAt) ?? ""}`}
+                  artwork={track.artwork}
+                />
+              ))}
+            </PurchasedGrid>
+          ) : (
+            <View style={styles.purchasedList}>
+              {sortedTracks.map((track, index) => (
+                <PurchasedRow
+                  key={`track-${track.uuid || track.id}`}
+                  index={index + 1}
+                  title={track.title}
+                  subtitle={
+                    track.albumTitle
+                      ? `${track.artistName} · ${track.albumTitle}`
+                      : track.artistName
+                  }
+                  meta={`Purchased · ${formatShortDate(track.acquiredAt) ?? ""}`}
+                  artwork={track.artwork}
+                />
+              ))}
+            </View>
+          )
+        ) : (
+          <PurchasedEmptyState title="No purchased tracks yet" />
+        )
+      ) : sortedAlbums.length > 0 ? (
+        isGridLayout ? (
+          <PurchasedGrid>
+            {sortedAlbums.map((album) => (
+              <PurchasedGridCard
+                key={`album-grid-${album.uuid || album.id}`}
+                title={album.title}
+                subtitle={album.artistName}
+                meta={`Acquired ${formatShortDate(album.acquiredAt) ?? ""}`}
+                artwork={album.artwork}
+              />
+            ))}
+          </PurchasedGrid>
+        ) : (
+          <View style={styles.purchasedList}>
+            {sortedAlbums.map((album, index) => (
+              <PurchasedRow
+                key={`album-${album.uuid || album.id}`}
+                index={index + 1}
+                title={album.title}
+                subtitle={album.artistName}
+                meta={`Purchased · ${formatShortDate(album.acquiredAt) ?? ""}`}
+                artwork={album.artwork}
+              />
+            ))}
+          </View>
+        )
+      ) : (
+        <PurchasedEmptyState title="No purchased albums yet" />
+      )}
+    </View>
+  );
+}
+
+function PurchasedGrid({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return <View style={styles.purchasedGrid}>{children}</View>;
+}
+
+function PurchasedRow({
+  index,
+  title,
+  subtitle,
+  meta,
+  artwork,
+}: {
+  index: number;
+  title: string;
+  subtitle: string;
+  meta: string;
+  artwork: string | null;
+}) {
+  return (
+    <View style={styles.purchasedRow}>
+      <Text style={styles.purchasedIndex}>{index}</Text>
+      <View style={styles.purchasedArtwork}>
+        {artwork ? (
+          <Image
+            source={{ uri: artwork }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+          />
+        ) : (
+          <Text style={styles.purchasedArtworkText}>
+            {title.slice(0, 1).toUpperCase()}
+          </Text>
+        )}
+      </View>
+      <View style={styles.purchasedCopy}>
+        <Text numberOfLines={1} style={styles.purchasedTitle}>
+          {title}
+        </Text>
+        <Text numberOfLines={1} style={styles.purchasedSubtitle}>
+          {subtitle}
+        </Text>
+        <Text numberOfLines={1} style={styles.purchasedMeta}>
+          {meta.trim()}
+        </Text>
+      </View>
+      <View style={styles.ownedBadge}>
+        <Text style={styles.ownedBadgeText}>Owned</Text>
+      </View>
+    </View>
+  );
+}
+
+function PurchasedGridCard({
+  title,
+  subtitle,
+  meta,
+  artwork,
+}: {
+  title: string;
+  subtitle: string;
+  meta: string;
+  artwork: string | null;
+}) {
+  return (
+    <View style={styles.purchasedGridCard}>
+      <View style={styles.purchasedGridArtwork}>
+        {artwork ? (
+          <Image
+            source={{ uri: artwork }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+          />
+        ) : (
+          <Text style={styles.purchasedArtworkText}>
+            {title.slice(0, 1).toUpperCase()}
+          </Text>
+        )}
+      </View>
+      <Text numberOfLines={1} style={styles.purchasedGridTitle}>
+        {title}
+      </Text>
+      <Text numberOfLines={1} style={styles.purchasedGridSubtitle}>
+        {subtitle}
+      </Text>
+      <Text numberOfLines={1} style={styles.purchasedGridMeta}>
+        {meta.trim()}
+      </Text>
+    </View>
+  );
+}
+
+function PurchasedEmptyState({ title }: { title: string }) {
+  return (
+    <View style={styles.purchasedEmptyState}>
+      <View style={styles.purchasedEmptyIconWrap}>
+        <Ionicons
+          name="musical-notes-outline"
+          size={34}
+          color={tokens.colors.textSecondary}
+        />
+      </View>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.description}>
+        {title.includes("tracks")
+          ? "Tracks you purchase will appear here."
+          : "Albums you purchase will appear here."}
+      </Text>
+    </View>
+  );
+}
+
+function renderSubscriptionPanel({
+  entitlement,
+  loading,
+  error,
+}: {
+  entitlement: EntitlementState | null | undefined;
+  loading: boolean;
+  error: string | null;
+}) {
+  if (loading) {
+    return (
+      <View style={styles.panel}>
+        <View style={styles.loadingRow}>
+          <ActivityIndicator color={tokens.colors.accent} />
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.panel}>
+        <Text style={styles.sectionTitle}>Unable to load subscription</Text>
+        <Text style={styles.description}>{error}</Text>
+      </View>
+    );
+  }
+
+  const entitlementStatus = resolveEntitlementStatus(entitlement);
+
+  if (!entitlement || entitlementStatus === "none") {
+    return (
+      <View style={styles.panel}>
+        <Text style={styles.sectionTitle}>No active subscription</Text>
+        <Text style={styles.description}>
+          Your account is using the default free listener access.
+        </Text>
+      </View>
+    );
+  }
+
+  const renewalDate = formatShortDate(
+    entitlement.period.currentPeriodEndsAt ?? entitlement.period.expiresAt,
+  );
+
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.sectionTitle}>Current subscription</Text>
+      <View style={styles.subscriptionCard}>
+        <View style={styles.subscriptionIconWrap}>
+          <Ionicons name="diamond-outline" size={24} color={tokens.colors.accent} />
+        </View>
+        <View style={styles.subscriptionCopy}>
+          <Text style={styles.subscriptionLevel}>{entitlement.plan.label}</Text>
+          <Text style={styles.subscriptionStatus}>
+            {formatSubscriptionStatus(entitlement.status)}
+          </Text>
+          {renewalDate ? (
+            <Text style={styles.subscriptionRenewal}>
+              {entitlementStatus === "lapsed" ? "Access ends " : "Renews "}
+              {renewalDate}
+            </Text>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -1102,8 +1542,6 @@ function NotificationsFeedPanel({
 }) {
   const { items, loading, error, isReady, canRetry, retry } =
     useNotifications(40);
-  const unreadCount = useUnreadNotificationCount();
-  const [markingId, setMarkingId] = useState<string | null>(null);
   const showLoadingSkeleton = loading && items.length === 0;
   const showRetryState = Boolean(error && items.length === 0);
   const showInlineRetry = Boolean(error && items.length > 0);
@@ -1117,20 +1555,12 @@ function NotificationsFeedPanel({
       return "Live updates are paused until the connection recovers.";
     }
 
-    if (unreadCount > 0) {
-      return `${unreadCount} unread`;
-    }
-
-    if (items.length) {
-      return "All caught up";
-    }
-
     if (!isReady && !error) {
       return "Connecting to your activity feed...";
     }
 
-    return "No notifications yet";
-  }, [showLoadingSkeleton, showRetryState, unreadCount, items.length, isReady, error]);
+    return null;
+  }, [showLoadingSkeleton, showRetryState, isReady, error]);
 
   const showSimpleEmptyState = useMemo(
     () =>
@@ -1141,38 +1571,41 @@ function NotificationsFeedPanel({
     [showLoadingSkeleton, showRetryState, showInlineRetry, items.length],
   );
 
-  const markRead = async (notificationId: string) => {
+  const markRead = async (notification: NotificationItem) => {
+    if (notification.isRead) {
+      return;
+    }
+
+    if (notification.source === "room") {
+      await markRoomNotificationRead({
+        notificationId: notification.numericId,
+      });
+      return;
+    }
+
     if (!isReady) {
       return;
     }
 
-    setMarkingId(notificationId);
-
-    try {
-      await updateDoc(
-        doc(getFirebaseClientDb(), "notifications", notificationId),
-        {
-          isRead: true,
-          readAt: serverTimestamp(),
-          seenAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        },
-      );
-    } finally {
-      setMarkingId((current: string | null) =>
-      current === notificationId ? null : current,
+    await updateDoc(
+      doc(getFirebaseClientDb(), "notifications", notification.id),
+      {
+        isRead: true,
+        readAt: serverTimestamp(),
+        seenAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
     );
-    }
   };
 
-  const handleNotificationPress = (notification: SocialNotification) => {
+  const handleNotificationPress = (notification: NotificationItem) => {
     const route = resolveNotificationRoute(notification);
     if (!route) {
       return;
     }
 
     if (!notification.isRead) {
-      void markRead(notification.id);
+      void markRead(notification);
     }
 
     onOpenRoute(route);
@@ -1198,21 +1631,10 @@ function NotificationsFeedPanel({
   }
 
   return (
-    <View style={styles.panel}>
-        <View style={styles.notificationHeaderRow}>
-          <View style={styles.notificationHeaderCopy}>
-            <Text style={styles.sectionTitle}>Live activity</Text>
-            <Text style={styles.description}>
-              Likes, follows, comments, and direct messages appear here in real
-              time.
-            </Text>
-          </View>
-        <View style={styles.notificationHeaderMeta}>
-          <UnreadBadge count={unreadCount} />
-        </View>
-      </View>
-
-      <Text style={styles.preferenceStatus}>{statusText}</Text>
+    <View style={styles.notificationFeed}>
+      {statusText ? (
+        <Text style={styles.preferenceStatus}>{statusText}</Text>
+      ) : null}
 
       {showInlineRetry ? (
         <View style={styles.notificationInlineBanner}>
@@ -1251,19 +1673,11 @@ function NotificationsFeedPanel({
         />
       ) : items.length ? (
         <View style={styles.notificationList}>
-          {items.map((notification: SocialNotification) => {
+          {items.map((notification: NotificationItem) => {
             const route = resolveNotificationRoute(notification);
-            const preview = getNotificationPreview(notification);
-            const isMarking = markingId === notification.id;
+            const preview = notification.preview;
             const timestampLabel = formatRelativeDate(notification.createdAt);
-            const iconColor =
-              notification.type === "direct_message"
-                ? tokens.colors.accentStrong
-                : notification.type === "follow"
-                  ? tokens.colors.accent
-                  : notification.type === "track_comment"
-                    ? tokens.colors.warning
-                    : tokens.colors.textPrimary;
+            const iconMeta = getNotificationIconMeta(notification);
 
             return (
               <View
@@ -1282,12 +1696,21 @@ function NotificationsFeedPanel({
                     route && pressed && styles.pressed,
                   ]}
                 >
-                  <View style={styles.notificationIconWrap}>
-                    <Ionicons
-                      name={getNotificationIconName(notification.type)}
-                      size={18}
-                      color={iconColor}
-                    />
+                  <View
+                    style={[
+                      styles.notificationIconWrap,
+                      { backgroundColor: iconMeta.backgroundColor },
+                    ]}
+                  >
+                    {iconMeta.icon === "soundwave" ? (
+                      <SoundwaveTabIcon size={18} color={iconMeta.color} />
+                    ) : (
+                      <Ionicons
+                        name={iconMeta.icon}
+                        size={18}
+                        color={iconMeta.color}
+                      />
+                    )}
                   </View>
 
                   <View style={styles.notificationCopy}>
@@ -1299,7 +1722,7 @@ function NotificationsFeedPanel({
                             styles.notificationHeadlineUnread,
                         ]}
                       >
-                        {describeNotification(notification)}
+                        {notification.label}
                       </Text>
                       <View style={styles.notificationHeadlineMeta}>
                         <Text
@@ -1327,32 +1750,6 @@ function NotificationsFeedPanel({
                     ) : null}
                   </View>
                 </Pressable>
-
-                {!notification.isRead ? (
-                  <Pressable
-                    onPress={() => {
-                      void markRead(notification.id);
-                    }}
-                    disabled={isMarking || !isReady}
-                    style={({ pressed }: { pressed: boolean }) => [
-                      styles.notificationMarkButton,
-                      (isMarking || !isReady) &&
-                        styles.notificationMarkButtonDisabled,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    {isMarking ? (
-                      <ActivityIndicator
-                        size="small"
-                        color={tokens.colors.textPrimary}
-                      />
-                    ) : (
-                      <Text style={styles.notificationMarkButtonLabel}>
-                        Mark read
-                      </Text>
-                    )}
-                  </Pressable>
-                ) : null}
               </View>
             );
           })}
@@ -1383,7 +1780,7 @@ function NotificationsFeedSkeleton() {
           style={styles.notificationSkeletonRow}
         >
           <View style={styles.notificationSkeletonBody}>
-            <ShimmerPlaceholder width={38} height={38} borderRadius={19} />
+            <ShimmerPlaceholder width={32} height={32} borderRadius={16} />
             <View style={styles.notificationSkeletonCopy}>
               <ShimmerPlaceholder
                 width={headlineWidth}
@@ -1398,7 +1795,7 @@ function NotificationsFeedSkeleton() {
               />
             </View>
           </View>
-          <ShimmerPlaceholder width={78} height={32} borderRadius={999} />
+          <ShimmerPlaceholder width={28} height={10} borderRadius={999} />
         </View>
       ))}
     </View>
@@ -1668,19 +2065,292 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 22,
   },
-  notificationHeaderRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
+  purchasedPage: {
+    gap: 18,
   },
-  notificationHeaderCopy: {
-    flex: 1,
+  purchasedTabs: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 4,
+    borderRadius: tokens.radii.pill,
+    backgroundColor: tokens.colors.bgElevated,
+    padding: 4,
+  },
+  purchasedTab: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: tokens.radii.pill,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  purchasedTabActive: {
+    backgroundColor: tokens.colors.accentDim,
+  },
+  purchasedTabLabel: {
+    color: tokens.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  purchasedTabLabelActive: {
+    color: tokens.colors.accentLight,
+  },
+  purchasedTabCount: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  purchasedToolbar: {
+    gap: 12,
+  },
+  purchasedTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  purchasedViewTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 34,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+  },
+  countPill: {
+    minWidth: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    backgroundColor: tokens.colors.bgElevated,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+  },
+  countPillText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  purchasedControlRow: {
+    gap: 10,
+  },
+  purchasedSortOptions: {
+    gap: 8,
+    paddingRight: 20,
+  },
+  purchasedSortChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 40,
+    borderRadius: 8,
+    paddingHorizontal: 13,
+    backgroundColor: tokens.colors.bgElevated,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+  },
+  purchasedSortChipActive: {
+    backgroundColor: tokens.colors.accentDim,
+    borderColor: tokens.colors.borderAccent,
+  },
+  purchasedSortLabel: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  purchasedSortLabelActive: {
+    color: tokens.colors.accentLight,
+  },
+  purchasedLayoutToggle: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 8,
+    backgroundColor: tokens.colors.bgElevated,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+    padding: 4,
+  },
+  purchasedLayoutButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  purchasedLayoutButtonActive: {
+    backgroundColor: tokens.colors.accentDim,
+  },
+  purchasedList: {
+    borderRadius: 8,
+    overflow: "hidden",
+    backgroundColor: tokens.colors.bgElevated,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+  },
+  purchasedGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  purchasedGridCard: {
+    width: "48%",
+    minWidth: 140,
+    flexGrow: 1,
+    borderRadius: 8,
+    backgroundColor: tokens.colors.bgElevated,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+    padding: 10,
     gap: 6,
   },
-  notificationHeaderMeta: {
-    minWidth: 24,
-    alignItems: "flex-end",
-    justifyContent: "flex-start",
+  purchasedGridArtwork: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  purchasedGridTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  purchasedGridSubtitle: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+  },
+  purchasedGridMeta: {
+    color: tokens.colors.textDisabled,
+    fontSize: 11,
+  },
+  purchasedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: tokens.colors.borderSubtle,
+  },
+  purchasedIndex: {
+    width: 18,
+    textAlign: "center",
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  purchasedArtwork: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  purchasedArtworkText: {
+    color: tokens.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  purchasedCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  purchasedTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  purchasedSubtitle: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  purchasedMeta: {
+    color: tokens.colors.textDisabled,
+    fontSize: 11,
+    marginTop: 4,
+  },
+  ownedBadge: {
+    borderRadius: tokens.radii.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: tokens.colors.accentDim,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderAccent,
+  },
+  ownedBadgeText: {
+    color: tokens.colors.accentLight,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  purchasedEmptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    minHeight: 260,
+    borderRadius: tokens.radii["2xl"],
+    backgroundColor: tokens.colors.bgSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+    padding: 24,
+  },
+  purchasedEmptyIconWrap: {
+    width: 82,
+    height: 82,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: tokens.colors.bgElevated,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+  },
+  subscriptionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderRadius: 8,
+    padding: 14,
+    backgroundColor: tokens.colors.bgElevated,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+  },
+  subscriptionIconWrap: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: tokens.colors.accentDim,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderAccent,
+  },
+  subscriptionCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  subscriptionLevel: {
+    color: tokens.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  subscriptionStatus: {
+    color: tokens.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  subscriptionRenewal: {
+    color: tokens.colors.textDisabled,
+    fontSize: 12,
+  },
+  notificationFeed: {
+    gap: 14,
   },
   notificationInlineBanner: {
     flexDirection: "row",
@@ -1801,17 +2471,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   notificationList: {
-    gap: 10,
+    alignSelf: "stretch",
+    marginHorizontal: -20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: tokens.colors.borderSubtle,
   },
   notificationSkeletonRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    padding: 14,
-    borderRadius: tokens.radii.xl,
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: tokens.colors.borderSubtle,
   },
   notificationSkeletonBody: {
@@ -1906,34 +2579,28 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   notificationRow: {
-    gap: 12,
-    padding: 14,
-    borderRadius: tokens.radii.xl,
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: tokens.colors.borderSubtle,
   },
   notificationRowUnread: {
-    borderColor: tokens.colors.borderAccent,
-    backgroundColor: tokens.colors.accentDim,
+    backgroundColor: "rgba(255,255,255,0.03)",
   },
   notificationBody: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
   },
   notificationBodyStatic: {
     opacity: 0.92,
   },
   notificationIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
   },
   notificationCopy: {
     flex: 1,
@@ -1952,9 +2619,9 @@ const styles = StyleSheet.create({
   notificationHeadline: {
     flex: 1,
     color: tokens.colors.textPrimary,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    lineHeight: 20,
+    lineHeight: 18,
   },
   notificationHeadlineUnread: {
     fontWeight: "800",
@@ -1977,24 +2644,7 @@ const styles = StyleSheet.create({
   notificationPreview: {
     color: tokens.colors.textSecondary,
     fontSize: 12,
-    lineHeight: 18,
-  },
-  notificationMarkButton: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-  },
-  notificationMarkButtonDisabled: {
-    opacity: 0.72,
-  },
-  notificationMarkButtonLabel: {
-    color: tokens.colors.textPrimary,
-    fontSize: 12,
-    fontWeight: "700",
+    lineHeight: 17,
   },
   notificationErrorText: {
     color: tokens.colors.danger,

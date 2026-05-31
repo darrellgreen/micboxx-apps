@@ -15,6 +15,7 @@ import { AddSquareTabIcon } from "@/components/icons/AddSquareTabIcon";
 import { HomeTabIcon } from "@/components/icons/HomeTabIcon";
 import { LibraryTabIcon } from "@/components/icons/LibraryTabIcon";
 import { PieChartTabIcon } from "@/components/icons/PieChartTabIcon";
+import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { AnimatedPressable } from "@micboxx/ui";
 import {
     CREATOR_TAB_META,
@@ -24,7 +25,7 @@ import {
 } from "@/shared/navigation/creator-tabs";
 import { tokens } from "@micboxx/theme";
 
-const SHOW_CREATOR_TAB_LABELS = false;
+const SHOW_CREATOR_TAB_LABELS = true;
 
 function isCreatorTab(routeName: string): routeName is CreatorTabKey {
   return CREATOR_TAB_ORDER.includes(routeName as CreatorTabKey);
@@ -179,13 +180,7 @@ function TabIcon({
   }
 
   if (tabKey === "rooms") {
-    return (
-      <Ionicons
-        name="radio-outline"
-        size={iconSize}
-        color={color}
-      />
-    );
+    return <SoundwaveTabIcon size={iconSize} color={color} />;
   }
 
   if (tabKey === "create") {
@@ -217,16 +212,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    minHeight: 60,
+    minHeight: 68,
     paddingHorizontal: 10,
     backgroundColor: tokens.colors.bgSurface,
   },
   tab: {
     flex: 1,
-    minHeight: 60,
+    minHeight: 68,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
+    gap: 8,
   },
   label: {
     color: "rgba(216, 223, 238, 0.52)",

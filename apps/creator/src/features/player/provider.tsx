@@ -9,10 +9,10 @@ import {
 } from "react";
 
 import { noopPlayerAnalyticsSink } from "@/features/player/analytics";
-import { PLAYER_ANALYTICS_EVENTS } from "@micboxx/utils";
+import { PLAYER_ANALYTICS_EVENTS } from "@micboxx/analytics";
 import { noopDownloadPlaybackResolver } from "@/features/player/downloads";
 import { trackPlayerAdapter } from "@/features/player/engine/adapter";
-import type { EngineTrack } from "@/features/player/engine/types";
+import type { EngineTrack } from "@micboxx/contracts";
 import {
   resetPlayerState,
   setCurrentIndex,
@@ -38,12 +38,12 @@ import {
 import {
   emptyQueueState,
 } from "@/features/player/store";
-import type { PlayerItem, PlayerQueueState } from "@/features/player/types/player";
+import type { PlayerItem, PlayerQueueState } from "@micboxx/contracts";
 import type {
   PlayerActionResult,
   ReplaceQueuePayload,
   StartPlaybackPayload,
-} from "@/features/player/types/transport";
+} from "@micboxx/contracts";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 interface PlayerProviderActions {

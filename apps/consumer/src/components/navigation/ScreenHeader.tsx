@@ -20,6 +20,10 @@ interface ScreenHeaderProps {
   showLogo?: boolean;
   /** Optional title text (replaces logo when provided) */
   title?: string;
+  /** Optional supporting line under the title */
+  subtitle?: string;
+  /** Left drawer button treatment */
+  leftIcon?: "account" | "menu";
   /** Render custom content on the right side */
   rightContent?: React.ReactNode;
   /** Optional right icon behavior */
@@ -31,6 +35,8 @@ interface ScreenHeaderProps {
 export function ScreenHeader({
   showLogo = true,
   title,
+  subtitle,
+  leftIcon = "account",
   rightContent,
   rightIconName = "notifications-outline",
   onRightPress,
@@ -54,7 +60,16 @@ export function ScreenHeader({
         : 0;
 
   const center = title ? (
-    <Text style={s.title}>{title}</Text>
+    <View style={s.titleBlock}>
+      <Text style={s.title} numberOfLines={1}>
+        {title}
+      </Text>
+      {subtitle ? (
+        <Text style={s.subtitle} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      ) : null}
+    </View>
   ) : showLogo ? (
     <Image
       source={require("../../../assets/images/micboxx-logo.png")}
@@ -65,14 +80,20 @@ export function ScreenHeader({
 
   return (
     <View style={s.container}>
-      {/* Absolutely centered logo */}
+      {/* Absolutely centered title block */}
       <View style={s.centerOverlay} pointerEvents="none">
         {center}
       </View>
 
-      {/* Left icon — settings (logged out) or avatar initial (logged in) */}
+      {/* Left drawer button */}
       <AnimatedPressable style={s.iconBtn} hitSlop={6} onPress={openDrawer} haptic="selection">
-        {session ? (
+        {leftIcon === "menu" ? (
+          <Ionicons
+            name="menu-outline"
+            size={22}
+            color={tokens.colors.textSecondary}
+          />
+        ) : session ? (
           <Text style={s.avatarInitial}>
             {(
               session.user.displayName?.[0] ?? session.user.username[0]
@@ -138,8 +159,21 @@ const s = StyleSheet.create({
   },
   title: {
     color: tokens.colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  titleBlock: {
+    maxWidth: "66%",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  subtitle: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "600",
+    textAlign: "center",
   },
   iconBtn: {
     width: 36,

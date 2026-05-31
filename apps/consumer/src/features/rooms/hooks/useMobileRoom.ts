@@ -38,12 +38,12 @@ import {
     submitRoomQuestion,
     voteRoomPoll,
     voteRoomQuestion,
-} from "@/features/rooms/api";
+    ApiError,
+} from "@micboxx/api";
 import {
     isRoomMuteActive,
     subscribeToMobileRoomState,
 } from "@/features/rooms/firebase/roomListeners";
-import { ApiError } from "@/lib/api/client";
 import { useAppSelector } from "@/store/hooks";
 
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 25_000;

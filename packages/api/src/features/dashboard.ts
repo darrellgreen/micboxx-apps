@@ -7,16 +7,16 @@ import type {
     EntitlementState,
     PublicSubscriptionPlan,
 } from "@micboxx/contracts";
-import { ensureFreshSession } from "@/features/auth/api";
-import { apiFetch } from "@/lib/api/client";
+import { getMicboxxApiConfig } from "../config";
+import { apiFetch } from "../client";
 
 export async function getMyPlaylists(
   page = 1,
   pageSize = 24,
   accessToken?: string | null,
 ): Promise<DashboardPlaylistList> {
-  const session = await ensureFreshSession();
-  const liveAccessToken = session?.accessToken ?? accessToken ?? null;
+  const sessionToken = await getMicboxxApiConfig().getToken();
+  const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
     throw new Error("Sign in again to load your playlists.");
@@ -32,8 +32,8 @@ export async function getDashboardPlaylist(
   playlistId: string | number,
   accessToken?: string | null,
 ): Promise<DashboardPlaylist> {
-  const session = await ensureFreshSession();
-  const liveAccessToken = session?.accessToken ?? accessToken ?? null;
+  const sessionToken = await getMicboxxApiConfig().getToken();
+  const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
     throw new Error("Sign in again to load your playlist.");
@@ -50,8 +50,8 @@ export async function getDashboardPlaylist(
 export async function getCurrentEntitlements(
   accessToken?: string | null,
 ): Promise<EntitlementState | null> {
-  const session = await ensureFreshSession();
-  const liveAccessToken = session?.accessToken ?? accessToken ?? null;
+  const sessionToken = await getMicboxxApiConfig().getToken();
+  const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
     return null;
@@ -70,8 +70,8 @@ export async function getOrderHistory(
   limit = 100,
   accessToken?: string | null,
 ): Promise<CommerceOrderHistoryEntry[]> {
-  const session = await ensureFreshSession();
-  const liveAccessToken = session?.accessToken ?? accessToken ?? null;
+  const sessionToken = await getMicboxxApiConfig().getToken();
+  const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
     throw new Error("Sign in again to load your purchases.");

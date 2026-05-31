@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@micboxx/ui";
+import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { env } from "@/config/env";
 import type {
   EntitlementCapabilityDetail,
@@ -23,7 +24,7 @@ import { formatCurrency } from "@micboxx/api";
 import {
   useGetCurrentEntitlementsQuery,
   useGetPublicSubscriptionPlansQuery,
-} from "@/store/micboxx-api";
+} from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -223,6 +224,11 @@ export default function PremiumScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
+        <ScreenHeader
+          title="Subscriptions"
+          subtitle="Plans and access"
+          leftIcon="menu"
+        />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={tokens.colors.accent} />
         </View>
@@ -232,33 +238,11 @@ export default function PremiumScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.headerIconWrap}>
-            <Ionicons
-              name="diamond-outline"
-              size={18}
-              color={tokens.colors.accent}
-            />
-          </View>
-        </View>
-        <Text style={styles.headerTitle}>Premium</Text>
-        {session ? (
-          <AnimatedPressable
-            onPress={() => router.push("/account/profile" as never)}
-            style={styles.headerRight}
-          >
-            <Ionicons
-              name="person-circle-outline"
-              size={22}
-              color={tokens.colors.textSecondary}
-            />
-          </AnimatedPressable>
-        ) : (
-          <View style={styles.headerRight} />
-        )}
-      </View>
+      <ScreenHeader
+        title="Subscriptions"
+        subtitle="Plans and access"
+        leftIcon="menu"
+      />
 
       <ScrollView
         contentContainerStyle={styles.scroll}

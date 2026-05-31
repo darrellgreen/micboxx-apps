@@ -19,6 +19,19 @@ export function isAuthCancelledError(
   return error instanceof AuthCancelledError;
 }
 
+export class AuthSessionExpiredError extends Error {
+  constructor(message = "Session expired.") {
+    super(message);
+    this.name = "AuthSessionExpiredError";
+  }
+}
+
+export function isAuthSessionExpiredError(
+  error: unknown,
+): error is AuthSessionExpiredError {
+  return error instanceof AuthSessionExpiredError;
+}
+
 // ─── Deep-link fallback ────────────────────────────────────────────────────
 // When the auth session intercepts the final app callback it closes the browser
 // itself and resolves promptAsync/openAuthSessionAsync — no Linking event fires.
@@ -142,7 +155,7 @@ export async function ensureFreshSession(
   } | null;
 
   if (!response.ok || typeof payload?.access_token !== "string") {
-    throw new Error(
+    throw new AuthSessionExpiredError(
       payload?.error_description ??
         payload?.error ??
         "Your MicBoxx sign-in expired. Sign in again to load creator analytics.",

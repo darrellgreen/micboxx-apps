@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
 import type { SocialNotification } from "@micboxx/contracts";
+import { getUnreadNotificationCount } from "@micboxx/notifications";
 import {
     getNotificationsCollection,
     readSocialNotification,
@@ -80,7 +81,7 @@ export function useNotifications(maxItems = 40) {
   }, [firebaseConfigured, firebaseUid, maxItems, reloadNonce, socialStatus]);
 
   const unreadCount = useMemo(
-    () => items.filter((notification) => !notification.isRead).length,
+    () => getUnreadNotificationCount(items),
     [items],
   );
 

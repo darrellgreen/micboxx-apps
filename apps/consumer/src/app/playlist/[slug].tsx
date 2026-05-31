@@ -25,7 +25,7 @@ import { formatDuration } from "@micboxx/api";
 import {
     useGetDashboardPlaylistQuery,
     useGetPlaylistPageQuery,
-} from "@/store/micboxx-api";
+} from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 function normalizeParam(value?: string | string[]) {

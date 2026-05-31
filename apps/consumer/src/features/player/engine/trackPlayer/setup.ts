@@ -1,5 +1,5 @@
 import { MICBOXX_PROGRESS_INTERVAL_SEC } from "@/features/player/constants/capabilities";
-import type { EngineSetupOptions } from "@/features/player/engine/types";
+import type { EngineSetupOptions } from "@micboxx/contracts";
 import { requireTrackPlayerBundle } from "@/features/player/engine/trackPlayer/runtime";
 
 let setupPromise: Promise<void> | null = null;

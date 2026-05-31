@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@micboxx/ui";
 import { Avatar } from "@micboxx/ui";
+import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useAuth } from "@/features/auth/provider";
 import { tokens } from "@micboxx/theme";
 
@@ -55,14 +56,6 @@ export default function AccountScreen() {
       requiresAuth: true,
     },
     {
-      key: "purchases",
-      label: "Purchases",
-      subtitle: "Owned music and receipts",
-      icon: "bag-handle-outline",
-      route: "/account/purchases",
-      requiresAuth: true,
-    },
-    {
       key: "notifications",
       label: "Notifications",
       subtitle: "Likes, follows, and activity",
@@ -72,8 +65,8 @@ export default function AccountScreen() {
     },
     {
       key: "premium",
-      label: "Subscription",
-      subtitle: "View plans and manage membership",
+      label: "Subscriptions",
+      subtitle: "Plans, membership, and access",
       icon: "diamond-outline",
       action: () => router.push("/(tabs)/premium" as never),
     },
@@ -111,10 +104,11 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Account</Text>
-      </View>
+      <ScreenHeader
+        title="Account"
+        subtitle="Profile and settings"
+        leftIcon="menu"
+      />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -165,7 +159,7 @@ export default function AccountScreen() {
             </View>
             <Text style={styles.guestTitle}>Welcome to MicBoxx</Text>
             <Text style={styles.guestSubtitle}>
-              Sign in to manage your playlists, purchases, and subscription.
+              Sign in to manage your playlists, purchases, and subscriptions.
             </Text>
             <AnimatedPressable
               onPress={() => router.push("/sign-in")}

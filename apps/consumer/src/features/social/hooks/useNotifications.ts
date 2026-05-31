@@ -4,6 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
 import type { SocialNotification } from "@micboxx/contracts";
 import {
+  getRoomNotifications,
+  type RoomNotification,
+} from "@micboxx/api";
+import {
+  type NotificationItem,
+  normalizeAndSortNotifications,
+  getUnreadNotificationCount,
+} from "@micboxx/notifications";
+import {
     getNotificationsCollection,
     readSocialNotification,
 } from "@/features/social/firestore";
@@ -15,12 +24,16 @@ export function useNotifications(maxItems = 40) {
   const firebaseUid = useAppSelector((state) => state.socialAuth.firebaseUid);
   const socialError = useAppSelector((state) => state.socialAuth.error);
   const socialStatus = useAppSelector((state) => state.socialAuth.status);
-  const hasDrupalSession = useAppSelector((state) =>
-    Boolean(state.auth.session?.accessToken),
+  const accessToken = useAppSelector(
+    (state) => state.auth.session?.accessToken ?? null,
   );
-  const [items, setItems] = useState<SocialNotification[]>([]);
-  const [loading, setLoading] = useState(false);
+  const hasDrupalSession = Boolean(accessToken);
+  const [socialItems, setSocialItems] = useState<SocialNotification[]>([]);
+  const [roomItems, setRoomItems] = useState<RoomNotification[]>([]);
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [roomLoading, setRoomLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [roomError, setRoomError] = useState<string | null>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
   const firebaseConfigured = isFirebaseConfigured();
   const isReady = socialStatus === "authenticated" && Boolean(firebaseUid);
@@ -37,14 +50,14 @@ export function useNotifications(maxItems = 40) {
       socialStatus !== "authenticated" ||
       !firebaseConfigured
     ) {
-      setItems([]);
-      setLoading(false);
+      setSocialItems([]);
+      setSocialLoading(false);
       setError(null);
       return;
     }
 
     const db = getFirebaseClientDb();
-    setLoading(true);
+    setSocialLoading(true);
     setError(null);
 
     const notificationsQuery = query(
@@ -57,7 +70,7 @@ export function useNotifications(maxItems = 40) {
     const unsubscribe = onSnapshot(
       notificationsQuery,
       (snapshot) => {
-        setItems(
+        setSocialItems(
           snapshot.docs.map((documentSnapshot) =>
             readSocialNotification(
               documentSnapshot.id,
@@ -65,19 +78,70 @@ export function useNotifications(maxItems = 40) {
             ),
           ),
         );
-        setLoading(false);
+        setSocialLoading(false);
       },
       (nextError) => {
         setError(nextError.message);
-        setLoading(false);
+        setSocialLoading(false);
       },
     );
 
     return unsubscribe;
   }, [firebaseConfigured, firebaseUid, maxItems, reloadNonce, socialStatus]);
 
+  useEffect(() => {
+    if (!accessToken) {
+      setRoomItems([]);
+      setRoomLoading(false);
+      setRoomError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchRoomItems = async () => {
+      setRoomLoading((current) => current || roomItems.length === 0);
+      try {
+        const response = await getRoomNotifications({
+          limit: maxItems,
+          accessToken,
+        });
+        if (!cancelled) {
+          setRoomItems(response.notifications);
+          setRoomError(null);
+        }
+      } catch (nextError) {
+        if (!cancelled) {
+          setRoomError(
+            nextError instanceof Error
+              ? nextError.message
+              : "Unable to load Room notifications.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setRoomLoading(false);
+        }
+      }
+    };
+
+    void fetchRoomItems();
+    const intervalId = setInterval(() => {
+      void fetchRoomItems();
+    }, 20000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [accessToken, maxItems, reloadNonce, roomItems.length]);
+
+  const items = useMemo<NotificationItem[]>(() => {
+    return normalizeAndSortNotifications(socialItems, roomItems, maxItems);
+  }, [maxItems, roomItems, socialItems]);
+
   const unreadCount = useMemo(
-    () => items.filter((notification) => !notification.isRead).length,
+    () => getUnreadNotificationCount(items),
     [items],
   );
 
@@ -107,12 +171,12 @@ export function useNotifications(maxItems = 40) {
 
   return {
     items,
-    loading: loading || socialStatus === "authenticating",
-    error: error ?? authError,
+    loading: socialLoading || roomLoading || socialStatus === "authenticating",
+    error: error ?? (items.length ? null : roomError) ?? authError,
     unreadCount,
     firebaseUid,
     isReady,
-    canRetry: firebaseConfigured && (hasDrupalSession || isReady),
+    canRetry: hasDrupalSession || (firebaseConfigured && isReady),
     retry,
   };
 }

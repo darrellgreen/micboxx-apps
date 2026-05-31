@@ -57,7 +57,12 @@ export default function CreateAlbumScreen() {
   }
 
   return (
-    <ScreenShell title="Create album" subtitle="Album creation comes first in the current creator release model.">
+    <ScreenShell
+      title=""
+      subtitle=""
+      headerTitle="Create album"
+      headerSubtitle="Start a new release"
+    >
       <Panel title="Album details">
         <Field label="Title">
           <TextField value={title} onChangeText={setTitle} placeholder="Album title" />

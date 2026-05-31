@@ -4,7 +4,7 @@ import type {
   ResendCodeResult,
   VerifyResult,
 } from "@micboxx/contracts";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch } from "@micboxx/api";
 
 export async function registerUserForVerification(
   payload: RegisterRequest,

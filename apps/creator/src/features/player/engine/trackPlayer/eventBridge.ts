@@ -10,7 +10,7 @@ import type {
 import type {
   EnginePlaybackState,
   MicBoxxPlayerEvent,
-} from "@/features/player/engine/types";
+} from "@micboxx/contracts";
 import { requireTrackPlayerBundle } from "@/features/player/engine/trackPlayer/runtime";
 
 function mapPlaybackState(state: string): EnginePlaybackState {

@@ -1,4 +1,4 @@
-import type { PlayerItem } from "@/features/player/types/player";
+import type { PlayerItem } from "@micboxx/contracts";
 
 export interface DownloadPlaybackCandidate {
   item: PlayerItem;

@@ -9,7 +9,7 @@ import {
     readStoredSession,
     writeStoredSession,
 } from "@/features/auth/storage";
-import { mockSession } from "@/lib/mock-data";
+import { mockSession } from "@micboxx/api";
 
 export class AuthCancelledError extends Error {
   constructor(message = "Sign-in was cancelled.") {

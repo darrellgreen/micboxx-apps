@@ -12,8 +12,10 @@ export default function CatalogHomeScreen() {
 
   return (
     <ScreenShell
-      title="Catalog"
-      subtitle="Entity-first release management. Tracks and albums stay separate; state lives inside each entity."
+      title=""
+      subtitle=""
+      headerTitle="Catalog"
+      headerSubtitle="Manage tracks and albums"
     >
       <View style={styles.hero}>
         <View style={styles.heroStat}>
