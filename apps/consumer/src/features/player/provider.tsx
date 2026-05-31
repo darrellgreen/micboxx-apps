@@ -12,6 +12,7 @@ import { noopPlayerAnalyticsSink } from "@/features/player/analytics";
 import { PLAYER_ANALYTICS_EVENTS } from "@micboxx/analytics";
 import { noopDownloadPlaybackResolver } from "@/features/player/downloads";
 import { trackPlayerAdapter } from "@/features/player/engine/adapter";
+import { apiFetch } from "@micboxx/api";
 import type { EngineTrack } from "@micboxx/contracts";
 import {
     resetPlayerState,
@@ -98,14 +99,166 @@ function isRoomOwnedQueue(queue: PlayerQueueState): boolean {
 function usePlayerProviderValue(): PlayerProviderContextValue {
   const dispatch = useAppDispatch();
   const state = useAppSelector((rootState) => rootState.player);
+  const session = useAppSelector((rootState) => rootState.auth.session);
   const initializedRef = useRef(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const wasPlayingBeforeInterruptionRef = useRef(false);
   const stateRef = useRef(state);
 
+  const playbackReportRef = useRef<{ trackId: string | null; reported: boolean }>({
+    trackId: null,
+    reported: false,
+  });
+
+  const eventFlagsRef = useRef<{
+    trackId: string | null;
+    started: boolean;
+    qualified: boolean;
+    completed: boolean;
+  }>({ trackId: null, started: false, qualified: false, completed: false });
+
+  const analyticsSessionIdRef = useRef<string | null>(null);
+
+  const currentTrackId = state.nowPlaying.currentItem?.id ?? null;
+
+  useEffect(() => {
+    playbackReportRef.current = {
+      trackId: currentTrackId,
+      reported: false,
+    };
+    eventFlagsRef.current = {
+      trackId: currentTrackId,
+      started: false,
+      qualified: false,
+      completed: false,
+    };
+    analyticsSessionIdRef.current = currentTrackId
+      ? `mobile-play-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      : null;
+  }, [currentTrackId]);
+
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  const resolveSourceType = useCallback((): string => {
+    const contextType = stateRef.current.queue.context?.type;
+    switch (contextType) {
+      case "track":
+        return "public_track";
+      case "album":
+        return "album";
+      case "artist":
+        return "artist_profile";
+      case "playlist":
+        return "playlist";
+      case "recommendation":
+        return "discover";
+      case "search":
+        return "search";
+      default:
+        return "unknown";
+    }
+  }, []);
+
+  const resolveSourceRef = useCallback((): string | null => {
+    return stateRef.current.queue.context?.slug ?? stateRef.current.queue.context?.id ?? null;
+  }, []);
+
+  const reportCurrentTrackPlay = useCallback(async () => {
+    const currentTrack = stateRef.current.nowPlaying.currentItem;
+    if (!currentTrack) {
+      return;
+    }
+
+    const trackId = currentTrack.id;
+    if (playbackReportRef.current.trackId === trackId && playbackReportRef.current.reported) {
+      return;
+    }
+
+    playbackReportRef.current = {
+      trackId,
+      reported: true,
+    };
+
+    try {
+      await apiFetch(`/v1/public/tracks/${trackId}/analytics/play`, {
+        method: "POST",
+        accessToken: session?.accessToken ?? null,
+      });
+    } catch (err) {
+      if (__DEV__) {
+        console.warn("[Analytics] recordTrackPlayback failed:", err);
+      }
+    }
+  }, [session?.accessToken]);
+
+  const reportPlayEvent = useCallback(
+    async (eventType: "play_started" | "play_qualified" | "play_completed") => {
+      const currentTrack = stateRef.current.nowPlaying.currentItem;
+      if (!currentTrack) return;
+
+      const trackId = currentTrack.id;
+      const flags = eventFlagsRef.current;
+      if (flags.trackId !== trackId) {
+        eventFlagsRef.current = { trackId, started: false, qualified: false, completed: false };
+      }
+
+      const key = eventType === "play_started" ? "started" : eventType === "play_qualified" ? "qualified" : "completed";
+      if (eventFlagsRef.current[key]) {
+        return;
+      }
+
+      eventFlagsRef.current[key] = true;
+
+      try {
+        await apiFetch(`/v1/public/tracks/${trackId}/analytics/event`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+          },
+          body: JSON.stringify({
+            eventType,
+            sourceType: resolveSourceType(),
+            sourceRef: resolveSourceRef(),
+            sessionId: analyticsSessionIdRef.current ?? "unknown",
+          }),
+          accessToken: session?.accessToken ?? null,
+        });
+      } catch (err) {
+        if (__DEV__) {
+          console.warn(`[Analytics] reportPlayEvent (${eventType}) failed:`, err);
+        }
+      }
+    },
+    [session?.accessToken, resolveSourceType, resolveSourceRef],
+  );
+
+  const checkQualifiedAndCompleted = useCallback(
+    (currentTime: number, trackDuration: number) => {
+      const currentTrack = stateRef.current.nowPlaying.currentItem;
+      if (!currentTrack || trackDuration <= 0) return;
+
+      const trackId = currentTrack.id;
+      const flags = eventFlagsRef.current;
+      if (flags.trackId !== trackId) return;
+
+      // Qualified: >= 30s or >= 25% of duration, whichever is smaller but >= 5s.
+      if (!flags.qualified) {
+        const qualifyThreshold = Math.max(5, Math.min(30, trackDuration * 0.25));
+        if (currentTime >= qualifyThreshold) {
+          void reportPlayEvent("play_qualified");
+        }
+      }
+
+      // Completed: >= 90% of duration.
+      if (!flags.completed && currentTime >= trackDuration * 0.9) {
+        void reportPlayEvent("play_completed");
+      }
+    },
+    [reportPlayEvent],
+  );
 
   const emitAnalytics = useCallback(
     (
@@ -325,6 +478,8 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
                   currentState.nowPlaying.currentItem?.authorization.sourceKind ?? null,
                 currentPositionSec: currentState.nowPlaying.position.positionSec,
               });
+              void reportCurrentTrackPlay();
+              void reportPlayEvent("play_started");
             }
             if (event.state === "paused") {
               emitAnalytics("playbackPaused", {
@@ -358,6 +513,10 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
           }
           case "position-changed":
             dispatch(setPosition(event.position));
+            void checkQualifiedAndCompleted(
+              event.position.positionSec,
+              event.position.durationSec,
+            );
             break;
           case "remote-play":
             void trackPlayerAdapter.play();
