@@ -1,4 +1,4 @@
-import { useMediaPicker } from "@micboxx/media";
+import { useMediaPicker, useProfileMediaUpload } from "@micboxx/media";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -6,10 +6,8 @@ import { StyleSheet, View } from "react-native";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveOnboardingHref } from "@/features/bootstrap/routes";
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
-import {
-  replaceUserAvatar,
-  updateUserProfile,
-} from "@/shared/api/creator-dashboard";
+import { ExpoProfileUploadAdapter } from "@/features/media/ExpoProfileUploadAdapter";
+import { updateUserProfile } from "@/shared/api/creator-dashboard";
 import { Field, TextField, ErrorText } from "@/shared/ui/form";
 import { ScreenShell, Panel, PillButton } from "@/shared/ui/layout";
 
@@ -23,6 +21,7 @@ export default function OnboardingProfileScreen() {
     bootstrap.profile?.avatarUrl ? "Current avatar connected" : "No avatar selected",
   );
   const avatarPicker = useMediaPicker(ExpoMediaPickerAdapter);
+  const uploader = useProfileMediaUpload(ExpoProfileUploadAdapter);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,16 +49,7 @@ export default function OnboardingProfileScreen() {
       });
 
       if (avatarPicker.asset) {
-        const formData = new FormData();
-        formData.append(
-          "avatar",
-          {
-            uri: avatarPicker.asset.uri,
-            name: avatarPicker.asset.fileName ?? "avatar.jpg",
-            type: avatarPicker.asset.mimeType ?? "image/jpeg",
-          } as any,
-        );
-        await replaceUserAvatar(formData);
+        await uploader.uploadAvatar(avatarPicker.asset);
       }
 
       await bootstrap.refetch();

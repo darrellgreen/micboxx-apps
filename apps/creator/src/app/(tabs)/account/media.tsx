@@ -1,17 +1,15 @@
-import { useMediaPicker } from "@micboxx/media";
-import { useState } from "react";
+import { useMediaPicker, useProfileMediaUpload } from "@micboxx/media";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
-import { replaceUserAvatar, replaceUserCover } from "@/shared/api/creator-dashboard";
+import { ExpoProfileUploadAdapter } from "@/features/media/ExpoProfileUploadAdapter";
 import { ErrorText } from "@/shared/ui/form";
 import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
 
 export default function AccountMediaScreen() {
   const bootstrap = useCreatorBootstrap();
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState<"avatar" | "cover" | null>(null);
   const picker = useMediaPicker(ExpoMediaPickerAdapter);
+  const uploader = useProfileMediaUpload(ExpoProfileUploadAdapter);
 
   async function pickAndUpload(kind: "avatar" | "cover") {
     const file = await picker.pickImage();
@@ -20,40 +18,28 @@ export default function AccountMediaScreen() {
       return;
     }
 
-    setSaving(kind);
-    setError(null);
-
     try {
-      const formData = new FormData();
-      formData.append(
-        kind,
-        {
-          uri: file.uri,
-          name: file.fileName ?? `${kind}.jpg`,
-          type: file.mimeType ?? "image/jpeg",
-        } as any,
-      );
-
       if (kind === "avatar") {
-        await replaceUserAvatar(formData);
+        await uploader.uploadAvatar(file);
       } else {
-        await replaceUserCover(formData);
+        await uploader.uploadCover(file);
       }
 
       await bootstrap.refetch();
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Image upload failed.");
-    } finally {
-      setSaving(null);
+    } catch {
+      // Errors are surfaced through uploader.state.error
     }
   }
+
+  const isUploadingAvatar = uploader.state.status === "uploading" && uploader.state.target === "avatar";
+  const isUploadingCover = uploader.state.status === "uploading" && uploader.state.target === "cover";
 
   return (
     <ScreenShell title="Avatar and cover" subtitle="Action-enabled image updates for the creator profile.">
       <Panel title="Current media" description={`Avatar: ${bootstrap.profile?.avatarUrl ? "Connected" : "Missing"} · Cover: ${bootstrap.profile?.coverUrl ? "Connected" : "Missing"}`}>
-        <PillButton label={saving === "avatar" ? "Uploading avatar…" : "Replace avatar"} tone="accent" onPress={() => void pickAndUpload("avatar")} />
-        <PillButton label={saving === "cover" ? "Uploading cover…" : "Replace cover"} onPress={() => void pickAndUpload("cover")} />
-        {error ? <ErrorText>{error}</ErrorText> : null}
+        <PillButton label={isUploadingAvatar ? "Uploading avatar…" : "Replace avatar"} tone="accent" onPress={() => void pickAndUpload("avatar")} />
+        <PillButton label={isUploadingCover ? "Uploading cover…" : "Replace cover"} onPress={() => void pickAndUpload("cover")} />
+        {uploader.state.error ? <ErrorText>{uploader.state.error}</ErrorText> : null}
       </Panel>
     </ScreenShell>
   );
