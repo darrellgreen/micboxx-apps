@@ -1,10 +1,10 @@
-import { useMediaPicker } from "@micboxx/media";
+import { useAlbumUpload, useMediaPicker } from "@micboxx/media";
 import { router } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 
+import { ExpoAlbumUploadAdapter } from "@/features/media/ExpoAlbumUploadAdapter";
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
-import { createAlbum } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
 import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
 
@@ -12,41 +12,30 @@ export default function CreateAlbumScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const artworkPicker = useMediaPicker(ExpoMediaPickerAdapter);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const uploader = useAlbumUpload(ExpoAlbumUploadAdapter);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   async function pickArtwork() {
     await artworkPicker.pickImage();
   }
 
   async function handleCreate() {
+    setValidationError(null);
+
     if (!artworkPicker.asset) {
-      setError("Album artwork is required.");
+      setValidationError("Album artwork is required.");
       return;
     }
 
-    setSaving(true);
-    setError(null);
-
     try {
-      const formData = new FormData();
-      formData.append("title", title.trim());
-      formData.append("description", description.trim());
-      formData.append(
-        "artwork",
-        {
-          uri: artworkPicker.asset.uri,
-          name: artworkPicker.asset.fileName ?? "album-artwork.jpg",
-          type: artworkPicker.asset.mimeType ?? "image/jpeg",
-        } as any,
-      );
+      const albumId = await uploader.uploadAlbum(artworkPicker.asset, {
+        title: title.trim(),
+        description: description.trim(),
+      });
 
-      const album = await createAlbum(formData);
-      router.replace(`/create/upload?albumId=${album.id}` as never);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Album could not be created.");
-    } finally {
-      setSaving(false);
+      router.replace(`/create/upload?albumId=${albumId}` as never);
+    } catch {
+      // Handled by uploader state
     }
   }
 
@@ -69,8 +58,8 @@ export default function CreateAlbumScreen() {
             <PillButton label="Choose artwork" onPress={() => void pickArtwork()} />
           </View>
         </Field>
-        {error ? <ErrorText>{error}</ErrorText> : null}
-        <PillButton label={saving ? "Creating…" : "Create album"} tone="accent" onPress={() => void handleCreate()} />
+        {validationError || uploader.state.error ? <ErrorText>{validationError || uploader.state.error}</ErrorText> : null}
+        <PillButton label={uploader.state.status === "uploading" ? "Creating…" : "Create album"} tone="accent" onPress={() => void handleCreate()} />
       </Panel>
     </ScreenShell>
   );

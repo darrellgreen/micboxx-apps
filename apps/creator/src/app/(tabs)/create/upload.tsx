@@ -1,11 +1,11 @@
-import { useMediaPicker } from "@micboxx/media";
+import { useMediaPicker, useTrackUpload } from "@micboxx/media";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
-import { createTrackUpload } from "@/shared/api/creator-dashboard";
+import { ExpoTrackUploadAdapter } from "@/features/media/ExpoTrackUploadAdapter";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
 import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
 
@@ -18,8 +18,9 @@ export default function UploadTrackScreen() {
   const [genreId, setGenreId] = useState(bootstrap.uploadOptions?.genres[0]?.id?.toString() ?? "");
   const audioPicker = useMediaPicker(ExpoMediaPickerAdapter);
   const artworkPicker = useMediaPicker(ExpoMediaPickerAdapter);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const uploader = useTrackUpload(ExpoTrackUploadAdapter);
+
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!albumId && bootstrap.uploadOptions?.albums[0]?.id) {
@@ -39,54 +40,35 @@ export default function UploadTrackScreen() {
   }
 
   async function handleUpload() {
+    setValidationError(null);
+
     if (!albumId) {
-      setError("Choose an album before uploading.");
+      setValidationError("Choose an album before uploading.");
       return;
     }
 
     if (!genreId) {
-      setError("Choose a genre before uploading.");
+      setValidationError("Choose a genre before uploading.");
       return;
     }
 
     if (!audioPicker.asset || !artworkPicker.asset) {
-      setError("Audio and artwork are required.");
+      setValidationError("Audio and artwork are required.");
       return;
     }
 
-    setSaving(true);
-    setError(null);
-
     try {
-      const formData = new FormData();
-      formData.append("title", title.trim());
-      formData.append("description", description.trim());
-      formData.append("genreId", genreId);
-      formData.append("albumId", albumId);
-      formData.append(
-        "audio",
-        {
-          uri: audioPicker.asset.uri,
-          name: audioPicker.asset.fileName ?? "track.mp3",
-          type: audioPicker.asset.mimeType ?? "audio/mpeg",
-        } as any,
-      );
-      formData.append(
-        "artwork",
-        {
-          uri: artworkPicker.asset.uri,
-          name: artworkPicker.asset.fileName ?? "track-artwork.jpg",
-          type: artworkPicker.asset.mimeType ?? "image/jpeg",
-        } as any,
-      );
+      const trackId = await uploader.uploadTrack(audioPicker.asset, artworkPicker.asset, {
+        title: title.trim(),
+        description: description.trim(),
+        genreId,
+        albumId,
+      });
 
-      const track = await createTrackUpload(formData);
       await bootstrap.refetch();
-      router.replace(`/create/progress/${track.id}` as never);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Upload failed.");
-    } finally {
-      setSaving(false);
+      router.replace(`/create/progress/${trackId}` as never);
+    } catch {
+      // Errors handled by uploader.state.error
     }
   }
 
@@ -124,8 +106,8 @@ export default function UploadTrackScreen() {
         <Field label="Artwork" helper={artworkPicker.asset?.fileName ?? artworkPicker.asset?.uri ?? "Select artwork"}>
           <PillButton label="Choose artwork" onPress={() => void pickArtwork()} />
         </Field>
-        {error ? <ErrorText>{error}</ErrorText> : null}
-        <PillButton label={saving ? "Uploading…" : "Upload track"} tone="accent" onPress={() => void handleUpload()} />
+        {validationError || uploader.state.error ? <ErrorText>{validationError || uploader.state.error}</ErrorText> : null}
+        <PillButton label={uploader.state.status === "uploading" ? "Uploading…" : "Upload track"} tone="accent" onPress={() => void handleUpload()} />
       </Panel>
     </ScreenShell>
   );

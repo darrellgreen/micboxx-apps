@@ -67,3 +67,35 @@ export interface MediaPickerAdapter {
 }
 
 export type UploadProgressCallback = (progress: UploadProgressState) => void;
+
+export interface TrackMetadata {
+  title: string;
+  description: string;
+  genreId: string;
+  albumId: string;
+}
+
+export interface TrackUploadState {
+  status: "idle" | "uploading" | "success" | "error";
+  error: string | null;
+  trackId: string | null;
+}
+
+export interface TrackUploadAdapter {
+  uploadTrack(audio: MediaAsset, artwork: MediaAsset, metadata: TrackMetadata): Promise<{ id: string }>;
+}
+
+export interface AlbumMetadata {
+  title: string;
+  description: string;
+}
+
+export interface AlbumUploadState {
+  status: "idle" | "uploading" | "success" | "error";
+  error: string | null;
+  albumId: string | null;
+}
+
+export interface AlbumUploadAdapter {
+  uploadAlbum(artwork: MediaAsset, metadata: AlbumMetadata): Promise<{ id: string }>;
+}
