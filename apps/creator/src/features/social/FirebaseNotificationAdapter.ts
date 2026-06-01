@@ -1,6 +1,5 @@
 import { limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import type { NotificationAdapter } from "@micboxx/notifications";
-import type { SocialNotification } from "@micboxx/contracts";
 import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
 import {
   getNotificationsCollection,

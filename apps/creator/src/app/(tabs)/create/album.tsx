@@ -1,8 +1,9 @@
-import * as ImagePicker from "expo-image-picker";
+import { useMediaPicker } from "@micboxx/media";
 import { router } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 
+import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import { createAlbum } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
 import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
@@ -10,23 +11,16 @@ import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
 export default function CreateAlbumScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [artwork, setArtwork] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const artworkPicker = useMediaPicker(ExpoMediaPickerAdapter);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function pickArtwork() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
-    });
-
-    if (!result.canceled) {
-      setArtwork(result.assets[0] ?? null);
-    }
+    await artworkPicker.pickImage();
   }
 
   async function handleCreate() {
-    if (!artwork) {
+    if (!artworkPicker.asset) {
       setError("Album artwork is required.");
       return;
     }
@@ -41,9 +35,9 @@ export default function CreateAlbumScreen() {
       formData.append(
         "artwork",
         {
-          uri: artwork.uri,
-          name: artwork.fileName ?? "album-artwork.jpg",
-          type: artwork.mimeType ?? "image/jpeg",
+          uri: artworkPicker.asset.uri,
+          name: artworkPicker.asset.fileName ?? "album-artwork.jpg",
+          type: artworkPicker.asset.mimeType ?? "image/jpeg",
         } as any,
       );
 
@@ -70,7 +64,7 @@ export default function CreateAlbumScreen() {
         <Field label="Description">
           <TextField value={description} onChangeText={setDescription} multiline />
         </Field>
-        <Field label="Artwork" helper={artwork?.fileName ?? artwork?.uri ?? "Select album artwork"}>
+        <Field label="Artwork" helper={artworkPicker.asset?.fileName ?? artworkPicker.asset?.uri ?? "Select album artwork"}>
           <View style={formStyles.chipRow}>
             <PillButton label="Choose artwork" onPress={() => void pickArtwork()} />
           </View>

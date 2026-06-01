@@ -36,12 +36,17 @@ export interface UploadProgressEvent {
   progress: number; // 0 to 1
 }
 
-export interface MediaUploadAdapter {
-  uploadFile(
-    file: MediaFile,
-    url: string,
-    onProgress?: (event: UploadProgressEvent) => void
-  ): Promise<void>;
+export type ProfileMediaUploadTarget = "avatar" | "cover";
+
+export interface ProfileMediaUploadState {
+  status: "idle" | "uploading" | "success" | "error";
+  target: ProfileMediaUploadTarget | null;
+  error: string | null;
+}
+
+export interface ProfileMediaUploadAdapter {
+  uploadAvatar(asset: MediaAsset): Promise<void>;
+  uploadCover(asset: MediaAsset): Promise<void>;
 }
 
 export interface MediaCacheAdapter {
@@ -49,3 +54,16 @@ export interface MediaCacheAdapter {
   setCachedUri(remoteUrl: string, localUri: string): Promise<void>;
   generateCacheKey(remoteUrl: string): string;
 }
+
+export interface MediaPickOptions {
+  allowsEditing?: boolean;
+  quality?: number;
+  multiple?: boolean;
+}
+
+export interface MediaPickerAdapter {
+  pickImage(options?: MediaPickOptions): Promise<MediaAsset | null>;
+  pickAudio(options?: MediaPickOptions): Promise<MediaAsset | null>;
+}
+
+export type UploadProgressCallback = (progress: UploadProgressState) => void;

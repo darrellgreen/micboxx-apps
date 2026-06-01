@@ -1,10 +1,10 @@
-import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
+import { useMediaPicker } from "@micboxx/media";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
+import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import { createTrackUpload } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
 import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
@@ -16,8 +16,8 @@ export default function UploadTrackScreen() {
   const [description, setDescription] = useState("");
   const [albumId, setAlbumId] = useState(params.albumId ?? bootstrap.uploadOptions?.albums[0]?.id?.toString() ?? "");
   const [genreId, setGenreId] = useState(bootstrap.uploadOptions?.genres[0]?.id?.toString() ?? "");
-  const [audioAsset, setAudioAsset] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
-  const [artworkAsset, setArtworkAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const audioPicker = useMediaPicker(ExpoMediaPickerAdapter);
+  const artworkPicker = useMediaPicker(ExpoMediaPickerAdapter);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,26 +31,11 @@ export default function UploadTrackScreen() {
   }, [albumId, bootstrap.uploadOptions, genreId]);
 
   async function pickAudio() {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "audio/*",
-      multiple: false,
-      copyToCacheDirectory: true,
-    });
-
-    if (!result.canceled) {
-      setAudioAsset(result.assets[0] ?? null);
-    }
+    await audioPicker.pickAudio();
   }
 
   async function pickArtwork() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
-    });
-
-    if (!result.canceled) {
-      setArtworkAsset(result.assets[0] ?? null);
-    }
+    await artworkPicker.pickImage();
   }
 
   async function handleUpload() {
@@ -64,7 +49,7 @@ export default function UploadTrackScreen() {
       return;
     }
 
-    if (!audioAsset || !artworkAsset) {
+    if (!audioPicker.asset || !artworkPicker.asset) {
       setError("Audio and artwork are required.");
       return;
     }
@@ -81,17 +66,17 @@ export default function UploadTrackScreen() {
       formData.append(
         "audio",
         {
-          uri: audioAsset.uri,
-          name: audioAsset.name,
-          type: audioAsset.mimeType ?? "audio/mpeg",
+          uri: audioPicker.asset.uri,
+          name: audioPicker.asset.fileName ?? "track.mp3",
+          type: audioPicker.asset.mimeType ?? "audio/mpeg",
         } as any,
       );
       formData.append(
         "artwork",
         {
-          uri: artworkAsset.uri,
-          name: artworkAsset.fileName ?? "track-artwork.jpg",
-          type: artworkAsset.mimeType ?? "image/jpeg",
+          uri: artworkPicker.asset.uri,
+          name: artworkPicker.asset.fileName ?? "track-artwork.jpg",
+          type: artworkPicker.asset.mimeType ?? "image/jpeg",
         } as any,
       );
 
@@ -133,10 +118,10 @@ export default function UploadTrackScreen() {
             ))}
           </View>
         </Field>
-        <Field label="Audio" helper={audioAsset?.name ?? "Select an audio file"}>
+        <Field label="Audio" helper={audioPicker.asset?.fileName ?? "Select an audio file"}>
           <PillButton label="Choose audio" onPress={() => void pickAudio()} />
         </Field>
-        <Field label="Artwork" helper={artworkAsset?.fileName ?? artworkAsset?.uri ?? "Select artwork"}>
+        <Field label="Artwork" helper={artworkPicker.asset?.fileName ?? artworkPicker.asset?.uri ?? "Select artwork"}>
           <PillButton label="Choose artwork" onPress={() => void pickArtwork()} />
         </Field>
         {error ? <ErrorText>{error}</ErrorText> : null}

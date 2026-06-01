@@ -1,7 +1,8 @@
-import * as ImagePicker from "expo-image-picker";
+import { useMediaPicker } from "@micboxx/media";
 import { useState } from "react";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
+import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import { replaceUserAvatar, replaceUserCover } from "@/shared/api/creator-dashboard";
 import { ErrorText } from "@/shared/ui/form";
 import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
@@ -10,14 +11,12 @@ export default function AccountMediaScreen() {
   const bootstrap = useCreatorBootstrap();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<"avatar" | "cover" | null>(null);
+  const picker = useMediaPicker(ExpoMediaPickerAdapter);
 
   async function pickAndUpload(kind: "avatar" | "cover") {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
-    });
+    const file = await picker.pickImage();
 
-    if (result.canceled || !result.assets[0]) {
+    if (!file) {
       return;
     }
 
@@ -25,7 +24,6 @@ export default function AccountMediaScreen() {
     setError(null);
 
     try {
-      const file = result.assets[0];
       const formData = new FormData();
       formData.append(
         kind,

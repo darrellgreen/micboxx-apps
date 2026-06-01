@@ -1,10 +1,11 @@
-import * as ImagePicker from "expo-image-picker";
+import { useMediaPicker } from "@micboxx/media";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveOnboardingHref } from "@/features/bootstrap/routes";
+import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import {
   replaceUserAvatar,
   updateUserProfile,
@@ -21,8 +22,7 @@ export default function OnboardingProfileScreen() {
   const [avatarLabel, setAvatarLabel] = useState(
     bootstrap.profile?.avatarUrl ? "Current avatar connected" : "No avatar selected",
   );
-  const [avatarAsset, setAvatarAsset] =
-    useState<ImagePicker.ImagePickerAsset | null>(null);
+  const avatarPicker = useMediaPicker(ExpoMediaPickerAdapter);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,14 +32,10 @@ export default function OnboardingProfileScreen() {
   }, [bootstrap.profile?.bio, bootstrap.profile?.displayName]);
 
   async function pickAvatar() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
-    });
+    const file = await avatarPicker.pickImage();
 
-    if (!result.canceled) {
-      setAvatarAsset(result.assets[0] ?? null);
-      setAvatarLabel(result.assets[0]?.fileName ?? result.assets[0]?.uri ?? "Selected avatar");
+    if (file) {
+      setAvatarLabel(file.fileName ?? file.uri ?? "Selected avatar");
     }
   }
 
@@ -53,14 +49,14 @@ export default function OnboardingProfileScreen() {
         bio: bio.trim(),
       });
 
-      if (avatarAsset) {
+      if (avatarPicker.asset) {
         const formData = new FormData();
         formData.append(
           "avatar",
           {
-            uri: avatarAsset.uri,
-            name: avatarAsset.fileName ?? "avatar.jpg",
-            type: avatarAsset.mimeType ?? "image/jpeg",
+            uri: avatarPicker.asset.uri,
+            name: avatarPicker.asset.fileName ?? "avatar.jpg",
+            type: avatarPicker.asset.mimeType ?? "image/jpeg",
           } as any,
         );
         await replaceUserAvatar(formData);
