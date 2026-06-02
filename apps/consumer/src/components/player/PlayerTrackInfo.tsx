@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { formatCompactNumber } from "@micboxx/api";
+import { Heading, BodyText, Subtext } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 interface PlayerTrackInfoProps {
@@ -30,7 +31,7 @@ export function PlayerTrackInfo({
                 size={12}
                 color={tokens.colors.textSecondary}
               />
-              <Text style={s.statText}>{formatCompactNumber(plays)} Plays</Text>
+              <BodyText size="sm" weight="medium" color="secondary">{formatCompactNumber(plays)} Plays</BodyText>
             </View>
           ) : null}
           {typeof likes === "number" ? (
@@ -40,16 +41,23 @@ export function PlayerTrackInfo({
                 size={12}
                 color={tokens.colors.textSecondary}
               />
-              <Text style={s.statText}>{formatCompactNumber(likes)}</Text>
+              <BodyText size="sm" weight="medium" color="secondary">{formatCompactNumber(likes)}</BodyText>
             </View>
           ) : null}
         </View>
       ) : null}
 
-      <Text style={s.trackTitle} numberOfLines={2}>
-        {title}
-      </Text>
-      <Text style={s.artistName}>{artistName}</Text>
+      <View style={s.titleWrap}>
+        <Heading level="h3" align="center" numberOfLines={2}>
+          {title}
+        </Heading>
+      </View>
+      
+      <View style={s.artistWrap}>
+        <BodyText size="md" weight="medium" align="center" color="secondary">
+          {artistName}
+        </BodyText>
+      </View>
     </View>
   );
 }
@@ -62,27 +70,14 @@ const s = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 20,
-    marginTop: 56,
+    marginTop: 48,
   },
   statItem: { flexDirection: "row", alignItems: "center", gap: 5 },
-  statText: {
-    color: tokens.colors.textSecondary,
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  trackTitle: {
-    color: tokens.colors.textPrimary,
-    fontSize: 24,
-    fontWeight: "700",
-    textAlign: "center",
+  titleWrap: {
     marginTop: 10,
     paddingHorizontal: 32,
   },
-  artistName: {
-    color: tokens.colors.textSecondary,
-    fontSize: 15,
-    fontWeight: "500",
-    textAlign: "center",
-    marginTop: 5,
+  artistWrap: {
+    marginTop: 2,
   },
 });

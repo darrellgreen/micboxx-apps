@@ -1,38 +1,62 @@
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { ScrollView, StyleSheet, View, type ScrollViewProps } from "react-native";
+import type { ReactNode } from "react";
 
 import { AppBackdrop } from "./app-backdrop";
 import { tokens } from "@micboxx/theme";
 
-interface ScreenProps extends ScrollViewProps {
+export interface ScreenProps extends ScrollViewProps {
   /** Skip bottom padding (e.g. for screens with a fixed footer) */
   noPaddingBottom?: boolean;
   /** Skip the horizontal padding (e.g. full-width hero sections) */
   noPaddingHorizontal?: boolean;
+  /** Optional fixed header component */
+  header?: ReactNode;
+  /** Whether the screen should scroll (default: true) */
+  scroll?: boolean;
+  /** Edges for the safe area (default: ["top"]) */
+  safeAreaEdges?: Edge[];
 }
 
 export function Screen({
   noPaddingBottom = false,
   noPaddingHorizontal = false,
+  scroll = true,
+  header,
+  safeAreaEdges = ["top"],
   style,
   contentContainerStyle,
+  children,
   ...props
 }: ScreenProps) {
+  const contentStyle = [
+    styles.content,
+    noPaddingBottom && styles.noPaddingBottom,
+    noPaddingHorizontal && styles.noPaddingHorizontal,
+    contentContainerStyle,
+  ];
+
+  const body = scroll ? (
+    <ScrollView
+      {...props}
+      style={[styles.scroll, style]}
+      contentContainerStyle={contentStyle}
+      showsVerticalScrollIndicator={false}
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={[styles.scroll, style, contentStyle]} {...props as any}>
+      {children}
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+    <SafeAreaView style={styles.safeArea} edges={safeAreaEdges}>
       <View style={styles.root}>
         <AppBackdrop />
-        <ScrollView
-          {...props}
-          style={[styles.scroll, style]}
-          contentContainerStyle={[
-            styles.content,
-            noPaddingBottom && styles.noPaddingBottom,
-            noPaddingHorizontal && styles.noPaddingHorizontal,
-            contentContainerStyle,
-          ]}
-          showsVerticalScrollIndicator={false}
-        />
+        {header}
+        {body}
       </View>
     </SafeAreaView>
   );

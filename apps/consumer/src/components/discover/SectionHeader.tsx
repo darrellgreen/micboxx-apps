@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AnimatedPressable } from "@micboxx/ui";
+import { Heading, AnimatedPressable } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export function SectionHeader({
@@ -19,19 +19,22 @@ export function SectionHeader({
     <View style={s.sectionHeader}>
       <View style={s.sectionLeft}>
         <View style={s.accentBar} />
-        <Text style={s.sectionBold}>{bold} </Text>
-        <Text style={s.sectionLight}>{light}</Text>
+        <Heading level="h3" style={s.sectionTitle}>
+          {bold} <Text style={s.sectionLight}>{light}</Text>
+        </Heading>
       </View>
-      <AnimatedPressable style={s.seeAll} onPress={onSeeAll} haptic="selection">
-        <Text style={s.seeAllText}>See All</Text>
-        <View style={s.seeAllCircle}>
-          <Ionicons
-            name={seeAllIconName}
-            size={12}
-            color={tokens.colors.textPrimary}
-          />
-        </View>
-      </AnimatedPressable>
+      {onSeeAll ? (
+        <AnimatedPressable style={s.seeAll} onPress={onSeeAll} haptic="selection">
+          <Text style={s.seeAllText}>See All</Text>
+          <View style={s.seeAllCircle}>
+            <Ionicons
+              name={seeAllIconName}
+              size={12}
+              color={tokens.colors.textPrimary}
+            />
+          </View>
+        </AnimatedPressable>
+      ) : null}
     </View>
   );
 }
@@ -46,22 +49,17 @@ const s = StyleSheet.create({
   sectionLeft: { flexDirection: "row", alignItems: "center" },
   accentBar: {
     width: 3,
-    height: 28,
+    height: 24,
     borderRadius: 2,
     backgroundColor: tokens.colors.brandSecondary,
     marginRight: 10,
   },
-  sectionBold: {
-    color: tokens.colors.textPrimary,
-    fontSize: 22,
-    fontWeight: "800",
+  sectionTitle: {
     letterSpacing: -0.3,
   },
   sectionLight: {
     color: tokens.colors.textSecondary,
-    fontSize: 22,
     fontWeight: "400",
-    letterSpacing: -0.3,
   },
   seeAll: { flexDirection: "row", alignItems: "center", gap: 6 },
   seeAllText: {

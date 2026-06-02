@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { TrackWaveform } from "@/features/player/components/TrackWaveform";
 import { formatDuration } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
+import { AnimatedPressable, BodyText } from "@micboxx/ui";
 
 interface PlayerTransportProps {
   playing: boolean;
@@ -53,15 +54,16 @@ export function PlayerTransport({
           accentColor={tokens.colors.accent}
         />
         <View style={s.timeRow}>
-          <Text style={s.timeText}>{formatDuration(currentTime)}</Text>
-          <Text style={s.timeText}>{formatDuration(duration)}</Text>
+          <BodyText size="sm" weight="semibold" color="accent">{formatDuration(currentTime)}</BodyText>
+          <BodyText size="sm" weight="semibold" color="accent">{formatDuration(duration)}</BodyText>
         </View>
       </View>
 
       <View style={s.transportRow}>
-        <Pressable
+        <AnimatedPressable
           onPress={onCycleRepeat}
           style={[s.transportBtn, repeatActive && s.transportBtnActive]}
+          haptic="selection"
         >
           <View>
             <Ionicons
@@ -73,21 +75,26 @@ export function PlayerTransport({
                   : tokens.colors.textPrimary
               }
             />
-            {repeatMode === "track" ? <Text style={s.repeatBadge}>1</Text> : null}
+            {repeatMode === "track" ? (
+              <BodyText size="sm" weight="semibold" color="accent" style={s.repeatBadge}>1</BodyText>
+            ) : null}
           </View>
-        </Pressable>
-        <Pressable
+        </AnimatedPressable>
+
+        <AnimatedPressable
           onPress={onSkipPrevious}
           disabled={!hasPrevious}
           style={[s.transportBtn, !hasPrevious && s.transportBtnDisabled]}
+          haptic="selection"
         >
           <Ionicons
             name="play-skip-back"
             size={28}
             color={tokens.colors.textPrimary}
           />
-        </Pressable>
-        <Pressable onPress={onTogglePlay} style={s.playBtn}>
+        </AnimatedPressable>
+
+        <AnimatedPressable onPress={onTogglePlay} style={s.playBtn} haptic="selection" scaleValue={0.92}>
           <LinearGradient
             colors={[tokens.colors.brandSecondary, tokens.colors.accent]}
             start={{ x: 0, y: 0 }}
@@ -101,18 +108,20 @@ export function PlayerTransport({
               style={playing ? undefined : { marginLeft: 3 }}
             />
           </LinearGradient>
-        </Pressable>
-        <Pressable
+        </AnimatedPressable>
+
+        <AnimatedPressable
           onPress={onSkipNext}
           disabled={!hasNext}
           style={[s.transportBtn, !hasNext && s.transportBtnDisabled]}
+          haptic="selection"
         >
           <Ionicons
             name="play-skip-forward"
             size={28}
             color={tokens.colors.textPrimary}
           />
-        </Pressable>
+        </AnimatedPressable>
       </View>
     </View>
   );
@@ -128,17 +137,12 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 6,
   },
-  timeText: {
-    color: tokens.colors.accent,
-    fontSize: 12,
-    fontWeight: "600",
-  },
   transportRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 24,
-    marginTop: 8,
+    marginTop: 16, // Better spacing around playback controls
   },
   transportBtn: {
     width: 48,
@@ -151,13 +155,18 @@ const s = StyleSheet.create({
     borderRadius: 24,
   },
   transportBtnDisabled: {
-    opacity: 0.35,
+    opacity: 0.3,
   },
   playBtn: {
     width: 64,
     height: 64,
     borderRadius: 32,
     overflow: "hidden",
+    shadowColor: tokens.colors.accent,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
   playBtnGradient: {
     flex: 1,
@@ -166,10 +175,8 @@ const s = StyleSheet.create({
   },
   repeatBadge: {
     position: "absolute",
-    right: -6,
-    bottom: -2,
-    color: tokens.colors.accent,
-    fontSize: 11,
-    fontWeight: "800",
+    right: -8,
+    bottom: -4,
+    fontSize: 10,
   },
 });

@@ -19,7 +19,7 @@ import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
-import { VerifiedBadge } from "@micboxx/ui";
+import { VerifiedBadge, Screen, ErrorState, Button, Heading, Subtext, BodyText, Pill } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { useAuth } from "@/features/auth/provider";
 import {
@@ -201,77 +201,46 @@ export default function TrackDetailScreen() {
 
   if (!slug) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ headerShown: false }} />
+      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
+        <DetailRouteHeader title="Track" />
         <View style={styles.page}>
-          <DetailRouteHeader title="Track" />
-          <DetailStatusPanel
+          <ErrorState
             title="Track unavailable"
-            body="No track slug was supplied for this route. Return to Home or Search and try again."
+            message="No track slug was supplied for this route. Return to Home or Search and try again."
           />
           <View style={styles.stateActionsRow}>
-            <Pressable
-              onPress={() => router.replace("/(tabs)/home")}
-              style={({ pressed }) => [
-                styles.stateAction,
-                styles.stateActionPrimary,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.stateActionPrimaryLabel}>Go home</Text>
-            </Pressable>
+            <Button label="Go home" onPress={() => router.replace("/(tabs)/home")} tone="primary" />
           </View>
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ headerShown: false }} />
+      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={tokens.colors.accent} />
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   if (!track || error) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ headerShown: false }} />
+      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
+        <DetailRouteHeader title="Track" />
         <View style={styles.page}>
-          <DetailRouteHeader title="Track" />
-          <DetailStatusPanel
+          <ErrorState
             title="Unable to load track"
-            body="This detail route could not be loaded right now. Try again from Home or Search."
+            message="This detail route could not be loaded right now. Try again from Home or Search."
           />
           <View style={styles.stateActionsRow}>
-            <Pressable
-              onPress={() => void refetch()}
-              style={({ pressed }) => [
-                styles.stateAction,
-                styles.stateActionPrimary,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.stateActionPrimaryLabel}>Retry</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => router.replace("/(tabs)/home")}
-              style={({ pressed }) => [
-                styles.stateAction,
-                styles.stateActionSecondary,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.stateActionSecondaryLabel}>Go home</Text>
-            </Pressable>
+            <Button label="Retry" onPress={() => void refetch()} tone="primary" />
+            <Button label="Go home" onPress={() => router.replace("/(tabs)/home")} tone="secondary" />
           </View>
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
@@ -335,15 +304,9 @@ export default function TrackDetailScreen() {
     formatDuration(track.duration),
   ]);
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <Stack.Screen options={{ headerShown: false }} />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.page}
-        showsVerticalScrollIndicator={false}
-      >
-        <DetailRouteHeader title="Track" />
+    <Screen scroll={true} noPaddingBottom noPaddingHorizontal header={<Stack.Screen options={{ headerShown: false }} />}>
+      <DetailRouteHeader title="Track" />
+      <View style={styles.page}>
 
         <View style={styles.heroCard}>
           {track.assets.artworkUrl ? (
@@ -402,14 +365,14 @@ export default function TrackDetailScreen() {
                 style={({ pressed }) => [pressed && styles.pressed]}
               >
                 <View style={styles.artistRow}>
-                  <Text numberOfLines={1} style={styles.artistLink}>
+                  <BodyText size="sm" weight="semibold" color="secondary" numberOfLines={1}>
                     {track.artist?.displayName ?? "Unknown artist"}
-                  </Text>
+                  </BodyText>
                   <VerifiedBadge size={14} />
                 </View>
               </Pressable>
 
-              <Text style={styles.trackTitle}>{track.title}</Text>
+              <Heading level="h2" numberOfLines={2} style={styles.trackTitle}>{track.title}</Heading>
 
               {badgeLabel ? (
                 <View style={styles.badgePill}>
@@ -418,7 +381,7 @@ export default function TrackDetailScreen() {
               ) : null}
 
               {heroMeta ? (
-                <Text style={styles.heroMeta}>{heroMeta}</Text>
+                <Subtext color="muted">{heroMeta}</Subtext>
               ) : null}
 
               <View style={styles.socialStatsRow}>
@@ -575,8 +538,8 @@ export default function TrackDetailScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </Screen>
   );
 }
 
@@ -650,36 +613,15 @@ function HeroActionButton({
   tone: "primary" | "glass";
 }) {
   return (
-    <Pressable
-      disabled={action.disabled}
-      onPress={() => void action.onPress()}
-      style={({ pressed }) => [
-        styles.heroActionButton,
-        tone === "primary"
-          ? styles.heroActionButtonPrimary
-          : styles.heroActionButtonGlass,
-        action.disabled && styles.heroActionButtonDisabled,
-        pressed && !action.disabled && styles.pressed,
-      ]}
-    >
-      <Ionicons
-        name={action.icon}
-        size={15}
-        color={
-          tone === "primary"
-            ? tokens.colors.bgApp
-            : tokens.colors.textPrimary
-        }
+    <View style={{ flex: tone === "primary" ? 2 : 1 }}>
+      <Button
+        tone={tone === "primary" ? "primary" : "secondary"}
+        label={action.label}
+        icon={<Ionicons name={action.icon} size={15} color={tone === "primary" ? "#000" : "#FFF"} />}
+        onPress={() => void action.onPress()}
+        disabled={action.disabled}
       />
-      <Text
-        style={[
-          styles.heroActionLabel,
-          tone === "primary" && styles.heroActionLabelPrimary,
-        ]}
-      >
-        {action.label}
-      </Text>
-    </Pressable>
+    </View>
   );
 }
 

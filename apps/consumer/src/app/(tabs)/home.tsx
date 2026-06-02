@@ -11,8 +11,7 @@ import {
   TrendingArtists,
 } from "@/components/discover";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { AnimatedPressable } from "@micboxx/ui";
-import { ShimmerPlaceholder } from "@micboxx/ui";
+import { AnimatedPressable, Screen, Skeleton, EmptyState, ErrorState, Button, Surface, Heading, BodyText, Subtext } from "@micboxx/ui";
 import type {
   PublicArtistSummary,
   PublicTrackSummary
@@ -270,29 +269,25 @@ function ReleaseRoomsSection({
             : item.state_line;
 
           return (
-            <Pressable style={s.roomCard} onPress={() => onOpenRoom(item)}>
-              {item.artwork_url ? (
-                <Image
-                  source={{ uri: item.artwork_url }}
-                  style={s.roomArtwork}
-                  contentFit="cover"
-                />
-              ) : (
-                <View style={[s.roomArtwork, s.roomArtworkFallback]}>
-                  <Text style={s.roomArtworkFallbackLabel}>Room</Text>
+            <Pressable onPress={() => onOpenRoom(item)}>
+              <Surface tone="section" padding="none" borderRadius="section" style={s.roomCard}>
+                {item.artwork_url ? (
+                  <Image
+                    source={{ uri: item.artwork_url }}
+                    style={s.roomArtwork}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={[s.roomArtwork, s.roomArtworkFallback]}>
+                    <Text style={s.roomArtworkFallbackLabel}>Room</Text>
+                  </View>
+                )}
+                <View style={s.roomCardCopy}>
+                  <BodyText weight="semibold" numberOfLines={1}>{item.release_title}</BodyText>
+                  <Subtext numberOfLines={1}>{item.artist_name}</Subtext>
+                  <Subtext color="accent" numberOfLines={1} style={{ fontSize: 11, marginTop: 2 }}>{meta}</Subtext>
                 </View>
-              )}
-              <View style={s.roomCardCopy}>
-                <Text style={s.roomCardTitle} numberOfLines={1}>
-                  {item.release_title}
-                </Text>
-                <Text style={s.roomCardArtist} numberOfLines={1}>
-                  {item.artist_name}
-                </Text>
-                <Text style={s.roomCardMeta} numberOfLines={1}>
-                  {meta}
-                </Text>
-              </View>
+              </Surface>
             </Pressable>
           );
         }}
@@ -620,34 +615,21 @@ export default function HomeScreen() {
 
   if (isSettlingInitialData) {
     return (
-      <SafeAreaView style={s.safe} edges={["top"]}>
-        <ScreenHeader leftIcon="menu" />
+      <Screen scroll={false} header={<ScreenHeader leftIcon="menu" />}>
         <View style={s.scrollContent}>
           {[1, 2].map((lane) => (
             <View key={lane} style={lane > 1 ? s.laneGap : undefined}>
               <View style={{ flexDirection: "row", gap: 8, marginBottom: 14 }}>
-                <ShimmerPlaceholder width={80} height={18} borderRadius={6} />
-                <ShimmerPlaceholder width={60} height={18} borderRadius={6} />
+                <Skeleton width={80} height={18} borderRadius={6} />
+                <Skeleton width={60} height={18} borderRadius={6} />
               </View>
               <View style={s.trackList}>
                 {[1, 2, 3, 4].map((row) => (
                   <View key={row} style={s.skeletonRow}>
-                    <ShimmerPlaceholder
-                      width={50}
-                      height={50}
-                      borderRadius={8}
-                    />
+                    <Skeleton width={50} height={50} borderRadius={8} />
                     <View style={{ flex: 1, gap: 8 }}>
-                      <ShimmerPlaceholder
-                        width="70%"
-                        height={12}
-                        borderRadius={6}
-                      />
-                      <ShimmerPlaceholder
-                        width="45%"
-                        height={10}
-                        borderRadius={6}
-                      />
+                      <Skeleton width="70%" height={12} borderRadius={6} />
+                      <Skeleton width="45%" height={10} borderRadius={6} />
                     </View>
                   </View>
                 ))}
@@ -655,43 +637,28 @@ export default function HomeScreen() {
             </View>
           ))}
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   if (!hasAnyContent && hasStartupError) {
     return (
-      <SafeAreaView style={s.safe} edges={["top"]}>
-        <ScreenHeader leftIcon="menu" />
-        <View style={s.loadingWrap}>
-          <Text style={s.emptyText}>Unable to load home right now</Text>
-          <AnimatedPressable
-            onPress={() => {
-              onRefresh();
-            }}
-            style={s.retryBtn}
-          >
-            <Text style={s.retryLabel}>Retry</Text>
-          </AnimatedPressable>
-        </View>
-      </SafeAreaView>
+      <Screen scroll={false} header={<ScreenHeader leftIcon="menu" />}>
+        <ErrorState message="Unable to load home right now" onRetry={onRefresh} />
+      </Screen>
     );
   }
 
   if (!hasAnyContent) {
     return (
-      <SafeAreaView style={s.safe} edges={["top"]}>
-        <ScreenHeader leftIcon="menu" />
-        <View style={s.loadingWrap}>
-          <Text style={s.emptyText}>Nothing to show yet</Text>
-        </View>
-      </SafeAreaView>
+      <Screen scroll={false} header={<ScreenHeader leftIcon="menu" />}>
+        <EmptyState title="Nothing to show yet" icon="musical-notes-outline" />
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView style={s.safe} edges={["top"]}>
-      <ScreenHeader leftIcon="menu" />
+    <Screen scroll={false} header={<ScreenHeader leftIcon="menu" />} noPaddingHorizontal noPaddingBottom>
       <FlatList
         data={homeSections}
         keyExtractor={extractKey}
@@ -703,7 +670,7 @@ export default function HomeScreen() {
         refreshing={refreshing}
         onRefresh={onRefresh}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
 
