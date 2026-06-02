@@ -7,8 +7,10 @@ import Svg, {
   Circle,
   Defs,
   Line,
+  LinearGradient as SvgLinearGradient,
   Path,
   Polyline,
+  Stop,
 } from "react-native-svg";
 
 import type { DashboardAnalyticsPeriod } from "@/contracts/creator";

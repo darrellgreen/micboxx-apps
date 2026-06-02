@@ -23,7 +23,7 @@ const HAPTIC_MAP: Record<Exclude<HapticType, "none">, () => void> = {
   selection: hapticSelection,
 };
 
-let ReanimatedPressable: React.ComponentClass<any> | null = null;
+let ReanimatedPressable: any = null;
 
 /**
  * Drop-in Pressable replacement with spring-scale press feedback and
