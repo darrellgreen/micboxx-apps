@@ -9,8 +9,6 @@ import Animated, {
 
 import { hapticLight, hapticSelection } from "./useHaptic";
 
-const ReanimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 type HapticType = "light" | "selection" | "none";
 
 interface AnimatedPressableProps extends PressableProps {
@@ -24,6 +22,8 @@ const HAPTIC_MAP: Record<Exclude<HapticType, "none">, () => void> = {
   light: hapticLight,
   selection: hapticSelection,
 };
+
+let ReanimatedPressable: React.ComponentClass<any> | null = null;
 
 /**
  * Drop-in Pressable replacement with spring-scale press feedback and
@@ -71,6 +71,10 @@ export const AnimatedPressable = React.memo(
         },
         [scale, onPressOut],
       );
+
+      if (!ReanimatedPressable) {
+        ReanimatedPressable = Animated.createAnimatedComponent(Pressable);
+      }
 
       return (
         <ReanimatedPressable

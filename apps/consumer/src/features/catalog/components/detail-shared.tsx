@@ -5,12 +5,13 @@ import type { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
-import type {
+import {
     DetailActionBarProps,
     DetailActionItem,
     RelatedLaneModel,
 } from "@/features/catalog/detail-models";
 import { tokens } from "@micboxx/theme";
+import { Heading, BodyText, Subtext, Button, Surface } from "@micboxx/ui";
 
 export function DetailRouteHeader({ title }: { title: string }) {
   const router = useRouter();
@@ -62,7 +63,7 @@ export function DetailHeroCard({
   const fallbackLabel = title.slice(0, 1).toUpperCase() || "M";
 
   return (
-    <View style={styles.heroCard}>
+    <Surface tone="section" borderRadius="section" padding="md" style={styles.heroCard}>
       <View style={styles.heroTop}>
         <View
           style={[
@@ -90,20 +91,20 @@ export function DetailHeroCard({
             </View>
           ) : null}
 
-          <Text style={styles.heroTitle}>{title}</Text>
+          <Heading level="h2">{title}</Heading>
           {subtitle ? (
-            <Text style={styles.heroSubtitle}>{subtitle}</Text>
+            <BodyText size="sm" weight="semibold" color="secondary">{subtitle}</BodyText>
           ) : null}
-          {meta ? <Text style={styles.heroMeta}>{meta}</Text> : null}
+          {meta ? <Subtext color="muted">{meta}</Subtext> : null}
         </View>
       </View>
 
       {description ? (
-        <Text style={styles.heroDescription}>{description}</Text>
+        <BodyText size="sm" color="secondary">{description}</BodyText>
       ) : null}
 
       {children ? <View style={styles.heroBody}>{children}</View> : null}
-    </View>
+    </Surface>
   );
 }
 
@@ -143,54 +144,26 @@ function ActionButton({
   item: DetailActionItem;
   emphasis: "primary" | "secondary" | "ghost" | "danger";
 }) {
+  const isPrimary = emphasis === "primary";
+  const isDanger = emphasis === "danger";
+  const iconColor = isPrimary ? tokens.colors.bgApp : isDanger ? tokens.colors.danger : tokens.colors.textPrimary;
+
+  const iconNode = item.customIcon === "soundwave" ? (
+    <SoundwaveTabIcon size={15} color={iconColor} />
+  ) : (
+    <Ionicons name={item.icon ?? "ellipse-outline"} size={15} color={iconColor} />
+  );
+
   return (
-    <Pressable
-      disabled={item.disabled}
-      onPress={() => void item.onPress()}
-      style={({ pressed }) => [
-        styles.actionButton,
-        emphasis === "primary" && styles.actionButtonPrimary,
-        emphasis === "secondary" && styles.actionButtonSecondary,
-        emphasis === "ghost" && styles.actionButtonGhost,
-        emphasis === "danger" && styles.actionButtonDanger,
-        item.disabled && styles.actionButtonDisabled,
-        pressed && !item.disabled && styles.pressed,
-      ]}
-    >
-      {item.customIcon === "soundwave" ? (
-        <SoundwaveTabIcon
-          size={15}
-          color={
-            emphasis === "primary"
-              ? tokens.colors.bgApp
-              : emphasis === "danger"
-                ? tokens.colors.danger
-                : tokens.colors.textPrimary
-          }
-        />
-      ) : (
-        <Ionicons
-          name={item.icon ?? "ellipse-outline"}
-          size={15}
-          color={
-            emphasis === "primary"
-              ? tokens.colors.bgApp
-              : emphasis === "danger"
-                ? tokens.colors.danger
-                : tokens.colors.textPrimary
-          }
-        />
-      )}
-      <Text
-        style={[
-          styles.actionLabel,
-          emphasis === "primary" && styles.actionLabelPrimary,
-          emphasis === "danger" && styles.actionLabelDanger,
-        ]}
-      >
-        {item.label}
-      </Text>
-    </Pressable>
+    <View style={isPrimary || emphasis === "secondary" ? { flex: 1 } : undefined}>
+      <Button
+        label={item.label}
+        tone={emphasis}
+        icon={iconNode}
+        onPress={() => void item.onPress()}
+        disabled={item.disabled}
+      />
+    </View>
   );
 }
 
@@ -229,7 +202,7 @@ export function RelatedLaneSection({ lane }: { lane: RelatedLaneModel }) {
 
   return (
     <View style={styles.infoSection}>
-      <Text style={styles.sectionTitle}>{lane.title}</Text>
+      <Heading level="h4">{lane.title}</Heading>
 
       {lane.items.length ? (
         <ScrollView
@@ -262,16 +235,16 @@ export function RelatedLaneSection({ lane }: { lane: RelatedLaneModel }) {
                 )}
               </View>
 
-              <Text numberOfLines={1} style={styles.relatedTitle}>
+              <BodyText size="sm" weight="semibold" numberOfLines={1}>
                 {item.title}
-              </Text>
+              </BodyText>
               {item.subtitle ? (
-                <Text numberOfLines={1} style={styles.relatedSubtitle}>
+                <BodyText size="sm" color="secondary" numberOfLines={1}>
                   {item.subtitle}
-                </Text>
+                </BodyText>
               ) : null}
               {item.meta ? (
-                <Text style={styles.relatedMeta}>{item.meta}</Text>
+                <Subtext color="muted">{item.meta}</Subtext>
               ) : null}
             </Pressable>
           ))}

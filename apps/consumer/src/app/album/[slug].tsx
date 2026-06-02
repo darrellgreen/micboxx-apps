@@ -11,9 +11,9 @@ import {
     DetailActionBar,
     DetailHeroCard,
     DetailRouteHeader,
-    DetailStatusPanel,
     RelatedLaneSection,
 } from "@/features/catalog/components/detail-shared";
+import { Screen, ErrorState, Heading } from "@micboxx/ui";
 import {
     buildAlbumAccessCtaModel,
     buildAlbumRelatedLane,
@@ -95,40 +95,33 @@ export default function AlbumDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ headerShown: false }} />
+      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
         <ActivityIndicator
           style={styles.loading}
           color={tokens.colors.accent}
         />
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   if (!album || error) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <ScrollView contentContainerStyle={styles.page}>
-          <DetailRouteHeader title="Album" />
-          <DetailStatusPanel
+      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
+        <DetailRouteHeader title="Album" />
+        <View style={styles.page}>
+          <ErrorState
             title="Unable to load album"
-            body="The requested release could not be loaded right now. Try again from Home or Search."
+            message="The requested release could not be loaded right now. Try again from Home or Search."
           />
-        </ScrollView>
-      </SafeAreaView>
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.page}
-        showsVerticalScrollIndicator={false}
-      >
-        <DetailRouteHeader title="Album" />
+    <Screen scroll={true} noPaddingBottom noPaddingHorizontal header={<Stack.Screen options={{ headerShown: false }} />}>
+      <DetailRouteHeader title="Album" />
+      <View style={styles.page}>
 
         <DetailHeroCard
           title={album.title}
@@ -184,7 +177,7 @@ export default function AlbumDetailScreen() {
 
         <View style={styles.trackSection}>
           <View>
-            <Text style={styles.sectionTitle}>Track list</Text>
+            <Heading level="h4">Track list</Heading>
           </View>
           <View style={styles.trackList}>
             {data.tracks.map((track, index) => {
@@ -207,8 +200,8 @@ export default function AlbumDetailScreen() {
         </View>
 
         <RelatedLaneSection lane={buildAlbumRelatedLane(data.relatedAlbums)} />
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </Screen>
   );
 }
 

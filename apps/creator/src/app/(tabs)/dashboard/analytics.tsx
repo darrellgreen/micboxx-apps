@@ -1,16 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, {
+
   Circle,
   Defs,
   Line,
-  LinearGradient as SvgLinearGradient,
   Path,
   Polyline,
-  Stop,
 } from "react-native-svg";
 
 import type { DashboardAnalyticsPeriod } from "@/contracts/creator";
@@ -119,14 +117,9 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
     <View style={styles.trendChartWrap}>
       <Svg viewBox={`0 0 ${width} ${height}`} style={styles.trendChartSvg}>
         <Defs>
-          <SvgLinearGradient id="analytics-line" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="rgba(121,201,107,0.44)" />
-            <Stop offset="55%" stopColor="rgba(121,201,107,0.98)" />
-            <Stop offset="100%" stopColor="rgba(0,179,166,0.98)" />
-          </SvgLinearGradient>
           <SvgLinearGradient id="analytics-area" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="rgba(121,201,107,0.3)" />
-            <Stop offset="100%" stopColor="rgba(121,201,107,0.04)" />
+            <Stop offset="0%" stopColor="rgba(121,201,107,0.15)" />
+            <Stop offset="100%" stopColor="rgba(121,201,107,0.0)" />
           </SvgLinearGradient>
         </Defs>
         {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
@@ -147,7 +140,7 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
         <Polyline
           points={polylinePoints}
           fill="none"
-          stroke="url(#analytics-line)"
+          stroke={tokens.colors.accent}
           strokeWidth={4}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -277,14 +270,7 @@ export default function DashboardAnalyticsScreen() {
           <ErrorState message={bootstrap.error} onRetry={() => void bootstrap.refetch()} />
         ) : null}
 
-        <LinearGradient
-          colors={["rgba(21,27,35,0.98)", "rgba(13,17,23,0.98)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.heroShell}
-        >
-          <View style={styles.heroGlowRight} />
-          <View style={styles.heroGlowLeft} />
+        <View style={styles.heroShell}>
           <View style={styles.heroContent}>
             <View style={styles.heroTopRow}>
               <View style={styles.heroTagRow}>
@@ -343,13 +329,10 @@ export default function DashboardAnalyticsScreen() {
               ) : null}
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         <View style={[styles.row, isWide && styles.rowWide]}>
-          <LinearGradient
-            colors={["rgba(21,27,35,0.98)", "rgba(13,17,23,0.98)"]}
-            style={[styles.panel, styles.heroPanel, isWide && styles.heroPanelWide]}
-          >
+          <View style={[styles.panel, styles.heroPanel, isWide && styles.heroPanelWide]}>
             <View style={styles.panelHeaderRow}>
               <View>
                 <Text style={styles.panelEyebrow}>Momentum</Text>
@@ -390,7 +373,7 @@ export default function DashboardAnalyticsScreen() {
                 <Text style={styles.heroStatValue}>{analytics.basic.completionRate}%</Text>
               </View>
             </View>
-          </LinearGradient>
+          </View>
 
           <View style={[styles.column, isWide && styles.sideColumn]}>
             <View style={styles.panel}>
@@ -702,11 +685,8 @@ export default function DashboardAnalyticsScreen() {
                           </View>
                           <View style={styles.shareTrackBg}>
                             <View style={[styles.shareTrackFillWrap, { flex: fillRatio }]}>
-                              <LinearGradient
-                                colors={["rgba(121,201,107,0.9)", "rgba(0,179,166,0.95)"]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.shareTrackFill}
+                              <View
+                                style={[styles.shareTrackFill, { backgroundColor: tokens.colors.accent }]}
                               />
                             </View>
                             <View style={{ flex: Math.max(0.01, 1 - fillRatio) }} />
@@ -808,11 +788,8 @@ export default function DashboardAnalyticsScreen() {
                         </View>
                         <View style={styles.shareTrackBg}>
                           <View style={[styles.shareTrackFillWrap, { flex: fillRatio }]}>
-                            <LinearGradient
-                              colors={["rgba(121,201,107,0.9)", "rgba(230,184,92,0.95)"]}
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 0 }}
-                              style={styles.shareTrackFill}
+                            <View
+                              style={[styles.shareTrackFill, { backgroundColor: tokens.colors.warning }]}
                             />
                           </View>
                           <View style={{ flex: Math.max(0.01, 1 - fillRatio) }} />
