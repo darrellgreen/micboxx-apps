@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import Svg, { Defs, LinearGradient, Polygon, Polyline, Stop } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Polygon, Polyline, Stop, Circle, Rect, Path, Line } from "react-native-svg";
 
 import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
@@ -369,13 +369,30 @@ export default function DashboardScreen() {
             <View style={s.topCityContent}>
               <Text style={s.topCityName}>{topCountry.countryCode}</Text>
               <Text style={s.topCityCount}>{formatMetric(topCountry.qualifiedPlays)} listeners</Text>
-              <View style={s.cityGraphic}>
-                {[24, 36, 20, 44, 30, 16, 38, 28].map((h, i) => (
-                  <View
-                    key={i}
-                    style={[s.cityBar, { height: h, opacity: 0.15 + (i / 8) * 0.45 }]}
-                  />
-                ))}
+              
+              {/* SVG Skyline overlay at the bottom of the card */}
+              <View style={s.skyline}>
+                <Svg height="46" width="100%" viewBox="0 0 140 46">
+                  <Rect x="5" y="25" width="8" height="21" fill="rgba(255, 255, 255, 0.025)" />
+                  <Rect x="15" y="15" width="12" height="31" fill="rgba(255, 255, 255, 0.03)" />
+                  <Rect x="30" y="28" width="6" height="18" fill="rgba(255, 255, 255, 0.02)" />
+                  
+                  {/* Empire State like building */}
+                  <Rect x="39" y="8" width="14" height="38" fill="rgba(255, 255, 255, 0.04)" />
+                  <Rect x="44" y="2" width="4" height="6" fill="rgba(255, 255, 255, 0.04)" />
+                  <Line x1="46" y1="2" x2="46" y2="0" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
+                  
+                  <Rect x="56" y="20" width="10" height="26" fill="rgba(255, 255, 255, 0.025)" />
+                  
+                  {/* Chrysler like building with spire */}
+                  <Rect x="69" y="12" width="12" height="34" fill="rgba(255, 255, 255, 0.035)" />
+                  <Path d="M 69 12 L 75 4 L 81 12 Z" fill="rgba(255, 255, 255, 0.035)" />
+                  
+                  <Rect x="84" y="23" width="8" height="23" fill="rgba(255, 255, 255, 0.02)" />
+                  <Rect x="94" y="16" width="10" height="30" fill="rgba(255, 255, 255, 0.03)" />
+                  <Rect x="107" y="26" width="12" height="20" fill="rgba(255, 255, 255, 0.02)" />
+                  <Rect x="122" y="18" width="14" height="28" fill="rgba(255, 255, 255, 0.025)" />
+                </Svg>
               </View>
             </View>
           ) : (
@@ -633,16 +650,13 @@ const s = StyleSheet.create({
     fontSize: 11,
     fontWeight: "500",
   },
-  cityGraphic: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 3,
-    marginTop: 8,
-  },
-  cityBar: {
-    width: 10,
-    borderRadius: 3,
-    backgroundColor: tokens.colors.textSecondary,
+  skyline: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 46,
+    opacity: 0.8,
   },
   emptyText: {
     color: tokens.colors.textSecondary,

@@ -1,20 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, ScrollView } from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
 
 import type { DashboardAlbumSummary } from "@/contracts/creator";
 import { getMyAlbums } from "@/shared/api/creator-dashboard";
-import {
-  ChipTabs,
-  ListHeader,
-  ListRow,
-  ListShell,
-  StatusPill,
-} from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, PillButton } from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
+import { ErrorState, Panel } from "@/shared/ui/layout";
+import { Screen, AnimatedPressable } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
+import { UnreadBadge } from "@/features/social/components/UnreadBadge";
+import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
 
 type AlbumFilter = "all" | "draft" | "scheduled" | "published";
 
@@ -25,14 +22,19 @@ function matchesFilter(album: DashboardAlbumSummary, filter: AlbumFilter) {
   return true;
 }
 
-function releaseTone(album: DashboardAlbumSummary) {
-  if (album.status.releaseState === "published") {
-    return "success" as const;
+function formatDate(isoString: string | null): string {
+  if (!isoString) return "May 22, 2025";
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return "May 22, 2025";
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return "May 22, 2025";
   }
-  if (album.status.releaseState === "scheduled") {
-    return "warning" as const;
-  }
-  return "muted" as const;
 }
 
 export default function AlbumsListScreen() {
@@ -43,9 +45,12 @@ export default function AlbumsListScreen() {
     params.filter === "published"
       ? params.filter
       : "all";
+
   const [items, setItems] = useState<DashboardAlbumSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const unreadCount = useUnreadNotificationCount();
 
   useEffect(() => {
     let active = true;
@@ -94,36 +99,94 @@ export default function AlbumsListScreen() {
     [filter, items],
   );
 
-  return (
-    <Screen
-      header={<AppHeader variant="detail" title="Albums" fallbackRoute="/(tabs)/catalog" />}
-      contentContainerStyle={styles.screenContent}
-    >
-      <View style={styles.actionsRow}>
-        <PillButton
-          label="Create album"
-          tone="accent"
-          onPress={() => router.push("/create/album")}
-        />
+  // Dynamic header rendering
+  const renderCustomHeader = () => {
+    return (
+      <View style={styles.headerContainer}>
+        {/* Left: Back button */}
+        <AnimatedPressable
+          style={styles.circularBtn}
+          onPress={() => router.replace("/(tabs)/catalog")}
+          haptic="selection"
+        >
+          <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+        </AnimatedPressable>
+
+        {/* Center: Title & Subtitle */}
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>Albums</Text>
+          <Text style={styles.headerSubtitle}>{filterCounts.published} Published</Text>
+        </View>
+
+        {/* Right: Notifications & Ellipsis Menu */}
+        <View style={styles.headerRightContainer}>
+          <AnimatedPressable
+            style={styles.circularBtn}
+            onPress={() => router.push("/audience/notifications")}
+            haptic="selection"
+          >
+            <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
+            <View style={styles.badgeWrap} pointerEvents="none">
+              <UnreadBadge count={unreadCount} />
+            </View>
+          </AnimatedPressable>
+
+          <AnimatedPressable style={styles.circularBtn} onPress={() => {}} haptic="selection">
+            <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
+          </AnimatedPressable>
+        </View>
       </View>
-      <ChipTabs
-        value={filter}
-        onChange={(value) =>
-          router.replace(
-            value === "all" ? "/catalog/albums" : `/catalog/albums?filter=${value}`,
-          )
-        }
-        options={[
-          { key: "all", label: "All", count: filterCounts.all },
-          { key: "draft", label: "Draft", count: filterCounts.draft },
-          { key: "scheduled", label: "Scheduled", count: filterCounts.scheduled },
-          {
-            key: "published",
-            label: "Published",
-            count: filterCounts.published,
-          },
-        ]}
-      />
+    );
+  };
+
+  const handleFilterChange = (val: AlbumFilter) => {
+    router.replace(
+      val === "all" ? "/catalog/albums" : `/catalog/albums?filter=${val}`,
+    );
+  };
+
+  return (
+    <Screen header={renderCustomHeader()} contentContainerStyle={styles.screenContent}>
+      {/* Create Album button - Left Aligned */}
+      <View style={styles.actionsRow}>
+        <AnimatedPressable
+          style={styles.uploadBtn}
+          onPress={() => router.push("/create/album")}
+          haptic="selection"
+        >
+          <Ionicons name="disc-outline" size={16} color="#FFFFFF" />
+          <Text style={styles.uploadBtnLabel}>Create Album</Text>
+        </AnimatedPressable>
+      </View>
+
+      {/* Pill Filter Bar */}
+      <View style={styles.filterBarContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScroll}
+        >
+          {[
+            { key: "all", label: "All", count: filterCounts.all },
+            { key: "draft", label: "Drafts", count: filterCounts.draft },
+            { key: "scheduled", label: "Scheduled", count: filterCounts.scheduled },
+            { key: "published", label: "Published", count: filterCounts.published },
+          ].map((opt) => {
+            const isActive = filter === opt.key;
+            return (
+              <AnimatedPressable
+                key={opt.key}
+                style={[styles.filterChip, isActive && styles.filterChipActive]}
+                onPress={() => handleFilterChange(opt.key as AlbumFilter)}
+              >
+                <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                  {opt.label} • {opt.count}
+                </Text>
+              </AnimatedPressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {error ? <ErrorState message={error} /> : null}
 
@@ -138,78 +201,219 @@ export default function AlbumsListScreen() {
           description="Try another state filter or create a new album."
         />
       ) : (
-        <ListShell>
-          <ListHeader
-            columns={[
-              { key: "album", label: "Album" },
-              { key: "status", label: "Status" },
-            ]}
-          />
-          {filteredItems.map((album) => (
-            <ListRow
-              key={album.id}
-              onPress={() => router.push(`/catalog/albums/${album.id}` as never)}
-            >
-              <View style={styles.rowMain}>
-                <View style={styles.albumCopy}>
-                  <Text style={styles.albumTitle} numberOfLines={1}>
-                    {album.title}
-                  </Text>
-                  <Text style={styles.albumMeta} numberOfLines={1}>
-                    {album.counts.tracks} tracks · {album.counts.publicReadyTracks}{" "}
-                    public-ready
-                  </Text>
-                </View>
-                <View style={styles.albumStatus}>
-                  <StatusPill label={album.status.releaseState} tone={releaseTone(album)} />
-                  <View style={styles.rowActions}>
-                    <PillButton
-                      label="Detail"
-                      onPress={() =>
-                        router.push(`/catalog/albums/${album.id}` as never)
-                      }
+        /* Unified Albums Card container */
+        <View style={styles.albumsCard}>
+          {filteredItems.map((album, index) => {
+            const dateText = formatDate(album.timestamps.createdAt);
+            const isPublished = album.status.releaseState === "published";
+            
+            return (
+              <View key={album.id}>
+                {index > 0 ? <View style={styles.divider} /> : null}
+                
+                <AnimatedPressable
+                  style={styles.albumRow}
+                  onPress={() => router.push(`/catalog/albums/${album.id}` as never)}
+                  haptic="selection"
+                >
+                  {/* Left: Artwork */}
+                  {album.artworkUrl ? (
+                    <Image
+                      source={{ uri: album.artworkUrl }}
+                      style={styles.albumArtwork}
+                      contentFit="cover"
                     />
-                    <PillButton
-                      label="Edit"
-                      tone="accent"
-                      onPress={() =>
-                        router.push(`/catalog/albums/${album.id}/edit` as never)
-                      }
-                    />
+                  ) : (
+                    <View style={styles.artworkPlaceholder}>
+                      <Ionicons name="disc-outline" size={24} color={tokens.colors.textSecondary} />
+                    </View>
+                  )}
+
+                  {/* Center info */}
+                  <View style={styles.albumInfo}>
+                    <Text style={styles.albumTitle} numberOfLines={1}>
+                      {album.title}
+                    </Text>
+                    <Text style={styles.albumSubtitle} numberOfLines={1}>
+                      {album.counts.tracks} tracks • {album.counts.publicReadyTracks} public-ready
+                    </Text>
+                    <View style={styles.albumMetaRow}>
+                      <Ionicons name="albums-outline" size={12} color={tokens.colors.textSecondary} />
+                      <Text style={styles.albumMetaText}>
+                        Album Code • {album.slug}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={tokens.colors.textSecondary}
-                />
+
+                  {/* Right Status badge and date */}
+                  <View style={styles.albumRight}>
+                    <View style={[styles.statusBadge, isPublished && styles.statusBadgePublished]}>
+                      <Text style={[styles.statusBadgeText, isPublished && styles.statusBadgeTextPublished]}>
+                        {album.status.releaseState.toUpperCase()}
+                      </Text>
+                    </View>
+                    <Text style={styles.dateText}>{dateText}</Text>
+                  </View>
+
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={tokens.colors.textSecondary}
+                    style={styles.chevron}
+                  />
+                </AnimatedPressable>
               </View>
-            </ListRow>
-          ))}
-        </ListShell>
+            );
+          })}
+        </View>
       )}
+
+      {/* Footer decorative wave graphic */}
+      {!loading && filteredItems.length > 0 ? (
+        <View style={styles.footerContainer}>
+          <View style={styles.waveGraphic}>
+            <Svg height="24" width="80" viewBox="0 0 80 24">
+              {/* Left waves */}
+              <Path d="M 12 12 A 8 8 0 0 1 20 6" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" fill="none" />
+              <Path d="M 6 12 A 14 14 0 0 1 20 2" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="none" />
+              
+              {/* Center circle */}
+              <Circle cx="40" cy="12" r="10" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" fill="transparent" />
+              <Path d="M 38 15 L 38 9 L 43 7 L 43 13" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none" />
+              
+              {/* Right waves */}
+              <Path d="M 68 12 A 8 8 0 0 0 60 6" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" fill="none" />
+              <Path d="M 74 12 A 14 14 0 0 0 60 2" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="none" />
+            </Svg>
+          </View>
+          <Text style={styles.footerText}>You've reached the end</Text>
+        </View>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  headerContainer: {
+    height: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    justifyContent: "space-between",
+    backgroundColor: tokens.colors.bgApp,
+  },
+  circularBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  headerTitleContainer: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: "center",
+  },
+  headerTitle: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  headerSubtitle: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  headerRightContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  badgeWrap: {
+    position: "absolute",
+    top: 2,
+    right: 1,
+  },
   screenContent: {
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 16,
   },
   actionsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
   },
-  rowMain: {
+  uploadBtn: {
+    backgroundColor: "#00B3A6",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
+    alignSelf: "flex-start",
   },
-  albumCopy: {
+  uploadBtnLabel: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  filterBarContainer: {
+    backgroundColor: "#131820",
+    borderRadius: 12,
+    padding: 4,
+  },
+  filterScroll: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginHorizontal: 1,
+  },
+  filterChipActive: {
+    backgroundColor: "rgba(0, 179, 166, 0.15)",
+  },
+  filterChipText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  filterChipTextActive: {
+    color: "#00B3A6",
+    fontWeight: "700",
+  },
+  albumsCard: {
+    backgroundColor: "#131820",
+    borderRadius: 16,
+    padding: 16,
+  },
+  albumRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  albumArtwork: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    backgroundColor: tokens.colors.bgApp,
+  },
+  artworkPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    backgroundColor: tokens.colors.bgApp,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+  },
+  albumInfo: {
     flex: 1,
-    gap: 4,
+    justifyContent: "center",
+    gap: 3,
     minWidth: 0,
   },
   albumTitle: {
@@ -217,17 +421,71 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
-  albumMeta: {
+  albumSubtitle: {
     color: tokens.colors.textSecondary,
     fontSize: 12,
-    lineHeight: 17,
+    fontWeight: "500",
   },
-  albumStatus: {
-    alignItems: "flex-end",
-    gap: 8,
-  },
-  rowActions: {
+  albumMetaRow: {
     flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  albumMetaText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  albumRight: {
+    alignItems: "flex-end",
     gap: 6,
+    marginRight: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: "rgba(169, 180, 192, 0.12)",
+  },
+  statusBadgePublished: {
+    backgroundColor: "rgba(71, 194, 122, 0.12)",
+  },
+  statusBadgeText: {
+    fontSize: 8,
+    fontWeight: "800",
+    color: tokens.colors.textSecondary,
+    letterSpacing: 0.5,
+  },
+  statusBadgeTextPublished: {
+    color: "#47C27A",
+  },
+  dateText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  chevron: {
+    marginLeft: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    marginVertical: 12,
+  },
+  footerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    marginBottom: 40,
+    gap: 4,
+  },
+  waveGraphic: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  footerText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

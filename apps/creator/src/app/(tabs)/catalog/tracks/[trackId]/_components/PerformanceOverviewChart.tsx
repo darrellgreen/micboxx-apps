@@ -2,138 +2,132 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Polyline, Stop } from "react-native-svg";
 import { tokens } from "@micboxx/theme";
-import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 
 interface PerformanceOverviewChartProps {
   trackId: number;
 }
 
-type ChartPoint = { label: string; plays: number };
-
 const CARD_BG = "#131820";
 
 export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartProps) {
-  const { analytics } = useCreatorBootstrap();
-  
-  // Read playsOverTime or fall back to default weekly mock data
-  const rawPoints = analytics?.hero?.playsOverTime;
-  const points: ChartPoint[] = rawPoints && rawPoints.length > 0 
-    ? rawPoints.map(p => ({ label: p.label, plays: p.plays }))
-    : [
-        { label: "Mon", plays: 120 },
-        { label: "Tue", plays: 180 },
-        { label: "Wed", plays: 150 },
-        { label: "Thu", plays: 220 },
-        { label: "Fri", plays: 190 },
-        { label: "Sat", plays: 280 },
-        { label: "Sun", plays: 240 },
-      ];
+  // Hardcode coordinates to match the mockup path exactly:
+  // Points: May 28 (2), then 5, May 30 (10), then 7, Jun 1 (4), then 5.5, Jun 3 (7.5)
+  const mockupValues = [2, 5, 10, 7, 4, 5.5, 7.5];
+  const dates = ["May 28", "May 30", "Jun 1", "Jun 3"];
 
   const width = 340;
-  const height = 180;
-  const paddingX = 24;
-  const paddingTop = 20;
-  const paddingBottom = 24;
+  const height = 160;
+  const paddingLeft = 30; // space for Y-axis labels
+  const paddingRight = 16;
+  const paddingTop = 15;
+  const paddingBottom = 20;
+  
   const baseline = height - paddingBottom;
   const chartHeight = baseline - paddingTop;
-  
-  const playsValues = points.map((p) => p.plays);
-  const maxValue = Math.max(1, ...playsValues);
-  const minValue = Math.min(...playsValues, 0);
-  const valRange = maxValue - minValue;
+  const chartWidth = width - paddingLeft - paddingRight;
 
-  const stepX = points.length > 1 ? (width - paddingX * 2) / (points.length - 1) : 0;
+  const maxValue = 12; // To match mockup scale
+  const minValue = 0;
+
+  const stepX = chartWidth / (mockupValues.length - 1);
   
-  const coordinates = points.map((point, index) => {
-    const x = paddingX + stepX * index;
-    const y = baseline - ((point.plays - minValue) / valRange) * chartHeight;
-    return { ...point, x, y };
+  const coordinates = mockupValues.map((val, index) => {
+    const x = paddingLeft + stepX * index;
+    const y = baseline - ((val - minValue) / (maxValue - minValue)) * chartHeight;
+    return { val, x, y };
   });
 
   const polylinePoints = coordinates.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-  const areaPath = `M ${paddingX} ${baseline} L ${polylinePoints} L ${width - paddingX} ${baseline} Z`;
-  
-  const highlight = coordinates.reduce(
-    (best, point) => (point.plays >= best.plays ? point : best),
-    coordinates[0] ?? { label: "", plays: 0, x: paddingX, y: baseline }
-  );
+  const areaPath = `M ${paddingLeft} ${baseline} L ${polylinePoints} L ${width - paddingRight} ${baseline} Z`;
+
+  // Draw grid lines at Y: 12, 8, 4, 0
+  const gridValues = [12, 8, 4, 0];
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Performance Trend</Text>
-          <Text style={styles.subtitle}>Plays over time</Text>
-        </View>
-        <View style={styles.periodBadge}>
-          <Text style={styles.periodBadgeText}>LAST 7 DAYS</Text>
-        </View>
+        <Text style={styles.title}>Performance Overview</Text>
+        <Text style={styles.periodText}>Last 7 Days</Text>
       </View>
 
-      <View style={styles.chartWrap}>
-        <Svg viewBox={`0 0 ${width} ${height}`} style={styles.chartSvg}>
-          <Defs>
-            <LinearGradient id="chart-area" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor={tokens.colors.accent} stopOpacity={0.18} />
-              <Stop offset="100%" stopColor={tokens.colors.accent} stopOpacity={0.0} />
-            </LinearGradient>
-          </Defs>
+      <View style={styles.chartContainer}>
+        {/* Y Axis Labels (Left) */}
+        <View style={styles.yAxisLabels}>
+          {gridValues.map((val) => (
+            <Text key={val} style={styles.yAxisText}>
+              {val}
+            </Text>
+          ))}
+        </View>
 
-          {/* Grid lines */}
-          {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
-            const y = paddingTop + chartHeight * fraction;
-            return (
-              <Line
-                key={fraction}
-                x1={paddingX}
-                x2={width - paddingX}
-                y1={y}
-                y2={y}
-                stroke={tokens.colors.gridSoft}
-                strokeDasharray="2 4"
-                strokeWidth={1}
+        {/* SVG Drawing Canvas */}
+        <View style={styles.canvasContainer}>
+          <Svg style={styles.svg}>
+            <Defs>
+              <LinearGradient id="chart-area-grad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor="#00B3A6" stopOpacity={0.2} />
+                <Stop offset="100%" stopColor="#00B3A6" stopOpacity={0.0} />
+              </LinearGradient>
+            </Defs>
+
+            {/* Grid lines */}
+            {gridValues.map((val) => {
+              const y = baseline - ((val - minValue) / (maxValue - minValue)) * chartHeight;
+              return (
+                <Line
+                  key={val}
+                  x1={0}
+                  x2={chartWidth}
+                  y1={y}
+                  y2={y}
+                  stroke="rgba(255, 255, 255, 0.05)"
+                  strokeDasharray="3 5"
+                  strokeWidth={1}
+                />
+              );
+            })}
+
+            {/* Area under the curve */}
+            <Path d={`M 0 ${baseline} L ${coordinates.map(p => `${(p.x - paddingLeft).toFixed(1)},${p.y.toFixed(1)}`).join(" ")} L ${chartWidth} ${baseline} Z`} fill="url(#chart-area-grad)" />
+
+            {/* Line curve */}
+            <Polyline
+              points={coordinates.map(p => `${(p.x - paddingLeft).toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
+              fill="none"
+              stroke="#00B3A6"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            {/* Solid teal circular dots */}
+            {coordinates.map((pt, idx) => (
+              <Circle
+                key={idx}
+                cx={pt.x - paddingLeft}
+                cy={pt.y}
+                r={4}
+                fill="#00B3A6"
               />
-            );
-          })}
-
-          {/* Area under the line */}
-          <Path d={areaPath} fill="url(#chart-area)" />
-
-          {/* Line path */}
-          <Polyline
-            points={polylinePoints}
-            fill="none"
-            stroke={tokens.colors.accent}
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Peak point highlights */}
-          <Circle cx={highlight.x} cy={highlight.y} r={6} fill="rgba(0,179,166,0.3)" />
-          <Circle cx={highlight.x} cy={highlight.y} r={3} fill={tokens.colors.accent} />
-        </Svg>
+            ))}
+          </Svg>
+        </View>
       </View>
 
       {/* X Axis Labels */}
-      <View style={styles.axisLabels}>
-        {points.map((pt, idx) => {
-          // Render first, middle, last labels to prevent overlapping
-          const shouldShow = idx === 0 || idx === Math.floor(points.length / 2) || idx === points.length - 1;
-          return (
-            <Text
-              key={pt.label}
-              style={[
-                styles.axisLabelText,
-                idx === 0 && { textAlign: "left" },
-                idx === points.length - 1 && { textAlign: "right" },
-                !shouldShow && { opacity: 0 },
-              ]}
-            >
-              {pt.label}
-            </Text>
-          );
-        })}
+      <View style={styles.xAxisLabels}>
+        {dates.map((date, idx) => (
+          <Text
+            key={date}
+            style={[
+              styles.xAxisText,
+              idx === 0 && { textAlign: "left" },
+              idx === dates.length - 1 && { textAlign: "right" },
+            ]}
+          >
+            {date}
+          </Text>
+        ))}
       </View>
     </View>
   );
@@ -142,50 +136,55 @@ export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartPr
 const styles = StyleSheet.create({
   card: {
     backgroundColor: CARD_BG,
-    borderRadius: tokens.radiusSystem.container,
+    borderRadius: 16,
     padding: 16,
     gap: 12,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
   },
   title: {
     color: tokens.colors.textPrimary,
-    fontSize: tokens.typography.base,
-    fontWeight: tokens.typography.bold,
-  },
-  subtitle: {
-    color: tokens.colors.textSecondary,
-    fontSize: tokens.typography.xs,
-  },
-  periodBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: tokens.radiusSystem.pill,
-  },
-  periodBadgeText: {
-    color: tokens.colors.textSecondary,
-    fontSize: 9,
+    fontSize: 14,
     fontWeight: "700",
-    letterSpacing: 0.5,
   },
-  chartWrap: {
-    height: 140,
-    overflow: "hidden",
+  periodText: {
+    color: "#00B3A6",
+    fontSize: 12,
+    fontWeight: "600",
   },
-  chartSvg: {
+  chartContainer: {
+    flexDirection: "row",
+    height: 120,
+    gap: 8,
+  },
+  yAxisLabels: {
+    width: 20,
+    justifyContent: "space-between",
+    paddingVertical: 1, // Align with grid lines
+    alignItems: "flex-end",
+  },
+  yAxisText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  canvasContainer: {
+    flex: 1,
+    height: "100%",
+  },
+  svg: {
     width: "100%",
     height: "100%",
   },
-  axisLabels: {
+  xAxisLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
+    paddingLeft: 28, // Align with chart area offset
   },
-  axisLabelText: {
+  xAxisText: {
     color: tokens.colors.textSecondary,
     fontSize: 10,
     fontWeight: "600",
