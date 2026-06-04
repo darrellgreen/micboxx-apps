@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-
 import { useNotifications } from "@/features/social/hooks/useNotifications";
 import {
   ChipTabs,
@@ -11,7 +10,8 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, ScreenShell, SectionTitle } from "@/shared/ui/layout";
+import { ErrorState, Panel, SectionTitle } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function NotificationsScreen() {
@@ -38,10 +38,11 @@ export default function NotificationsScreen() {
   ] as const;
 
   return (
-    <ScreenShell
-      title="Notifications"
-      subtitle="Creator activity feed with unread/read filter controls and direct activity drill-in."
+    <Screen
+      header={<AppHeader variant="detail" title="Notifications" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={styles.screenContent}
     >
+      <Stack.Screen options={{ headerShown: false }} />
       {notifications.error ? <ErrorState message={notifications.error} onRetry={notifications.retry} /> : null}
 
       <View style={styles.summaryRow}>
@@ -107,7 +108,7 @@ export default function NotificationsScreen() {
           ))}
         </ListShell>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
@@ -140,6 +141,10 @@ function formatRelative(isoValue: string | null) {
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   summaryRow: {
     flexDirection: "row",
     gap: 12,

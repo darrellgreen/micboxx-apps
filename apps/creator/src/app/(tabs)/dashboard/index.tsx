@@ -1,62 +1,223 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useMemo } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import Svg, { Defs, LinearGradient, Polygon, Polyline, Stop } from "react-native-svg";
 
-import { AnimatedPressable, Screen, Surface } from "@micboxx/ui";
-import type {
-  DashboardAlbumSummary,
-  DashboardTrackSummary,
-} from "@/contracts/creator";
+import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreateEntryHref } from "@/features/bootstrap/routes";
-import { formatDuration } from "@micboxx/api";
-import { ErrorState } from "@/shared/ui/layout";
+import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { tokens } from "@micboxx/theme";
 
-const CREATE_ALBUM_HREF = "/create/album";
-const COMPLETE_PROFILE_HREF = "/account/profile";
-const ANALYTICS_HREF = "/dashboard/analytics";
-const TRACKS_HREF = "/catalog/tracks";
+/* ─── helpers ─────────────────────────────────────────────────────────────── */
 
-function buildTrackStatusLabel(track: DashboardTrackSummary): string {
-  if (track.status.published) return "Published";
-  if (track.status.processing === "failed") return "Needs attention";
-  if (track.status.ready) return "Ready to publish";
-  if (track.status.processing === "processing" || track.status.processing === "pending") return "Processing";
-  return "Draft";
-}
-
-function formatMetric(value: number | null | undefined) {
-  const normalized = value ?? 0;
+function formatMetric(n: number): string {
   return new Intl.NumberFormat("en-US", {
     notation: "compact",
-    maximumFractionDigits: normalized >= 1000 ? 1 : 0,
-  }).format(normalized);
+    maximumFractionDigits: 1,
+  }).format(n);
 }
 
-function formatCurrency(value: number | null | undefined) {
-  if (value == null) return "—";
+function formatCurrency(n: number | null | undefined): string {
+  if (n == null) return "—";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(n);
 }
+
+function activityDate(iso: string): string {
+  const d = new Date(iso);
+  return (
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+    " • " +
+    d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+  );
+}
+
+function computeTrend(data: { plays: number }[]): { up: boolean; percent: number } {
+  if (data.length < 2) return { up: false, percent: 0 };
+  const half = Math.floor(data.length / 2);
+  const prev = data.slice(0, half).reduce((s, d) => s + d.plays, 0);
+  const curr = data.slice(half).reduce((s, d) => s + d.plays, 0);
+  if (prev === 0) return { up: curr > 0, percent: 0 };
+  const pct = Math.round(Math.abs(((curr - prev) / prev) * 100));
+  return { up: curr >= prev, percent: pct };
+}
+
+/* ─── sparkline ───────────────────────────────────────────────────────────── */
+
+function Sparkline({
+  data,
+  width = 100,
+  height = 36,
+  color = tokens.colors.accent,
+  gradientId,
+}: {
+  data: number[];
+  width?: number;
+  height?: number;
+  color?: string;
+  gradientId: string;
+}) {
+  if (data.length < 2) {
+    return <View style={{ width, height }} />;
+  }
+  const max = Math.max(...data, 1);
+  const points = data.map((v, i) => ({
+    x: (i / (data.length - 1)) * width,
+    y: height - 4 - (v / max) * (height - 8),
+  }));
+
+  const linePts = points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const areaPts = [
+    `${points[0].x.toFixed(1)},${height}`,
+    ...points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`),
+    `${points[points.length - 1].x.toFixed(1)},${height}`,
+  ].join(" ");
+
+  const isGrey = color.includes("255,255,255") || color.includes("rgba(255,");
+  const cleanColor = color.includes("rgba") ? color.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, "rgb($1,$2,$3)") : color;
+  const topOpacity = isGrey ? 0.015 : 0.22;
+
+  return (
+    <Svg width={width} height={height}>
+      <Defs>
+        <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={cleanColor} stopOpacity={topOpacity} />
+          <Stop offset="1" stopColor={cleanColor} stopOpacity="0" />
+        </LinearGradient>
+      </Defs>
+      <Polygon points={areaPts} fill={`url(#${gradientId})`} />
+      <Polyline points={linePts} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/* ─── sub-components ──────────────────────────────────────────────────────── */
+
+function MetricCard({
+  label,
+  value,
+  trend,
+  percent,
+  noData,
+  sparkData,
+  gradientId,
+}: {
+  label: string;
+  value: string;
+  trend: "up" | "down" | "flat";
+  percent: number;
+  noData?: boolean;
+  sparkData: number[];
+  gradientId: string;
+}) {
+  const trendColor =
+    trend === "up" ? "#22c55e" : trend === "down" ? "#ef4444" : tokens.colors.textSecondary;
+  const trendIcon =
+    trend === "up" ? "arrow-up" : trend === "down" ? "arrow-down" : "remove";
+  const sparkColor =
+    trend === "up" ? tokens.colors.accent : trend === "down" ? "#ef4444" : "rgba(255,255,255,0.18)";
+
+  return (
+    <View style={s.metricCard}>
+      <Text style={s.metricLabel}>{label}</Text>
+      <Text style={s.metricValue}>{value}</Text>
+      {noData ? (
+        <Text style={s.metricNoData}>No data yet</Text>
+      ) : (
+        <View style={s.metricTrend}>
+          <Ionicons name={trendIcon} size={11} color={trendColor} />
+          <Text style={[s.metricTrendText, { color: trendColor }]}>
+            {percent > 0 ? `${percent}%` : "0%"}
+          </Text>
+        </View>
+      )}
+      <View style={s.metricSpark}>
+        <Sparkline data={sparkData} color={sparkColor} width={120} height={34} gradientId={gradientId} />
+      </View>
+    </View>
+  );
+}
+
+function ActionBtn({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <AnimatedPressable style={s.actionBtn} onPress={onPress} haptic="selection">
+      <View style={s.actionIconCircle}>
+        <Ionicons name={icon} size={20} color={tokens.colors.accent} />
+      </View>
+      <Text style={s.actionLabel}>{label}</Text>
+    </AnimatedPressable>
+  );
+}
+
+function ActivityRow({
+  icon,
+  iconColor,
+  iconBg,
+  title,
+  actionText,
+  timestamp,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  iconBg: string;
+  title: string;
+  actionText: string;
+  timestamp: string;
+  onPress: () => void;
+}) {
+  return (
+    <AnimatedPressable style={s.activityRow} onPress={onPress} haptic="selection">
+      <View style={[s.activityIcon, { backgroundColor: iconBg }]}>
+        <Ionicons name={icon} size={14} color={iconColor} />
+      </View>
+      <View style={s.activityText}>
+        <Text style={s.activityTitle} numberOfLines={2}>
+          <Text style={s.activityTitleBold}>{title}</Text>
+          <Text style={s.activityTitleLight}>{actionText}</Text>
+        </Text>
+        <Text style={s.activityTime}>{timestamp}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={13} color={tokens.colors.textSecondary} />
+    </AnimatedPressable>
+  );
+}
+
+
+
+/* ─── screen ──────────────────────────────────────────────────────────────── */
 
 export default function DashboardScreen() {
   const bootstrap = useCreatorBootstrap();
-  const profile = bootstrap.profile;
-  const tracks = bootstrap.tracksSummary;
-  const permissions = bootstrap.uploadOptions?.currentUser.permissions;
-  const analytics = bootstrap.analytics;
-  
-  const canCreateAlbums = Boolean(permissions?.canCreateAlbums || permissions?.canAdministerAlbums);
-  const recentTracks = tracks?.tracks.slice(0, 4) ?? [];
-  const hasAvatar = Boolean(profile?.avatarUrl);
-  const hasBio = Boolean(profile?.bio?.trim());
-  const profileComplete = hasAvatar && hasBio;
+
+  const displayName = bootstrap.profile?.displayName ?? "Creator";
+  const analytics   = bootstrap.analytics;
+
+  const totalPlays       = analytics?.basic.totalPlays       ?? 0;
+  const uniqueListeners  = analytics?.basic.uniqueListeners  ?? 0;
+  const publishedTracks  = analytics?.basic.publishedTracks  ?? 0;
+  const revenue          = analytics?.revenue?.snapshot?.grossRevenue ?? null;
+
+  const playsOverTime = analytics?.hero?.playsOverTime ?? [];
+  const sparkData     = playsOverTime.map((p) => p.plays);
+  const trend         = computeTrend(playsOverTime);
+
+  const topTrack  = analytics?.catalogPerformance.topTracks[0] ?? null;
+  const topCountry = analytics?.basic.topCountry;
 
   const uploadHref = resolveCreateEntryHref({
     createEntryTarget: bootstrap.createEntryTarget,
@@ -64,348 +225,572 @@ export default function DashboardScreen() {
     uploadOptions: bootstrap.uploadOptions,
   });
 
-  const totalPlays = analytics?.basic.totalPlays ?? 0;
-  const revenue = analytics?.revenue?.snapshot?.grossRevenue;
-  const listeners = analytics?.basic.uniqueListeners ?? 0;
-  const publishedTracks = analytics?.basic.publishedTracks ?? 0;
-  const playsTrend = analytics?.hero?.playsOverTime ?? [];
-  const trendUp = playsTrend.length >= 2 && playsTrend[playsTrend.length - 1].plays >= playsTrend[playsTrend.length - 2].plays;
+  const canCreateAlbums = Boolean(
+    bootstrap.uploadOptions?.currentUser.permissions?.canCreateAlbums ||
+      bootstrap.uploadOptions?.currentUser.permissions?.canAdministerAlbums,
+  );
+
+  const recentActivity = useMemo(() => {
+    const tracks = bootstrap.tracksSummary?.tracks ?? [];
+    return tracks
+      .filter((t) => t.status.releaseState !== "draft")
+      .sort(
+        (a, b) =>
+          new Date(b.timestamps.updatedAt).getTime() -
+          new Date(a.timestamps.updatedAt).getTime(),
+      )
+      .slice(0, 3)
+      .map((t) => {
+        const isPub = t.status.releaseState === "published";
+        const isSched = t.status.releaseState === "scheduled";
+        
+        let icon: keyof typeof Ionicons.glyphMap = "time-outline";
+        let iconColor = "#a78bfa";
+        let iconBg = "rgba(167,139,250,0.12)";
+
+        if (isPub) {
+          icon = "checkmark";
+          iconColor = tokens.colors.accent;
+          iconBg = "rgba(0,179,166,0.12)";
+        } else if (isSched) {
+          icon = "calendar-outline";
+          iconColor = "#22c55e";
+          iconBg = "rgba(34,197,94,0.12)";
+        }
+
+        return {
+          key: `track-${t.id}`,
+          title: t.title,
+          actionText: ` was ${t.status.releaseState}`,
+          timestamp: activityDate(t.timestamps.updatedAt),
+          icon,
+          iconColor,
+          iconBg,
+          href: `/catalog/tracks/${t.id}`,
+        };
+      });
+  }, [bootstrap.tracksSummary]);
+
+  const needsProfile = !bootstrap.profile?.bio?.trim() || !bootstrap.profile?.avatarUrl;
 
   return (
-    <Screen style={styles.screen}>
-      {bootstrap.error ? (
-        <ErrorState
-          message={bootstrap.error}
-          onRetry={() => void bootstrap.refetch()}
-        />
-      ) : null}
+    <Screen header={<ScreenHeader />} contentContainerStyle={s.screen}>
 
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Overview</Text>
+      {/* ── Welcome ────────────────────────────────────────────────── */}
+      <View style={s.welcome}>
+        <Text style={s.welcomeTitle}>Welcome back, {displayName} 👋</Text>
+        <Text style={s.welcomeSubtitle}>Here's what's happening with your music today.</Text>
       </View>
 
-      {/* KPI Row */}
-      <View style={styles.kpiRow}>
-        <Surface tone="section" borderRadius="section" padding="md" style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Total Plays</Text>
-          <Text style={styles.kpiValue}>{formatMetric(totalPlays)}</Text>
-        </Surface>
-        <Surface tone="section" borderRadius="section" padding="md" style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Revenue</Text>
-          <Text style={styles.kpiValue}>{formatCurrency(revenue)}</Text>
-        </Surface>
-        <Surface tone="section" borderRadius="section" padding="md" style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Listeners</Text>
-          <Text style={styles.kpiValue}>{formatMetric(listeners)}</Text>
-        </Surface>
-        <Surface tone="section" borderRadius="section" padding="md" style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Published Tracks</Text>
-          <Text style={styles.kpiValue}>{formatMetric(publishedTracks)}</Text>
-        </Surface>
+      {/* ── Overview ───────────────────────────────────────────────── */}
+      <View style={s.overviewCard}>
+        <View style={s.overviewHeader}>
+          <Text style={s.sectionTitle}>Overview</Text>
+          <View style={s.overviewPeriod}>
+            <Text style={s.overviewPeriodText}>Last 7 Days</Text>
+            <Ionicons name="chevron-down" size={13} color={tokens.colors.accent} />
+          </View>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.metricsScroll}
+        >
+          <MetricCard
+            label="PLAYS"
+            value={formatMetric(totalPlays)}
+            trend={trend.up ? "up" : "flat"}
+            percent={trend.percent}
+            sparkData={sparkData}
+            gradientId="sg_plays"
+          />
+          <MetricCard
+            label="LISTENERS"
+            value={formatMetric(uniqueListeners)}
+            trend={uniqueListeners > 0 ? "up" : "flat"}
+            percent={0}
+            sparkData={sparkData.map((v) => Math.floor(v * 0.4))}
+            gradientId="sg_listeners"
+          />
+          <MetricCard
+            label="PUBLISHED TRACKS"
+            value={String(publishedTracks)}
+            trend="flat"
+            percent={0}
+            sparkData={sparkData.map(() => publishedTracks)}
+            gradientId="sg_tracks"
+          />
+          <MetricCard
+            label="REVENUE"
+            value={revenue != null ? formatCurrency(revenue) : "—"}
+            trend="flat"
+            percent={0}
+            noData={revenue == null}
+            sparkData={sparkData.map(() => 0)}
+            gradientId="sg_revenue"
+          />
+        </ScrollView>
       </View>
 
-      {/* Action Center */}
-      <Surface tone="section" borderRadius="section" padding="lg" style={styles.actionCenter}>
-        <Text style={styles.sectionTitle}>Action Center</Text>
-        <View style={styles.actionGrid}>
-          <ActionCard 
-            icon="cloud-upload" 
-            label="Upload Track" 
-            onPress={() => router.push(uploadHref as never)} 
-            primary
-          />
-          {canCreateAlbums && (
-            <ActionCard 
-              icon="disc" 
-              label="Create Album" 
-              onPress={() => router.push(CREATE_ALBUM_HREF as never)} 
-            />
-          )}
-          <ActionCard 
-            icon="radio" 
-            label="Go Live" 
-            onPress={() => router.push("/rooms" as never)} 
-          />
-          {!profileComplete && (
-            <ActionCard 
-              icon="person" 
-              label="Complete Profile" 
-              onPress={() => router.push(COMPLETE_PROFILE_HREF as never)} 
-            />
+      {/* ── Top Track + Top City ───────────────────────────────────── */}
+      <View style={s.topRow}>
+        {/* Top Track */}
+        <View style={s.topCard}>
+          <Text style={s.topCardTitle}>Top Track</Text>
+          {topTrack ? (
+            <View style={s.topTrackContent}>
+              {topTrack.artworkUrl ? (
+                <Image
+                  source={{ uri: topTrack.artworkUrl }}
+                  style={s.topTrackArt}
+                  contentFit="cover"
+                />
+              ) : (
+                <View style={[s.topTrackArt, s.topTrackArtFallback]}>
+                  <Ionicons name="musical-note" size={22} color={tokens.colors.textSecondary} />
+                </View>
+              )}
+              <View style={s.topTrackCopy}>
+                <Text style={s.topTrackName} numberOfLines={1}>{topTrack.title}</Text>
+                <Text style={s.topTrackArtist} numberOfLines={1}>{displayName}</Text>
+                <Text style={s.topTrackPlays}>{formatMetric(topTrack.plays)} plays</Text>
+              </View>
+            </View>
+          ) : (
+            <Text style={s.emptyText}>No track data yet</Text>
           )}
         </View>
-      </Surface>
 
-      {/* Recent Tracks */}
-      <Surface tone="section" borderRadius="section" padding="lg" style={styles.recentTracks}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Tracks</Text>
-          <AnimatedPressable onPress={() => router.push(TRACKS_HREF as never)}>
-            <Text style={styles.seeAll}>See all</Text>
-          </AnimatedPressable>
+        {/* Top Listener Location */}
+        <View style={s.topCard}>
+          <Text style={s.topCardTitle}>Top Listeners</Text>
+          {topCountry ? (
+            <View style={s.topCityContent}>
+              <Text style={s.topCityName}>{topCountry.countryCode}</Text>
+              <Text style={s.topCityCount}>{formatMetric(topCountry.qualifiedPlays)} listeners</Text>
+              <View style={s.cityGraphic}>
+                {[24, 36, 20, 44, 30, 16, 38, 28].map((h, i) => (
+                  <View
+                    key={i}
+                    style={[s.cityBar, { height: h, opacity: 0.15 + (i / 8) * 0.45 }]}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : (
+            <Text style={s.emptyText}>No data yet</Text>
+          )}
         </View>
-        
-        {recentTracks.length > 0 ? (
-          <View style={styles.trackList}>
-            {recentTracks.map((track) => (
-              <TrackRow key={track.id} track={track} />
+      </View>
+
+      {/* ── Action Center ──────────────────────────────────────────── */}
+      <View style={s.actionCard}>
+        <Text style={s.sectionTitle}>Action Center</Text>
+        <View style={s.actionRow}>
+          <ActionBtn
+            icon="cloud-upload-outline"
+            label="Upload"
+            onPress={() => router.push(uploadHref as never)}
+          />
+          <ActionBtn
+            icon="disc-outline"
+            label="Album"
+            onPress={() => router.push("/create/album" as never)}
+          />
+          <ActionBtn
+            icon="radio-outline"
+            label="Go Live"
+            onPress={() => router.push("/rooms" as never)}
+          />
+          <ActionBtn
+            icon="person-outline"
+            label="Profile"
+            onPress={() => router.push("/account/profile" as never)}
+          />
+        </View>
+      </View>
+
+      {/* ── Recent Activity ────────────────────────────────────────── */}
+      <View style={s.bottomCard}>
+        <Text style={s.sectionTitle}>Recent Activity</Text>
+        {recentActivity.length > 0 ? (
+          recentActivity.map((item) => (
+            <ActivityRow
+              key={item.key}
+              icon={item.icon}
+              iconColor={item.iconColor}
+              iconBg={item.iconBg}
+              title={item.title}
+              actionText={item.actionText}
+              timestamp={item.timestamp}
+              onPress={() => router.push(item.href as never)}
+            />
+          ))
+        ) : (
+          <Text style={s.emptyText}>No recent activity</Text>
+        )}
+      </View>
+
+      {/* ── Creator Insight Card ───────────────────────────────────── */}
+      {trend.percent > 0 ? (
+        <View style={s.insightCard}>
+          <Text style={s.insightStar}>✨</Text>
+          <View style={s.insightLeft}>
+            <Text style={s.insightHeadline}>Keep the momentum going</Text>
+            <Text style={s.insightBody}>You're getting more plays this week.</Text>
+            <View style={s.insightTrend}>
+              <Ionicons name="arrow-up" size={12} color={tokens.colors.accent} />
+              <Text style={s.insightTrendText}>{trend.percent}% vs last 7 days</Text>
+            </View>
+          </View>
+          <View style={s.insightBarChart}>
+            {[0.4, 0.55, 0.45, 0.7, 0.6, 0.85, 1.0].map((ratio, i) => (
+              <View
+                key={i}
+                style={[
+                  s.insightBar,
+                  {
+                    height: Math.round(ratio * 48),
+                    backgroundColor: i >= 5 ? tokens.colors.accent : tokens.colors.secondaryAccent,
+                    opacity: 0.7 + ratio * 0.3,
+                  },
+                ]}
+              />
             ))}
           </View>
-        ) : (
-          <Text style={styles.emptyText}>No tracks uploaded yet. Start building your catalog.</Text>
-        )}
-      </Surface>
+        </View>
+      ) : null}
 
-      {/* Analytics Snapshot */}
-      <Surface tone="section" borderRadius="section" padding="lg" style={styles.analyticsSnapshot}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Analytics Snapshot</Text>
-          <AnimatedPressable onPress={() => router.push(ANALYTICS_HREF as never)}>
-            <Text style={styles.seeAll}>Full report</Text>
-          </AnimatedPressable>
-        </View>
-        <Text style={styles.snapshotPeriod}>Last 7 Days</Text>
-        
-        <View style={styles.snapshotGrid}>
-          <SnapshotTrend label="Plays" up={trendUp} />
-          <SnapshotTrend label="Revenue" up={revenue != null && revenue > 0} />
-          <SnapshotTrend label="Listeners" up={listeners > 0} />
-        </View>
-      </Surface>
-      
-      {/* Spacer for bottom tab bar */}
-      <View style={{ height: 100 }} />
+      <View style={{ height: 40 }} />
     </Screen>
   );
 }
 
-function ActionCard({ 
-  icon, 
-  label, 
-  onPress,
-  primary
-}: { 
-  icon: keyof typeof Ionicons.glyphMap; 
-  label: string; 
-  onPress: () => void;
-  primary?: boolean;
-}) {
-  return (
-    <AnimatedPressable style={[styles.actionCard, primary && styles.actionCardPrimary]} onPress={onPress}>
-      <Ionicons name={icon} size={20} color={primary ? tokens.colors.bgApp : tokens.colors.textPrimary} />
-      <Text style={[styles.actionCardLabel, primary && styles.actionCardLabelPrimary]}>{label}</Text>
-    </AnimatedPressable>
-  );
-}
+/* ─── styles ──────────────────────────────────────────────────────────────── */
 
-function SnapshotTrend({ label, up }: { label: string; up: boolean }) {
-  return (
-    <View style={styles.snapshotTrend}>
-      <Text style={styles.snapshotTrendLabel}>{label}</Text>
-      <View style={styles.trendIconRow}>
-        <Ionicons name={up ? "trending-up" : "remove"} size={16} color={up ? tokens.colors.success : tokens.colors.textSecondary} />
-      </View>
-    </View>
-  );
-}
+const CARD_BG = "#131820";
 
-function TrackRow({ track }: { track: DashboardTrackSummary }) {
-  return (
-    <AnimatedPressable
-      style={styles.trackRow}
-      onPress={() => router.push(`/catalog/tracks/${track.id}` as never)}
-    >
-      <View style={styles.trackArtWrap}>
-        {track.artworkUrl ? (
-          <Image source={{ uri: track.artworkUrl }} style={styles.trackArt} contentFit="cover" />
-        ) : (
-          <Ionicons name="musical-note" size={20} color={tokens.colors.textSecondary} />
-        )}
-      </View>
-      <View style={styles.trackCopy}>
-        <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
-        <Text style={styles.trackMeta} numberOfLines={1}>
-          {formatDuration(track.duration)}
-        </Text>
-      </View>
-      <View style={styles.statusPill}>
-        <Text style={styles.statusPillText}>{buildTrackStatusLabel(track)}</Text>
-      </View>
-    </AnimatedPressable>
-  );
-}
-
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   screen: {
     paddingHorizontal: 16,
-    paddingTop: 60,
+    gap: 14,
   },
-  header: {
-    marginBottom: 20,
+
+  /* welcome */
+  welcome: {
+    gap: 4,
+    paddingTop: 4,
   },
-  headerTitle: {
-    fontSize: 28,
+  welcomeTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 22,
     fontWeight: "800",
-    color: tokens.colors.textPrimary,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
-  kpiRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 24,
-  },
-  kpiCard: {
-    flex: 1,
-    minWidth: "45%",
-    gap: 8,
-  },
-  kpiLabel: {
-    fontSize: 12,
-    fontWeight: "600",
+  welcomeSubtitle: {
     color: tokens.colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontSize: 13,
+    fontWeight: "400",
   },
-  kpiValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: tokens.colors.textPrimary,
-    fontVariant: ["tabular-nums"],
+
+  /* overview */
+  overviewCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 18,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 12,
   },
-  actionCenter: {
-    marginBottom: 24,
-    gap: 16,
-  },
-  sectionHeader: {
+  overviewHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: 16,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: tokens.colors.textPrimary,
-  },
-  seeAll: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: tokens.colors.accent,
-  },
-  actionGrid: {
+  overviewPeriod: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    alignItems: "center",
+    gap: 4,
   },
-  actionCard: {
+  overviewPeriodText: {
+    color: tokens.colors.accent,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  metricsScroll: {
+    paddingHorizontal: 12,
+    gap: 8,
+    paddingBottom: 8,
+  },
+  metricCard: {
+    width: 130,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12,
+    padding: 12,
+    gap: 4,
+  },
+  metricLabel: {
+    color: tokens.colors.textSecondary,
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  metricValue: {
+    color: tokens.colors.textPrimary,
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    lineHeight: 30,
+  },
+  metricTrend: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  metricTrendText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  metricNoData: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "400",
+  },
+  metricSpark: {
+    marginTop: 8,
+  },
+
+  /* top row */
+  topRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  topCard: {
     flex: 1,
-    minWidth: "45%",
+    backgroundColor: CARD_BG,
+    borderRadius: 18,
+    padding: 14,
+    gap: 10,
+    position: "relative",
+  },
+  topCardTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  topTrackContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: tokens.colors.bgElevated,
-    padding: 16,
-    borderRadius: tokens.radii.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
   },
-  actionCardPrimary: {
-    backgroundColor: tokens.colors.accent,
-    borderColor: tokens.colors.accent,
+  topTrackArt: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    backgroundColor: tokens.colors.bgApp,
+    flexShrink: 0,
   },
-  actionCardLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: tokens.colors.textPrimary,
-  },
-  actionCardLabelPrimary: {
-    color: tokens.colors.bgApp,
-    fontWeight: "700",
-  },
-  recentTracks: {
-    marginBottom: 24,
-    gap: 16,
-  },
-  trackList: {
-    gap: 12,
-  },
-  trackRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  trackArtWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: tokens.radii.md,
-    backgroundColor: tokens.colors.bgElevated,
+  topTrackArtFallback: {
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
   },
-  trackArt: {
-    width: "100%",
-    height: "100%",
-  },
-  trackCopy: {
+  topTrackCopy: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
-  trackTitle: {
-    fontSize: 15,
-    fontWeight: "600",
+  topTrackName: {
     color: tokens.colors.textPrimary,
-  },
-  trackMeta: {
     fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 17,
+  },
+  topTrackArtist: {
     color: tokens.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginVertical: 1,
   },
-  statusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: tokens.colors.bgElevated,
-    borderRadius: tokens.radii.pill,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-  },
-  statusPillText: {
+  topTrackPlays: {
+    color: tokens.colors.accent,
     fontSize: 11,
     fontWeight: "600",
+  },
+  topCityContent: {
+    gap: 4,
+    flex: 1,
+  },
+  topCityName: {
+    color: tokens.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  topCityCount: {
     color: tokens.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  cityGraphic: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 3,
+    marginTop: 8,
+  },
+  cityBar: {
+    width: 10,
+    borderRadius: 3,
+    backgroundColor: tokens.colors.textSecondary,
   },
   emptyText: {
-    fontSize: 14,
     color: tokens.colors.textSecondary,
-    lineHeight: 20,
+    fontSize: 12,
+    fontWeight: "400",
   },
-  analyticsSnapshot: {
-    gap: 16,
+
+  /* action center */
+  actionCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 18,
+    padding: 16,
+    gap: 14,
   },
-  snapshotPeriod: {
-    fontSize: 13,
-    color: tokens.colors.textSecondary,
-    marginTop: -8,
-  },
-  snapshotGrid: {
+  actionRow: {
     flexDirection: "row",
-    gap: 16,
+    justifyContent: "space-around",
   },
-  snapshotTrend: {
+  actionBtn: {
     flex: 1,
-    gap: 8,
-    padding: 12,
-    backgroundColor: tokens.colors.bgElevated,
-    borderRadius: tokens.radii.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 14,
+    marginHorizontal: 4,
   },
-  snapshotTrendLabel: {
-    fontSize: 13,
+  actionIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  actionLabel: {
+    color: tokens.colors.textPrimary,
+    fontSize: 10,
     fontWeight: "600",
-    color: tokens.colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 14,
   },
-  trendIconRow: {
+
+  /* bottom row */
+  bottomRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+  },
+  bottomCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 18,
+    padding: 14,
+    gap: 10,
+  },
+
+  /* activity */
+  activityRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  activityIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  activityText: {
+    flex: 1,
+    gap: 2,
+  },
+  activityTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  activityTitleBold: {
+    fontWeight: "700",
+  },
+  activityTitleLight: {
+    fontWeight: "400",
+  },
+  activityTime: {
+    color: tokens.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: "400",
+  },
+
+
+
+  /* insight card */
+  insightCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 18,
+    padding: 18,
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
+  },
+  insightLeft: {
+    flex: 1,
+    gap: 6,
+  },
+  insightStar: {
+    fontSize: 22,
+    flexShrink: 0,
+  },
+  insightHeadline: {
+    color: tokens.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 18,
+  },
+  insightBody: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "400",
+    lineHeight: 17,
+  },
+  insightTrend: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  insightTrendText: {
+    color: tokens.colors.accent,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  insightBarChart: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 4,
+    flexShrink: 0,
+  },
+  insightBar: {
+    width: 10,
+    borderRadius: 4,
+  },
+
+  /* shared */
+  sectionTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

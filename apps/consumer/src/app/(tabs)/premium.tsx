@@ -3,15 +3,13 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Linking,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable, Skeleton } from "@micboxx/ui";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { env } from "@/config/env";
 import type {
@@ -218,7 +216,7 @@ export default function PremiumScreen() {
   const manageUrl = joinWebUrl("/account/subscription");
 
   const openUrl = (url: string | null) => {
-    if (url) void Linking.openURL(url);
+    if (url) void import("react-native").then(rn => rn.Linking.openURL(url));
   };
 
   if (loading) {
@@ -230,7 +228,9 @@ export default function PremiumScreen() {
           leftIcon="menu"
         />
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={tokens.colors.accent} />
+          <Skeleton width={140} height={20} borderRadius={10} />
+          <Skeleton width="100%" height={260} borderRadius={8} />
+          <Skeleton width="100%" height={260} borderRadius={8} />
         </View>
       </SafeAreaView>
     );
@@ -243,11 +243,7 @@ export default function PremiumScreen() {
         subtitle="Plans and access"
         leftIcon="menu"
       />
-
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={styles.heroWrap}>
           {hasActivePlan && entitlement ? (

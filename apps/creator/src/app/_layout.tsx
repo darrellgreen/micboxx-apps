@@ -124,6 +124,26 @@ export default function RootLayout() {
                       name="(tabs)"
                       options={{ headerShown: false }}
                     />
+                    <Stack.Screen
+                      name="audience"
+                      options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                        contentStyle: {
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                    />
+                    <Stack.Screen
+                      name="rooms/[albumId]"
+                      options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                        contentStyle: {
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                    />
                   </Stack>
                   <StatusBar style="light" />
                 </View>

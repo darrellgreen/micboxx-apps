@@ -4,7 +4,8 @@ import { Text, View, StyleSheet } from "react-native";
 
 import type { DashboardTrack } from "@/contracts/creator";
 import { getTrackStatus, publishTrack, requeueTrack, unpublishTrack } from "@/shared/api/creator-dashboard";
-import { ErrorState, KeyValueRow, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, KeyValueRow, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 export default function TrackDetailScreen() {
   const { trackId } = useLocalSearchParams<{ trackId?: string }>();
@@ -46,7 +47,7 @@ export default function TrackDetailScreen() {
   }
 
   return (
-    <ScreenShell title="Track detail" subtitle="Track-level status, metadata, and operational actions.">
+    <Screen header={<AppHeader variant="detail" title="Track Detail" fallbackRoute="/(tabs)/catalog" />}>
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading || !track ? (
         <Panel title="Loading track" description="Reading the current dashboard track payload." />
@@ -78,7 +79,7 @@ export default function TrackDetailScreen() {
           ) : null}
         </>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 

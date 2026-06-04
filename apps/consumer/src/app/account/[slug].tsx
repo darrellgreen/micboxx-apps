@@ -22,6 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
+import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
 import { Avatar } from "@micboxx/ui";
 import { Pill } from "@micboxx/ui";
 import { ShimmerPlaceholder } from "@micboxx/ui";
@@ -786,17 +787,7 @@ export default function AccountDestinationScreen() {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.headerButton}>
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={tokens.colors.textPrimary}
-          />
-        </Pressable>
-        <Text style={styles.headerTitle}>{meta.title}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <DetailRouteHeader title={meta.title} fallbackRoute="/(tabs)/account" />
 
       <ScrollView
         contentContainerStyle={[

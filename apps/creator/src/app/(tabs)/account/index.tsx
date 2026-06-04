@@ -1,11 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
+import { Screen, AnimatedPressable, Avatar } from "@micboxx/ui";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { Avatar } from "@micboxx/ui";
-import { AnimatedPressable } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { tokens } from "@micboxx/theme";
 
@@ -73,18 +70,13 @@ export default function AccountHomeScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <Screen contentContainerStyle={styles.scroll}>
       <View style={styles.headerWrap}>
         <ScreenHeader
           title="Account"
           subtitle="Profile, settings, and creator access"
         />
       </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
         <AnimatedPressable
           onPress={() => router.push("/account/profile")}
           haptic="selection"
@@ -155,16 +147,11 @@ export default function AccountHomeScreen() {
             </AnimatedPressable>
           ))}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
   headerWrap: {
     paddingHorizontal: 16,
     paddingBottom: 4,

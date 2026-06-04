@@ -1,14 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
 import {
-    ActivityIndicator,
     FlatList,
-    Pressable,
     StyleSheet,
-    Text,
     View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Screen, AppHeader, ErrorState, EmptyState, Skeleton, AnimatedPressable } from "@micboxx/ui";
 
 import { useAuth } from "@/features/auth/provider";
 import { InboxRow } from "@/features/social/components/InboxRow";
@@ -19,72 +16,55 @@ export default function MessagesInboxScreen() {
   const { session, signIn, isSigningIn } = useAuth();
   const { items, loading, error, isReady, canRetry, retry } = useInbox();
 
+  const composeButton = (
+    <AnimatedPressable
+      onPress={() => router.push("/messages/new")}
+      style={styles.iconButton}
+    >
+      <Ionicons
+        name="create-outline"
+        size={20}
+        color={tokens.colors.textPrimary}
+      />
+    </AnimatedPressable>
+  );
+
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <Screen
+      scroll={false}
+      noPaddingHorizontal={true}
+      header={<AppHeader variant="detail" title="Messages" fallbackRoute="/(tabs)/account" rightContent={composeButton} />}
+    >
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.iconButton}>
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={tokens.colors.textPrimary}
-          />
-        </Pressable>
-        <Text style={styles.title}>Messages</Text>
-        <Pressable
-          onPress={() => router.push("/messages/new")}
-          style={styles.iconButton}
-        >
-          <Ionicons
-            name="create-outline"
-            size={18}
-            color={tokens.colors.textPrimary}
-          />
-        </Pressable>
-      </View>
-
       {!session ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyTitle}>Sign in required</Text>
-          <Text style={styles.emptyText}>
-            Direct messages are available once your MicBoxx account is signed
-            in.
-          </Text>
-          <Pressable
-            onPress={() => void signIn()}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            {isSigningIn ? (
-              <ActivityIndicator color={tokens.colors.textPrimary} />
-            ) : (
-              <Text style={styles.primaryButtonLabel}>Sign in</Text>
-            )}
-          </Pressable>
-        </View>
+        <EmptyState
+          icon="lock-closed-outline"
+          title="Sign in required"
+          description="Direct messages are available once your MicBoxx account is signed in."
+          action={{
+            label: "Sign in",
+            onPress: () => void signIn(),
+            loading: isSigningIn,
+          }}
+        />
       ) : error ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyTitle}>Unable to load messages</Text>
-          <Text style={styles.emptyText}>{error}</Text>
-          {canRetry ? (
-            <Pressable
-              onPress={retry}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonLabel}>Retry</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <ErrorState
+          title="Unable to load messages"
+          message={error}
+          onRetry={canRetry ? retry : undefined}
+        />
       ) : loading || !isReady ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={tokens.colors.accent} />
-          <Text style={styles.emptyText}>Connecting your inbox…</Text>
+        <View style={styles.listContent}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <View key={`message-skeleton-${index}`} style={styles.skeletonRow}>
+              <Skeleton width={44} height={44} borderRadius={22} />
+              <View style={styles.skeletonCopy}>
+                <Skeleton width="64%" height={12} borderRadius={6} />
+                <Skeleton width="40%" height={10} borderRadius={6} />
+              </View>
+            </View>
+          ))}
         </View>
       ) : (
         <FlatList
@@ -99,25 +79,18 @@ export default function MessagesInboxScreen() {
             />
           )}
           ListEmptyComponent={
-            <View style={styles.center}>
-              <Text style={styles.emptyTitle}>No conversations yet</Text>
-              <Text style={styles.emptyText}>
-                Your direct messages will appear here once you start chatting
-                with artists.
-              </Text>
-            </View>
+            <EmptyState
+              title="No conversations yet"
+              description="Your direct messages will appear here once you start chatting with artists."
+            />
           }
         />
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -139,6 +112,17 @@ const styles = StyleSheet.create({
     color: tokens.colors.textPrimary,
     fontSize: 20,
     fontWeight: "800",
+  },
+  skeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 10,
+    paddingHorizontal: 16,
+  },
+  skeletonCopy: {
+    flex: 1,
+    gap: 8,
   },
   primaryButton: {
     minWidth: 132,

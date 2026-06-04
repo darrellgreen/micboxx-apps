@@ -3,15 +3,8 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Screen, Skeleton } from "@micboxx/ui";
 import { notifyDeepLinkCallback } from "@/features/auth/api";
 import { tokens } from "@micboxx/theme";
 
@@ -42,7 +35,7 @@ export default function AuthCallbackScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
+    <Screen scroll={false}>
       <View style={s.topBar}>
         <Pressable
           style={s.closeBtn}
@@ -60,15 +53,17 @@ export default function AuthCallbackScreen() {
         </Pressable>
       </View>
       <View style={s.body}>
-        <ActivityIndicator size="large" color={tokens.colors.accent} />
-        <Text style={s.label}>Completing sign in…</Text>
+        <Skeleton width={80} height={80} borderRadius={40} />
+        <View style={s.labelStack}>
+          <Skeleton width={140} height={20} borderRadius="section" />
+          <Skeleton width={100} height={16} borderRadius="section" />
+        </View>
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
   topBar: {
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -88,8 +83,9 @@ const s = StyleSheet.create({
     justifyContent: "center",
     gap: 16,
   },
-  label: {
-    color: tokens.colors.textSecondary,
-    fontSize: 15,
+  labelStack: {
+    alignItems: "center",
+    gap: 8,
+    marginTop: 16,
   },
 });

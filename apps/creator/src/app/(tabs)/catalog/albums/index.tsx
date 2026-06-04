@@ -12,7 +12,8 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 type AlbumFilter = "all" | "draft" | "scheduled" | "published";
@@ -94,17 +95,17 @@ export default function AlbumsListScreen() {
   );
 
   return (
-    <ScreenShell
-      title="Albums"
-      subtitle="Album entities with release-state filters and membership health."
-      actions={
+    <Screen
+      header={<AppHeader variant="detail" title="Albums" fallbackRoute="/(tabs)/catalog" />}
+      contentContainerStyle={styles.screenContent}
+    >
+      <View style={styles.actionsRow}>
         <PillButton
           label="Create album"
           tone="accent"
           onPress={() => router.push("/create/album")}
         />
-      }
-    >
+      </View>
       <ChipTabs
         value={filter}
         onChange={(value) =>
@@ -187,11 +188,20 @@ export default function AlbumsListScreen() {
           ))}
         </ListShell>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   rowMain: {
     flexDirection: "row",
     alignItems: "center",

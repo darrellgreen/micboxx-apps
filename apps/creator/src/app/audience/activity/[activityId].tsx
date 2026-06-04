@@ -1,7 +1,8 @@
-import { useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 
 import { useNotifications } from "@/features/social/hooks/useNotifications";
-import { EmptyState, KeyValueRow, Panel, ScreenShell } from "@/shared/ui/layout";
+import { EmptyState, KeyValueRow, Panel } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 export default function AudienceActivityDetailScreen() {
   const { activityId } = useLocalSearchParams<{ activityId?: string }>();
@@ -9,7 +10,11 @@ export default function AudienceActivityDetailScreen() {
   const item = notifications.items.find((entry) => entry.id === activityId);
 
   return (
-    <ScreenShell title="Activity detail" subtitle="The underlying notification payload for this audience event.">
+    <Screen
+      header={<AppHeader variant="detail" title="Activity" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    >
+      <Stack.Screen options={{ headerShown: false }} />
       {item ? (
         item.source === "social" ? (
           <Panel title={item.type} description={item.raw.messagePreview ?? item.raw.commentPreview ?? item.raw.trackTitle ?? "Creator activity"}>
@@ -26,6 +31,6 @@ export default function AudienceActivityDetailScreen() {
       ) : (
         <EmptyState title="Activity not found" description="This activity item is no longer in the current notification window." />
       )}
-    </ScreenShell>
+    </Screen>
   );
 }

@@ -4,7 +4,8 @@ import { View, Text, StyleSheet } from "react-native";
 
 import type { DashboardAlbum } from "@/contracts/creator";
 import { getAlbumStatus, publishAlbum, unpublishAlbum } from "@/shared/api/creator-dashboard";
-import { ErrorState, KeyValueRow, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, KeyValueRow, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 export default function AlbumDetailScreen() {
   const { albumId } = useLocalSearchParams<{ albumId?: string }>();
@@ -42,7 +43,10 @@ export default function AlbumDetailScreen() {
   }
 
   return (
-    <ScreenShell title="Album detail" subtitle="Album-level release state, track membership, and publish actions.">
+    <Screen
+      header={<AppHeader variant="detail" title="Album" fallbackRoute="/(tabs)/catalog" />}
+      contentContainerStyle={styles.screenContent}
+    >
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading || !album ? (
         <Panel title="Loading album" description="Reading the current dashboard album payload." />
@@ -70,11 +74,15 @@ export default function AlbumDetailScreen() {
           </Panel>
         </>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",

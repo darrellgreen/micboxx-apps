@@ -12,7 +12,8 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 type TrackFilter = "all" | "draft" | "scheduled" | "published" | "failed";
@@ -101,17 +102,17 @@ export default function TracksListScreen() {
   );
 
   return (
-    <ScreenShell
-      title="Tracks"
-      subtitle="Entity-first track management with release-state filters and operational status."
-      actions={
+    <Screen
+      header={<AppHeader variant="detail" title="Tracks" fallbackRoute="/(tabs)/catalog" />}
+      contentContainerStyle={styles.screenContent}
+    >
+      <View style={styles.actionsRow}>
         <PillButton
           label="Upload track"
           tone="accent"
           onPress={() => router.push("/create")}
         />
-      }
-    >
+      </View>
       <ChipTabs
         value={filter}
         onChange={(value) =>
@@ -206,11 +207,20 @@ export default function TracksListScreen() {
           ))}
         </ListShell>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   rowMain: {
     flexDirection: "row",
     alignItems: "center",

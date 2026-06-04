@@ -1,14 +1,18 @@
 import { router } from "expo-router";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { EmptyState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { EmptyState, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 export default function SelectAlbumScreen() {
   const bootstrap = useCreatorBootstrap();
   const albums = bootstrap.uploadOptions?.albums ?? [];
 
   return (
-    <ScreenShell title="Choose album" subtitle="Track uploads must be attached to an existing album in the current MicBoxx backend.">
+    <Screen
+      header={<AppHeader variant="detail" title="Select Album" fallbackRoute="/(tabs)/create" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    >
       {albums.length === 0 ? (
         <EmptyState title="No albums yet" description="Create an album first, then return here to upload a track." />
       ) : (
@@ -19,6 +23,6 @@ export default function SelectAlbumScreen() {
         ))
       )}
       <PillButton label="Create album" onPress={() => router.push("/create/album")} />
-    </ScreenShell>
+    </Screen>
   );
 }

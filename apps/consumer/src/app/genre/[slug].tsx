@@ -9,11 +9,11 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
+import { Screen, EmptyState, ErrorState, Skeleton } from "@micboxx/ui";
 import { SectionHeader, TrackRow } from "@/components/discover";
 import { ArtistCard } from "@micboxx/media";
 import type { PublicArtistSummary, PublicTrackSummary } from "@micboxx/contracts";
+import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
 import { resolveAlbumRoute, resolveUserRoute } from "@micboxx/utils";
 import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
 import { formatDuration } from "@micboxx/api";
@@ -176,23 +176,25 @@ export default function GenreTagScreen() {
 
   if (!slug) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <Screen scroll={false}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.loadingWrap}>
-          <Text style={styles.emptyTitle}>Genre unavailable</Text>
-        </View>
-      </SafeAreaView>
+        <EmptyState title="Genre unavailable" description="No genre slug was provided." />
+      </Screen>
     );
   }
 
   if (discoverLoading && !searchData) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <Screen scroll={false}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={tokens.colors.accent} />
+        <View style={[styles.scrollContent, { paddingHorizontal: 16, paddingTop: 16 }]}>
+          <Skeleton width={140} height={20} borderRadius={10} />
+          <View style={{ marginTop: 12, gap: 8 }}>
+            <Skeleton width="100%" height={100} borderRadius={12} />
+            <Skeleton width="100%" height={100} borderRadius={12} />
+          </View>
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
@@ -200,27 +202,11 @@ export default function GenreTagScreen() {
   const hasError = Boolean(discoverError || searchError) && !hasContent;
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <Screen contentContainerStyle={styles.scrollContent}>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.topBar}>
-          <Pressable
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-                return;
-              }
-              router.replace("/(tabs)/search");
-            }}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-          >
-            <Ionicons name="arrow-back" size={18} color={tokens.colors.textPrimary} />
-          </Pressable>
-        </View>
+      <View style={styles.topBar}>
+        <DetailRouteHeader title="Genre" fallbackRoute="/(tabs)/search" />
+      </View>
 
         <View style={styles.heroCard}>
           <Text style={styles.kicker}>Genre</Text>
@@ -231,28 +217,19 @@ export default function GenreTagScreen() {
         </View>
 
         {hasError ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Unable to load this genre</Text>
-            <Text style={styles.emptyBody}>
-              Genre results could not be loaded right now. Try again in a moment.
-            </Text>
-            <Pressable
-              onPress={() => {
-                void refetchDiscover();
-                void refetchSearch();
-              }}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.primaryButtonLabel}>Retry</Text>
-            </Pressable>
-          </View>
+          <ErrorState
+            title="Unable to load this genre"
+            message="Genre results could not be loaded right now. Try again in a moment."
+            onRetry={() => {
+              void refetchDiscover();
+              void refetchSearch();
+            }}
+          />
         ) : !hasContent && !searchFetching ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No results in this genre yet</Text>
-            <Text style={styles.emptyBody}>
-              Tracks, albums, and artists will appear here once more catalog items are tagged with {genreLabel}.
-            </Text>
-          </View>
+          <EmptyState
+            title="No results in this genre yet"
+            description={`Tracks, albums, and artists will appear here once more catalog items are tagged with ${genreLabel}.`}
+          />
         ) : (
           <View style={styles.resultsWrap}>
             {tracks.length ? (
@@ -318,8 +295,7 @@ export default function GenreTagScreen() {
             ) : null}
           </View>
         )}
-      </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -360,8 +336,6 @@ function CollectionResultCard({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
-  scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 10,

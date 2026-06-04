@@ -14,9 +14,10 @@ import Svg, {
 } from "react-native-svg";
 
 import type { DashboardAnalyticsPeriod } from "@/contracts/creator";
-import { AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { ErrorState, Panel, ScreenShell } from "@/shared/ui/layout";
+import { ScreenHeader } from "@/components/navigation/ScreenHeader";
+import { ErrorState, Panel } from "@/shared/ui/layout";
 import { tokens } from "@micboxx/theme";
 
 const PERIOD_OPTIONS: DashboardAnalyticsPeriod[] = ["7d", "30d", "90d"];
@@ -230,18 +231,15 @@ export default function DashboardAnalyticsScreen() {
 
   if (!analytics) {
     return (
-      <ScreenShell
-        title=""
-        subtitle=""
-        headerTitle="Analytics"
-        headerSubtitle="Performance insights"
-        contentStyle={styles.screenContent}
+      <Screen
+        header={<ScreenHeader title="Analytics" subtitle="Performance insights" />}
+        contentContainerStyle={styles.screenContent}
       >
         <Panel
           title="Analytics unavailable"
           description="Live analytics has not loaded yet. Check your session and backend connectivity."
         />
-      </ScreenShell>
+      </Screen>
     );
   }
 
@@ -261,12 +259,9 @@ export default function DashboardAnalyticsScreen() {
   const planIsLocked = analytics.revenue?.sellingLocked ?? false;
 
   return (
-    <ScreenShell
-      title=""
-      subtitle=""
-      headerTitle="Analytics"
-      headerSubtitle="Performance insights"
-      contentStyle={styles.screenContent}
+    <Screen
+      header={<ScreenHeader title="Analytics" subtitle="Performance insights" />}
+      contentContainerStyle={styles.screenContent}
     >
         {bootstrap.error ? (
           <ErrorState message={bootstrap.error} onRetry={() => void bootstrap.refetch()} />
@@ -862,12 +857,13 @@ export default function DashboardAnalyticsScreen() {
             />
           </View>
         )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   screenContent: {
+    paddingHorizontal: 16,
     gap: 16,
   },
   heroShell: {

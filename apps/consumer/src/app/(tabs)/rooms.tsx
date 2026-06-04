@@ -19,6 +19,7 @@ import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import type { PublicRoomSummary } from "@micboxx/contracts";
 import { useGetPublicRoomsQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
+import { Skeleton, ErrorState, EmptyState } from "@micboxx/ui";
 
 function roomKey(room: PublicRoomSummary): string {
   return room.release_identifier || `${room.release_ref_type}:${room.release_ref_id}`;
@@ -135,41 +136,25 @@ export default function RoomsScreen() {
         </View>
 
         {isLoading ? (
-          <View style={styles.statusCard}>
-            <ActivityIndicator color={tokens.colors.accent} />
-            <Text style={styles.statusText}>Loading Rooms...</Text>
+          <View style={{ gap: 14 }}>
+            <Skeleton width={140} height={20} borderRadius={10} />
+            <Skeleton width="100%" height={260} borderRadius={8} />
+            <Skeleton width="100%" height={260} borderRadius={8} />
           </View>
         ) : null}
 
         {hasError ? (
-          <View style={styles.statusCard}>
-            <Ionicons
-              name="alert-circle-outline"
-              size={24}
-              color={tokens.colors.warning}
-            />
-            <Text style={styles.statusTitle}>Rooms are unavailable</Text>
-            <Text style={styles.statusText}>
-              We could not load public room discovery from the server.
-            </Text>
-          </View>
+          <ErrorState
+            title="Rooms are unavailable"
+            message="We could not load public room discovery from the server."
+          />
         ) : null}
 
         {!isLoading && !hasError && !hasRooms ? (
-          <View style={styles.statusCard}>
-            <SoundwaveTabIcon size={28} color={tokens.colors.accent} />
-            <Text style={styles.statusTitle}>No public Rooms right now</Text>
-            <Text style={styles.statusText}>
-              Rooms will appear here as listeners open releases and real
-              activity begins.
-            </Text>
-            <Pressable
-              onPress={() => router.push("/(tabs)/home" as never)}
-              style={styles.emptyAction}
-            >
-              <Text style={styles.emptyActionText}>Browse music</Text>
-            </Pressable>
-          </View>
+          <EmptyState
+            title="No public Rooms right now"
+            description="Rooms will appear here as listeners open releases and real activity begins."
+          />
         ) : null}
 
         {activeRooms.length > 0 ? (

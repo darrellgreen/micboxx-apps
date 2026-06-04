@@ -1,16 +1,17 @@
 import { Text, StyleSheet } from "react-native";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { KeyValueRow, Panel, ScreenShell } from "@/shared/ui/layout";
+import { KeyValueRow, Panel } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function ReleaseHealthScreen() {
   const bootstrap = useCreatorBootstrap();
 
   return (
-    <ScreenShell
-      title="Release health"
-      subtitle="A summary of drafts, scheduled releases, failed processing, and published readiness."
+    <Screen
+      header={<AppHeader variant="detail" title="Release Health" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={styles.screenContent}
     >
       <Panel title="Catalog readiness">
         <KeyValueRow
@@ -44,11 +45,15 @@ export default function ReleaseHealthScreen() {
           and Create, while Dashboard only calls out what needs attention.
         </Text>
       </Panel>
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   copy: {
     color: tokens.colors.textSecondary,
     fontSize: 14,

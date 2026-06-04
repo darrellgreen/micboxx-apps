@@ -5,7 +5,8 @@ import { AnimatedPressable } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { buildPayoutReadinessSummary } from "@/features/revenue/insights";
 import { getCreatorUpgradeUrl } from "@/shared/api/external-links";
-import { KeyValueRow, Panel, ScreenShell } from "@/shared/ui/layout";
+import { KeyValueRow, Panel } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function MonetizationScreen() {
@@ -15,9 +16,9 @@ export default function MonetizationScreen() {
   const payoutReadiness = buildPayoutReadinessSummary(revenue);
 
   return (
-    <ScreenShell
-      title="Monetization"
-      subtitle="A creator-facing summary of what the current plan and catalog can monetize."
+    <Screen
+      header={<AppHeader variant="detail" title="Monetization" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={styles.screenContent}
     >
       <Panel title="Plan and access">
         <KeyValueRow
@@ -76,7 +77,7 @@ export default function MonetizationScreen() {
           </Text>
         </Panel>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
@@ -93,6 +94,10 @@ function formatReadinessState(state: "ready" | "needs_action" | "blocked") {
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   copy: {
     color: tokens.colors.textSecondary,
     fontSize: 14,

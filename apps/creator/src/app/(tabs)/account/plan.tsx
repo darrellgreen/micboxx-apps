@@ -8,7 +8,8 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { Panel, PillButton, ScreenShell, SectionTitle } from "@/shared/ui/layout";
+import { Panel, PillButton, SectionTitle } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function PlanScreen() {
@@ -23,9 +24,9 @@ export default function PlanScreen() {
     trackLimit == null ? "Unlimited" : String(Math.max(0, trackLimit - tracksUsed));
 
   return (
-    <ScreenShell
-      title="Plan and access"
-      subtitle="Business access snapshot for creator capabilities, limits, and upgrade handoff."
+    <Screen
+      header={<AppHeader variant="detail" title="Plan" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={styles.screenContent}
     >
       <View style={styles.heroRow}>
         <View style={styles.heroCard}>
@@ -101,11 +102,15 @@ export default function PlanScreen() {
           />
         ) : null}
       </Panel>
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   heroRow: {
     flexDirection: "row",
     gap: 12,

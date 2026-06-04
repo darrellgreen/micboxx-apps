@@ -4,7 +4,8 @@ import { Text, StyleSheet, View } from "react-native";
 
 import type { DashboardTrack } from "@/contracts/creator";
 import { getTrackStatus, requeueTrack } from "@/shared/api/creator-dashboard";
-import { ErrorState, KeyValueRow, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, KeyValueRow, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function UploadProgressScreen() {
@@ -40,7 +41,10 @@ export default function UploadProgressScreen() {
   }
 
   return (
-    <ScreenShell title="Upload progress" subtitle="Background processing state for the uploaded track.">
+    <Screen
+      header={<AppHeader variant="detail" title="Upload Progress" fallbackRoute="/(tabs)/create" />}
+      contentContainerStyle={styles.screenContent}
+    >
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading || !track ? (
         <Panel title="Loading upload status" description="Reading current processing state." />
@@ -64,11 +68,15 @@ export default function UploadProgressScreen() {
           </View>
         </>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",

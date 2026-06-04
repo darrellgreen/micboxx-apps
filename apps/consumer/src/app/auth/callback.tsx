@@ -17,14 +17,8 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect } from "react";
-import {
-    ActivityIndicator,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Screen, Skeleton } from "@micboxx/ui";
 
 import { notifyDeepLinkCallback } from "@/features/auth/api";
 import { tokens } from "@micboxx/theme";
@@ -57,7 +51,7 @@ export default function AuthCallbackScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
+    <Screen scroll={false} safeAreaEdges={["top", "bottom"]}>
       <View style={s.topBar}>
         <Pressable
           style={s.closeBtn}
@@ -74,15 +68,20 @@ export default function AuthCallbackScreen() {
         </Pressable>
       </View>
       <View style={s.body}>
-        <ActivityIndicator size="large" color={tokens.colors.accent} />
+        <View style={s.skeletonRow}>
+          <Skeleton width={48} height={48} borderRadius={24} />
+          <View style={s.skeletonCopy}>
+            <Skeleton width="60%" height={14} borderRadius={6} />
+            <Skeleton width="40%" height={10} borderRadius={6} />
+          </View>
+        </View>
         <Text style={s.label}>Completing sign in…</Text>
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
   topBar: {
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -103,7 +102,19 @@ const s = StyleSheet.create({
     gap: 16,
   },
   label: {
+    marginTop: 24,
     color: tokens.colors.textSecondary,
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  skeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    width: 240,
+  },
+  skeletonCopy: {
+    flex: 1,
+    gap: 8,
   },
 });

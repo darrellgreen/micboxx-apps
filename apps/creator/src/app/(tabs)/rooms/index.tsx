@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -12,7 +13,9 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, Panel, PillButton } from "@/shared/ui/layout";
+import { Screen } from "@micboxx/ui";
+import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { formatRelativeTime } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
@@ -81,24 +84,7 @@ export default function RoomsIndexScreen() {
   );
 
   return (
-    <ScreenShell
-      title="Live Rooms"
-      subtitle="Manage release Rooms and start listener-facing drop-ins. Broadcast publishing comes next."
-      actions={
-        <PillButton
-          label="Refresh"
-          onPress={() => {
-            setItems([]);
-            setLoading(true);
-            setError(null);
-            void getCreatorRoomList()
-              .then(setItems)
-              .catch((nextError) => setError(nextError instanceof Error ? nextError.message : "Unable to load Rooms."))
-              .finally(() => setLoading(false));
-          }}
-        />
-      }
-    >
+    <Screen header={<ScreenHeader title="Live Rooms" />} contentContainerStyle={styles.screenContent}>
       <ChipTabs
         value={filter}
         onChange={(next) => setFilter(next as RoomFilter)}
@@ -134,7 +120,11 @@ export default function RoomsIndexScreen() {
             >
               <View style={styles.row}>
                 <View style={styles.iconWrap}>
-                  <Ionicons name="radio-outline" size={18} color={tokens.colors.accent} />
+                  {item.artwork_url ? (
+                    <Image source={{ uri: item.artwork_url }} style={styles.artwork} contentFit="cover" />
+                  ) : (
+                    <Ionicons name="radio-outline" size={18} color={tokens.colors.accent} />
+                  )}
                 </View>
                 <View style={styles.copy}>
                   <Text style={styles.title} numberOfLines={1}>{item.release_title}</Text>
@@ -148,11 +138,15 @@ export default function RoomsIndexScreen() {
           ))}
         </ListShell>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   row: {
     alignItems: "center",
     flexDirection: "row",
@@ -160,11 +154,16 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     alignItems: "center",
-    borderRadius: tokens.radii.pill,
+    borderRadius: tokens.radii.md,
     backgroundColor: tokens.colors.accentDim,
     height: 34,
     justifyContent: "center",
     width: 34,
+    overflow: "hidden",
+  },
+  artwork: {
+    width: "100%",
+    height: "100%",
   },
   copy: {
     flex: 1,

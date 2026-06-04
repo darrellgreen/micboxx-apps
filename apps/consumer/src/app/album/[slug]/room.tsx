@@ -17,6 +17,7 @@ import { useMobileRoom } from "@/features/rooms/hooks/useMobileRoom";
 import { LiveVideoTakeoverSurface } from "@/features/rooms/live-video/LiveVideoTakeoverSurface";
 import { useGetAlbumPageQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
+import { Skeleton } from "@micboxx/ui";
 
 function normalizeParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -69,7 +70,9 @@ export default function AlbumRoomScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator style={styles.loading} color={tokens.colors.accent} />
+        <View style={[styles.loading, { padding: 20, paddingTop: 60 }]}>
+           <Skeleton width="100%" height={300} borderRadius={16} />
+        </View>
       </SafeAreaView>
     );
   }

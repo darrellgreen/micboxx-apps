@@ -11,9 +11,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { Avatar } from "@micboxx/ui";
+import { AppHeader, Screen, Skeleton, EmptyState, ErrorState, Avatar } from "@micboxx/ui";
 import type { PublicArtistSummary } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { getOrCreateConversation } from "@/features/social/dm-service";
@@ -120,46 +118,20 @@ export default function NewConversationScreen() {
   const showRecentConversations = !showSearchResults && Boolean(session);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <Screen scroll={false} noPaddingHorizontal={true} header={<AppHeader variant="flow" title="New message" fallbackRoute="/messages" />}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.iconButton}>
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={tokens.colors.textPrimary}
-          />
-        </Pressable>
-        <Text style={styles.title}>New message</Text>
-        <View style={styles.iconButtonPlaceholder} />
-      </View>
-
       {!session ? (
-        <View style={styles.centerState}>
-          <Ionicons
-            name="mail-open-outline"
-            size={34}
-            color={tokens.colors.accent}
-          />
-          <Text style={styles.stateTitle}>Sign in to send messages</Text>
-          <Text style={styles.stateBody}>
-            Direct messages require your MicBoxx account and social session.
-          </Text>
-          <Pressable
-            onPress={() => void signIn()}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            {isSigningIn ? (
-              <ActivityIndicator color={tokens.colors.textPrimary} />
-            ) : (
-              <Text style={styles.primaryButtonLabel}>Sign in</Text>
-            )}
-          </Pressable>
-        </View>
+        <EmptyState
+          icon="mail-open-outline"
+          title="Sign in to send messages"
+          description="Direct messages require your MicBoxx account and social session."
+          action={{
+            label: "Sign in",
+            onPress: () => void signIn(),
+            loading: isSigningIn,
+          }}
+        />
       ) : (
         <>
           <View style={styles.searchWrap}>
@@ -204,26 +176,22 @@ export default function NewConversationScreen() {
 
           {showSearchResults ? (
             searchError ? (
-              <View style={styles.centerState}>
-                <Text style={styles.stateTitle}>Search is unavailable</Text>
-                <Text style={styles.stateBody}>
-                  We could not load artist results right now. Try again in a
-                  moment.
-                </Text>
-                <Pressable
-                  onPress={() => void refetchSearch()}
-                  style={({ pressed }) => [
-                    styles.secondaryButton,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.secondaryButtonLabel}>Retry search</Text>
-                </Pressable>
-              </View>
+              <ErrorState
+                title="Search is unavailable"
+                message="We could not load artist results right now. Try again in a moment."
+                onRetry={() => void refetchSearch()}
+              />
             ) : searchFetching && !searchData ? (
-              <View style={styles.centerState}>
-                <ActivityIndicator color={tokens.colors.accent} />
-                <Text style={styles.stateBody}>Searching artists…</Text>
+              <View style={styles.listContent}>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <View key={`search-skeleton-${index}`} style={styles.skeletonRow}>
+                    <Skeleton width={48} height={48} borderRadius={24} />
+                    <View style={styles.skeletonCopy}>
+                      <Skeleton width="50%" height={12} borderRadius={6} />
+                      <Skeleton width="30%" height={10} borderRadius={6} />
+                    </View>
+                  </View>
+                ))}
               </View>
             ) : artistResults.length ? (
               <FlatList
@@ -273,12 +241,10 @@ export default function NewConversationScreen() {
                 }}
               />
             ) : (
-              <View style={styles.centerState}>
-                <Text style={styles.stateTitle}>No artist matches</Text>
-                <Text style={styles.stateBody}>
-                  Try a display name or username to start a conversation.
-                </Text>
-              </View>
+              <EmptyState
+                title="No artist matches"
+                description="Try a display name or username to start a conversation."
+              />
             )
           ) : showRecentConversations ? (
             <FlatList
@@ -297,38 +263,34 @@ export default function NewConversationScreen() {
                 <Text style={styles.sectionLabel}>Recent conversations</Text>
               }
               ListEmptyComponent={
-                <View style={styles.centerState}>
-                  {inboxLoading || !inboxReady || authPending ? (
-                    <>
-                      <ActivityIndicator color={tokens.colors.accent} />
-                      <Text style={styles.stateBody}>
-                        Preparing your messaging inbox…
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={styles.stateTitle}>No conversations yet</Text>
-                      <Text style={styles.stateBody}>
-                        Search for an artist or listener above to start your
-                        first direct message.
-                      </Text>
-                    </>
-                  )}
-                </View>
+                inboxLoading || !inboxReady || authPending ? (
+                  <View style={styles.listContent}>
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <View key={`inbox-skeleton-${index}`} style={styles.skeletonRow}>
+                        <Skeleton width={44} height={44} borderRadius={22} />
+                        <View style={styles.skeletonCopy}>
+                          <Skeleton width="60%" height={12} borderRadius={6} />
+                          <Skeleton width="40%" height={10} borderRadius={6} />
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <EmptyState
+                    title="No conversations yet"
+                    description="Search for an artist or listener above to start your first direct message."
+                  />
+                )
               }
             />
           ) : null}
         </>
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -467,6 +429,17 @@ const styles = StyleSheet.create({
     color: tokens.colors.textPrimary,
     fontSize: 14,
     fontWeight: "700",
+  },
+  skeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 10,
+    paddingHorizontal: 16,
+  },
+  skeletonCopy: {
+    flex: 1,
+    gap: 8,
   },
   pressed: {
     opacity: 0.82,

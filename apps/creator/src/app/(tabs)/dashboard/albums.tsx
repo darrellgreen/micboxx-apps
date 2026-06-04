@@ -11,7 +11,8 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { formatDuration, formatRelativeTime } from "@micboxx/api";
 
 type AlbumFilter = "all" | "published" | "scheduled" | "draft";
@@ -79,17 +80,17 @@ export default function DashboardAlbumsScreen() {
   );
 
   return (
-    <ScreenShell
-      title="Albums"
-      subtitle="Collections that group released tracks into one catalog page."
-      actions={
+    <Screen
+      header={<AppHeader variant="detail" title="Albums" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    >
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <PillButton
           label="Create album"
           tone="accent"
           onPress={() => router.push("/create/album")}
         />
-      }
-    >
+      </View>
       <ChipTabs
         value={filter}
         onChange={(next) => setFilter(next as AlbumFilter)}
@@ -146,6 +147,6 @@ export default function DashboardAlbumsScreen() {
           ))}
         </ListShell>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }

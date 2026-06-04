@@ -5,7 +5,8 @@ import { StyleSheet, View } from "react-native";
 import type { DashboardTrack } from "@/contracts/creator";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { getTrackStatus, publishTrack } from "@/shared/api/creator-dashboard";
-import { ErrorState, KeyValueRow, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, KeyValueRow, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function ReviewTrackScreen() {
@@ -45,7 +46,10 @@ export default function ReviewTrackScreen() {
   }
 
   return (
-    <ScreenShell title="Review & publish" subtitle="Final QA before release.">
+    <Screen
+      header={<AppHeader variant="detail" title="Review & Publish" fallbackRoute="/(tabs)/create" />}
+      contentContainerStyle={styles.screenContent}
+    >
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading || !track ? (
         <Panel title="Loading draft" description="Reading the current draft track payload." />
@@ -72,11 +76,15 @@ export default function ReviewTrackScreen() {
           </View>
         </>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   actionsRow: {
     flexDirection: "row",
     flexWrap: "wrap",

@@ -10,10 +10,10 @@ import { useAuth } from "@/features/auth/provider";
 import {
     DetailActionBar,
     DetailHeroCard,
-    DetailRouteHeader,
     RelatedLaneSection,
 } from "@/features/catalog/components/detail-shared";
-import { Screen, ErrorState, Heading } from "@micboxx/ui";
+import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
+import { Screen, ErrorState, Skeleton, Heading } from "@micboxx/ui";
 import {
     buildAlbumAccessCtaModel,
     buildAlbumRelatedLane,
@@ -96,10 +96,15 @@ export default function AlbumDetailScreen() {
   if (isLoading) {
     return (
       <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
-        <ActivityIndicator
-          style={styles.loading}
-          color={tokens.colors.accent}
-        />
+        <DetailRouteHeader title="Album" />
+        <View style={[styles.page, { paddingHorizontal: 16, paddingTop: 16, gap: 24 }]}>
+          <Skeleton width="100%" height={300} borderRadius={24} />
+          <View style={{ gap: 12 }}>
+            <Skeleton width="60%" height={28} borderRadius={8} />
+            <Skeleton width="40%" height={16} borderRadius={6} />
+            <Skeleton width="30%" height={16} borderRadius={6} />
+          </View>
+        </View>
       </Screen>
     );
   }
@@ -107,7 +112,7 @@ export default function AlbumDetailScreen() {
   if (!album || error) {
     return (
       <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
-        <DetailRouteHeader title="Album" />
+        <DetailRouteHeader title="Album" fallbackRoute="/(tabs)/home" />
         <View style={styles.page}>
           <ErrorState
             title="Unable to load album"
@@ -120,7 +125,7 @@ export default function AlbumDetailScreen() {
 
   return (
     <Screen scroll={true} noPaddingBottom noPaddingHorizontal header={<Stack.Screen options={{ headerShown: false }} />}>
-      <DetailRouteHeader title="Album" />
+      <DetailRouteHeader title="Album" fallbackRoute="/(tabs)/home" />
       <View style={styles.page}>
 
         <DetailHeroCard

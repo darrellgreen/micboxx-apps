@@ -2,10 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { AnimatedPressable } from "@micboxx/ui";
+import { StyleSheet, Text, View } from "react-native";
+import { Screen, AnimatedPressable, Button } from "@micboxx/ui";
 import { useAuth } from "@/features/auth/provider";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreatorEntryHref } from "@/features/bootstrap/routes";
@@ -40,7 +38,7 @@ export default function SignInScreen() {
   const busy = isHydrating || isSigningIn;
 
   return (
-    <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
+    <Screen scroll={false}>
       <View style={s.topBar}>
         <AnimatedPressable
           style={s.closeBtn}
@@ -103,38 +101,30 @@ export default function SignInScreen() {
               <Text style={s.signedInLabel}>Signed in</Text>
             </View>
 
-            <AnimatedPressable
-              style={s.signOutBtn}
-              onPress={() => void signOut()}
-              disabled={busy}
-            >
-              {busy ? (
-                <ActivityIndicator
-                  size="small"
-                  color={tokens.colors.textSecondary}
-                />
-              ) : (
-                <Text style={s.signOutLabel}>Sign out</Text>
-              )}
-            </AnimatedPressable>
+            <View style={{ width: "100%" }}>
+              <Button
+                label="Sign out"
+                onPress={() => void signOut()}
+                tone="secondary"
+                size="lg"
+                loading={busy}
+                fullWidth
+              />
+            </View>
           </>
         ) : (
           <>
-            <AnimatedPressable
-              style={s.primaryBtn}
-              scaleValue={0.93}
-              onPress={() => void signIn()}
-              disabled={busy}
-            >
-              {busy ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="log-in-outline" size={20} color="#fff" />
-                  <Text style={s.primaryLabel}>Sign in with MicBoxx</Text>
-                </>
-              )}
-            </AnimatedPressable>
+            <View style={{ width: "100%" }}>
+              <Button
+                label="Sign in with MicBoxx"
+                icon={<Ionicons name="log-in-outline" size={20} color="#fff" />}
+                onPress={() => void signIn()}
+                tone="primary"
+                size="lg"
+                loading={busy}
+                fullWidth
+              />
+            </View>
 
             <AnimatedPressable
               style={s.ghostBtn}
@@ -147,15 +137,11 @@ export default function SignInScreen() {
           </>
         )}
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
   topBar: {
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -226,21 +212,7 @@ const s = StyleSheet.create({
     paddingBottom: 24,
     gap: 12,
   },
-  primaryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    height: 52,
-    borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.accent,
-    ...tokens.shadows.accent,
-  },
-  primaryLabel: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+
   ghostBtn: {
     height: 48,
     alignItems: "center",
@@ -263,18 +235,5 @@ const s = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
   },
-  signOutBtn: {
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.bgSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-  },
-  signOutLabel: {
-    color: tokens.colors.textSecondary,
-    fontSize: 15,
-    fontWeight: "600",
-  },
+
 });

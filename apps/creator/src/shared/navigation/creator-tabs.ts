@@ -2,8 +2,8 @@ export const CREATOR_TAB_ORDER = [
   "dashboard",
   "catalog",
   "create",
-  "analytics",
   "rooms",
+  "analytics",
 ] as const;
 
 export type CreatorTabKey = (typeof CREATOR_TAB_ORDER)[number];
@@ -36,7 +36,7 @@ export const CREATOR_TAB_META: Record<
     icon: "add-outline",
   },
   analytics: {
-    title: "Analytics",
+    title: "Insights",
     icon: "analytics-outline",
   },
   rooms: {

@@ -44,7 +44,8 @@ import type {
 } from "@/features/rooms/types";
 import { formatRelativeTime } from "@micboxx/api";
 import { CreatorApiError } from "@/shared/api/creator-dashboard";
-import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { KeyValueRow, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -663,11 +664,14 @@ export default function RoomManagementScreen() {
 
   if (loading) {
     return (
-      <ScreenShell title="Live Room" subtitle="Opening your Room…">
+      <Screen
+        header={<AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+      >
         <Panel>
           <ActivityIndicator color={tokens.colors.accent} />
         </Panel>
-      </ScreenShell>
+      </Screen>
     );
   }
 
@@ -675,24 +679,25 @@ export default function RoomManagementScreen() {
 
   if (!detail || !entry) {
     return (
-      <ScreenShell
-        title="Room unavailable"
-        subtitle="Your Room could not be opened."
-        actions={<PillButton label="Back" onPress={() => router.back()} />}
+      <Screen
+        header={<AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
       >
+        <View>
+          <PillButton label="Back" onPress={() => router.back()} />
+        </View>
         {error ? <Panel title="Something went wrong" description={error} /> : null}
         <PillButton label="Try again" tone="accent" onPress={() => void load()} />
-      </ScreenShell>
+      </Screen>
     );
   }
 
   // ── Production Room screen ──────────────────────────────────────────────
 
   return (
-    <ScreenShell
-      title=""
-      headerTitle={detail.album.title}
-      headerSubtitle={headerSubtitle}
+    <Screen
+      header={<AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />}
+      contentContainerStyle={styles.screenContent}
     >
       {/* ── Notices & errors ─────────────────────────────────────────── */}
       {error ? <Panel title="Something went wrong" description={error} /> : null}
@@ -1195,7 +1200,12 @@ export default function RoomManagementScreen() {
           </View>
         )}
       </View>
-    </ScreenShell>
+      <Panel title="Troubleshooting">
+        <KeyValueRow label="Album ID" value={String(detail.album.id)} />
+        <KeyValueRow label="Connection ID" value={canonicalRoomId ?? "Unknown"} />
+        <KeyValueRow label="Transport layer" value="LiveKit Mesh + Firebase RTDB" />
+      </Panel>
+    </Screen>
   );
 }
 
@@ -1204,6 +1214,10 @@ export default function RoomManagementScreen() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   // ── Status bar ──────────────────────────────────────────────────────────
   statusBar: {
     flexDirection: "row",

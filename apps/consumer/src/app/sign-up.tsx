@@ -12,9 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { AnimatedPressable } from "@micboxx/ui";
+import { Screen, Button, AnimatedPressable } from "@micboxx/ui";
 import type { RegisterRequest } from "@micboxx/contracts";
 import { registerUserForVerification } from "@/features/auth/registration-api";
 import { ApiError } from "@micboxx/api";
@@ -126,7 +124,7 @@ export default function SignUpScreen() {
   }
 
   return (
-    <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
+    <Screen scroll={false} safeAreaEdges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -261,43 +259,29 @@ export default function SignUpScreen() {
             />
           </View>
 
-          <AnimatedPressable
-            style={s.primaryBtn}
-            scaleValue={0.93}
+          <Button
+            label="Create account"
             onPress={() => void handleCreateAccount()}
             disabled={busy}
-          >
-            {busy ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Ionicons name="mail-outline" size={18} color="#fff" />
-                <Text style={s.primaryLabel}>Create account</Text>
-              </>
-            )}
-          </AnimatedPressable>
+            loading={busy}
+            tone="primary"
+          />
 
-          <AnimatedPressable
-            style={s.secondaryBtn}
-            haptic="none"
+          <Button
+            label="I already have a code"
             onPress={() => {
               router.push("/sign-up-verify");
             }}
             disabled={busy}
-          >
-            <Text style={s.secondaryLabel}>I already have a code</Text>
-          </AnimatedPressable>
+            tone="ghost"
+          />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
   flex: {
     flex: 1,
   },
@@ -391,31 +375,5 @@ const s = StyleSheet.create({
     color: tokens.colors.textSecondary,
     fontSize: 12,
     lineHeight: 16,
-  },
-  primaryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    height: 52,
-    borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.accent,
-    ...tokens.shadows.accent,
-    marginTop: 6,
-  },
-  primaryLabel: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  secondaryBtn: {
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryLabel: {
-    color: tokens.colors.textSecondary,
-    fontSize: 14,
-    fontWeight: "500",
   },
 });

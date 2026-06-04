@@ -13,33 +13,6 @@ import {
 import { tokens } from "@micboxx/theme";
 import { Heading, BodyText, Subtext, Button, Surface } from "@micboxx/ui";
 
-export function DetailRouteHeader({ title }: { title: string }) {
-  const router = useRouter();
-
-  return (
-    <View style={styles.headerRow}>
-      <Pressable
-        onPress={() => router.back()}
-        style={({ pressed }) => [
-          styles.headerButton,
-          pressed && styles.pressed,
-        ]}
-      >
-        <Ionicons
-          name="chevron-back"
-          size={18}
-          color={tokens.colors.textPrimary}
-        />
-      </Pressable>
-
-      <Text numberOfLines={1} style={styles.headerTitle}>
-        {title}
-      </Text>
-
-      <View style={styles.headerSpacer} />
-    </View>
-  );
-}
 
 export function DetailHeroCard({
   title,

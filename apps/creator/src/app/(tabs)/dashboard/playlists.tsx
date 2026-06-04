@@ -14,7 +14,8 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, Panel } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 type PlaylistFilter = "all" | "published" | "draft";
 
@@ -76,9 +77,9 @@ export default function DashboardPlaylistsScreen() {
   );
 
   return (
-    <ScreenShell
-      title="Playlists"
-      subtitle="Listener collections built from your catalog tracks."
+    <Screen
+      header={<AppHeader variant="detail" title="Playlists" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
     >
       <ChipTabs
         value={filter}
@@ -138,6 +139,6 @@ export default function DashboardPlaylistsScreen() {
           ))}
         </ListShell>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }

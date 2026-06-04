@@ -3,19 +3,18 @@ import * as WebBrowser from "expo-web-browser";
 import { useEffect } from "react";
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
 import type { DashboardPlaylistTrack } from "@micboxx/contracts";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import {
-    DetailActionBar,
-    DetailHeroCard,
-    DetailRouteHeader,
-    DetailStatusPanel,
-    RelatedLaneSection,
+  DetailActionBar,
+  DetailHeroCard,
+  DetailStatusPanel,
+  RelatedLaneSection,
 } from "@/features/catalog/components/detail-shared";
+import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
 import { buildPlaylistRelatedLane } from "@/features/catalog/detail-utils";
 import { joinMetaParts, resolveTrackRoute } from "@micboxx/utils";
 import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
@@ -27,6 +26,7 @@ import {
     useGetPlaylistPageQuery,
 } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
+import { Screen, Skeleton, ErrorState } from "@micboxx/ui";
 
 function normalizeParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
@@ -155,28 +155,30 @@ export default function PlaylistDetailScreen() {
 
   if (!playlist && (isPublicLoading || isDashboardLoading)) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator
-          style={styles.loading}
-          color={tokens.colors.accent}
-        />
-      </SafeAreaView>
+      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
+        <DetailRouteHeader title="Playlist" fallbackRoute="/(tabs)/library" />
+        <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16, gap: 24, paddingBottom: 24 }}>
+          <Skeleton width="100%" height={300} borderRadius={24} />
+          <View style={{ gap: 12 }}>
+            <Skeleton width="60%" height={28} borderRadius={8} />
+            <Skeleton width="40%" height={16} borderRadius={6} />
+            <Skeleton width="30%" height={16} borderRadius={6} />
+          </View>
+        </View>
+      </Screen>
     );
   }
 
   if (!playlist || (publicError && dashboardError)) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <Screen>
         <Stack.Screen options={{ headerShown: false }} />
-        <ScrollView contentContainerStyle={styles.page}>
-          <DetailRouteHeader title="Playlist" />
-          <DetailStatusPanel
-            title="Unable to load playlist"
-            body="We could not load this playlist from your library or the public catalog right now."
-          />
-        </ScrollView>
-      </SafeAreaView>
+        <DetailRouteHeader title="Playlist" fallbackRoute="/(tabs)/library" />
+        <DetailStatusPanel
+          title="Unable to load playlist"
+          body="We could not load this playlist from your library or the public catalog right now."
+        />
+      </Screen>
     );
   }
 
@@ -225,14 +227,9 @@ export default function PlaylistDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <Screen>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.page}
-        showsVerticalScrollIndicator={false}
-      >
-        <DetailRouteHeader title="Playlist" />
+      <DetailRouteHeader title="Playlist" fallbackRoute="/(tabs)/library" />
 
         <DetailHeroCard
           title={playlist.title}
@@ -356,26 +353,12 @@ export default function PlaylistDetailScreen() {
           )}
         </View>
 
-        <RelatedLaneSection lane={buildPlaylistRelatedLane(relatedPlaylists)} />
-      </ScrollView>
-    </SafeAreaView>
+      <RelatedLaneSection lane={buildPlaylistRelatedLane(relatedPlaylists)} />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
-  scroll: {
-    flex: 1,
-  },
-  page: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 160,
-    gap: 18,
-  },
   loading: {
     flex: 1,
   },

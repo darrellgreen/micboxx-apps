@@ -9,7 +9,7 @@ export interface EmptyStateProps {
   title: string;
   description?: string;
   icon?: keyof typeof Ionicons.glyphMap;
-  action?: { label: string; onPress: () => void };
+  action?: { label: string; onPress: () => void; loading?: boolean };
 }
 
 export function EmptyState({ title, description, icon, action }: EmptyStateProps) {
@@ -24,7 +24,7 @@ export function EmptyState({ title, description, icon, action }: EmptyStateProps
       ) : null}
       {action ? (
         <View style={styles.actionWrap}>
-          <Button label={action.label} onPress={action.onPress} tone="secondary" />
+          <Button label={action.label} onPress={action.onPress} tone="secondary" loading={action.loading} />
         </View>
       ) : null}
     </View>

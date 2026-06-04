@@ -19,10 +19,10 @@ import {
   type BottomActionSheetItem,
 } from "@micboxx/ui";
 import {
-    DetailRouteHeader,
-    DetailStatusPanel,
-    RelatedLaneSection,
+  DetailHeroCard,
+  RelatedLaneSection,
 } from "@/features/catalog/components/detail-shared";
+import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
 import { ArtistHero } from "@/features/catalog/components/ArtistHero";
 import {
     buildAlbumRelatedLane,
@@ -180,7 +180,7 @@ export default function UserDetailScreen() {
     <SafeAreaView style={styles.safe} edges={["left", "right"]}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={[styles.headerOverlay, { top: insets.top + 8 }]}>
-        <DetailRouteHeader title="Profile" />
+        <DetailRouteHeader title="Profile" fallbackRoute="/(tabs)/search" />
       </View>
       <ScrollView
         style={styles.scroll}

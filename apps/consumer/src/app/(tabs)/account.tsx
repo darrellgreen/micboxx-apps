@@ -1,9 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { Avatar } from "@micboxx/ui";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useAuth } from "@/features/auth/provider";
@@ -103,17 +101,12 @@ export default function AccountScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <Screen contentContainerStyle={styles.scroll}>
       <ScreenHeader
         title="Account"
         subtitle="Profile and settings"
         leftIcon="menu"
       />
-
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
         {/* Profile Card */}
         {session ? (
           <AnimatedPressable
@@ -215,15 +208,13 @@ export default function AccountScreen() {
             <Text style={styles.signOutLabel}>Sign out</Text>
           </AnimatedPressable>
         )}
-      </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
 
   header: {
     flexDirection: "row",

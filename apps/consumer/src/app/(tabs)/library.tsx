@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import { Screen } from "@micboxx/ui";
 import { SectionHeader } from "@/components/discover";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useAuth } from "@/features/auth/provider";
@@ -46,7 +46,7 @@ export default function LibraryScreen() {
 
   if (!session) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <Screen scroll={false}>
         <ScreenHeader
           title="Library"
           subtitle="Saved music and purchases"
@@ -63,7 +63,7 @@ export default function LibraryScreen() {
             <Text style={styles.primaryButtonLabel}>Sign in</Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
@@ -74,7 +74,11 @@ export default function LibraryScreen() {
         subtitle="Saved music and purchases"
         leftIcon="menu"
       />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <SectionHeader bold="Your" light="Library" />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
@@ -197,7 +201,7 @@ export default function LibraryScreen() {
             {state.playlists.length === 0 ? <EmptyLine text="No playlists yet." /> : null}
           </Section>
         ) : null}
-      </ScrollView>
+        </ScrollView>
     </SafeAreaView>
   );
 }
@@ -260,6 +264,7 @@ function LibraryRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
+  scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 160, gap: 18 },
   gate: { flex: 1, alignItems: "center", justifyContent: "center", padding: 28, gap: 14 },
   gateTitle: { color: tokens.colors.textPrimary, fontSize: 24, fontWeight: "900", textAlign: "center" },

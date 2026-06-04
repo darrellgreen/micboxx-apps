@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { updateUserProfile } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField } from "@/shared/ui/form";
-import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 export default function AccountProfileScreen() {
   const bootstrap = useCreatorBootstrap();
@@ -43,7 +44,10 @@ export default function AccountProfileScreen() {
   }
 
   return (
-    <ScreenShell title="Edit profile" subtitle="Action-enabled creator profile editing.">
+    <Screen
+      header={<AppHeader variant="detail" title="Edit Profile" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    >
       <Panel title="Profile fields">
         <Field label="Display name">
           <TextField value={displayName} onChangeText={setDisplayName} />
@@ -63,6 +67,6 @@ export default function AccountProfileScreen() {
         {error ? <ErrorText>{error}</ErrorText> : null}
         <PillButton label={saving ? "Saving…" : "Save profile"} tone="accent" onPress={() => void handleSave()} />
       </Panel>
-    </ScreenShell>
+    </Screen>
   );
 }

@@ -10,9 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { AnimatedPressable } from "@micboxx/ui";
+import { Screen, Button, AnimatedPressable } from "@micboxx/ui";
 import {
   resendRegistrationCode,
   verifyRegistrationCode,
@@ -118,7 +116,7 @@ export default function SignUpVerifyScreen() {
   }
 
   return (
-    <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
+    <Screen scroll={false} safeAreaEdges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -193,61 +191,38 @@ export default function SignUpVerifyScreen() {
                 />
               </View>
 
-              <AnimatedPressable
-                style={s.primaryBtn}
-                scaleValue={0.93}
+              <Button
+                label="Verify code"
                 onPress={() => void handleVerify()}
                 disabled={verifying || verified}
-              >
-                {verifying ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <Ionicons name="checkmark" size={18} color="#fff" />
-                    <Text style={s.primaryLabel}>Verify code</Text>
-                  </>
-                )}
-              </AnimatedPressable>
+                loading={verifying}
+                tone="primary"
+              />
 
-              <AnimatedPressable
-                style={s.secondaryBtn}
-                haptic="none"
+              <Button
+                label="Resend code"
                 onPress={() => void handleResend()}
                 disabled={resending || verified}
-              >
-                {resending ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={tokens.colors.textSecondary}
-                  />
-                ) : (
-                  <Text style={s.secondaryLabel}>Resend code</Text>
-                )}
-              </AnimatedPressable>
+                loading={resending}
+                tone="ghost"
+              />
             </>
           ) : (
-            <AnimatedPressable
-              style={s.primaryBtn}
-              scaleValue={0.93}
+            <Button
+              label="Start signup"
               onPress={() => {
                 router.replace("/sign-up");
               }}
-            >
-              <Ionicons name="person-add-outline" size={18} color="#fff" />
-              <Text style={s.primaryLabel}>Start signup</Text>
-            </AnimatedPressable>
+              tone="primary"
+            />
           )}
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
   flex: {
     flex: 1,
   },
@@ -336,31 +311,5 @@ const s = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 6,
     textAlign: "center",
-  },
-  primaryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    height: 52,
-    borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.accent,
-    ...tokens.shadows.accent,
-    marginTop: 4,
-  },
-  primaryLabel: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  secondaryBtn: {
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryLabel: {
-    color: tokens.colors.textSecondary,
-    fontSize: 14,
-    fontWeight: "500",
   },
 });

@@ -19,12 +19,13 @@ import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
-import { VerifiedBadge, Screen, ErrorState, Button, Heading, Subtext, BodyText, Pill } from "@micboxx/ui";
+import { AppHeader, VerifiedBadge, Screen, ErrorState, Button, Heading, Subtext, BodyText, Pill, Skeleton } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { useAuth } from "@/features/auth/provider";
 import {
-    DetailRouteHeader,
-    DetailStatusPanel,
+  DetailHeroCard,
+  RelatedLaneSection,
+  DetailStatusPanel,
 } from "@/features/catalog/components/detail-shared";
 import type { DetailActionItem } from "@/features/catalog/detail-models";
 import {
@@ -199,10 +200,12 @@ export default function TrackDetailScreen() {
     }
   }
 
+  const detailHeader = <AppHeader variant="detail" title="Track" fallbackRoute="/(tabs)/home" />;
+
   if (!slug) {
     return (
-      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
-        <DetailRouteHeader title="Track" />
+      <Screen scroll={false} header={detailHeader}>
+        <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.page}>
           <ErrorState
             title="Track unavailable"
@@ -218,9 +221,15 @@ export default function TrackDetailScreen() {
 
   if (isLoading) {
     return (
-      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={tokens.colors.accent} />
+      <Screen scroll={false} header={detailHeader}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={[styles.page, { paddingHorizontal: 16, paddingTop: 16, gap: 24 }]}>
+          <Skeleton width="100%" height={300} borderRadius={24} />
+          <View style={{ gap: 12 }}>
+            <Skeleton width="60%" height={28} borderRadius={8} />
+            <Skeleton width="40%" height={16} borderRadius={6} />
+            <Skeleton width="30%" height={16} borderRadius={6} />
+          </View>
         </View>
       </Screen>
     );
@@ -228,8 +237,8 @@ export default function TrackDetailScreen() {
 
   if (!track || error) {
     return (
-      <Screen scroll={false} header={<Stack.Screen options={{ headerShown: false }} />}>
-        <DetailRouteHeader title="Track" />
+      <Screen scroll={false} header={detailHeader}>
+        <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.page}>
           <ErrorState
             title="Unable to load track"
@@ -304,8 +313,8 @@ export default function TrackDetailScreen() {
     formatDuration(track.duration),
   ]);
   return (
-    <Screen scroll={true} noPaddingBottom noPaddingHorizontal header={<Stack.Screen options={{ headerShown: false }} />}>
-      <DetailRouteHeader title="Track" />
+    <Screen scroll={true} noPaddingBottom noPaddingHorizontal header={detailHeader}>
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.page}>
 
         <View style={styles.heroCard}>

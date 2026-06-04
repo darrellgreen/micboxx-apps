@@ -12,9 +12,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { ScreenHeader } from "@/components/navigation/ScreenHeader";
+import { AppHeader, Screen, Skeleton, EmptyState, ErrorState } from "@micboxx/ui";
 import type { DirectMessage } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { ComposeBar } from "@/features/social/components/ComposeBar";
@@ -128,21 +126,14 @@ export default function ConversationScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <Screen scroll={false} noPaddingHorizontal={true} header={<AppHeader variant="detail" title={otherParticipantName} fallbackRoute="/audience/inbox" />}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <KeyboardAvoidingView
-        style={styles.safe}
+        style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.threadPanel}>
-          <View style={styles.header}>
-            <ScreenHeader
-              title={otherParticipantName}
-              subtitle={`${role} · ${relationshipCue}`}
-            />
-          </View>
-
+        {relationshipSignals.length > 0 ? (
           <View style={styles.signalRail}>
             {relationshipSignals.map((signal) => (
               <View key={signal} style={styles.signalChip}>
@@ -150,48 +141,38 @@ export default function ConversationScreen() {
               </View>
             ))}
           </View>
-        </View>
+        ) : null}
 
         {!session ? (
-          <View style={styles.center}>
-            <Text style={styles.emptyTitle}>Sign in required</Text>
-            <Text style={styles.emptyText}>
-              Sign in to open your MicBoxx conversations and send messages.
-            </Text>
-            <Pressable
-              onPress={() => void signIn()}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              {isSigningIn ? (
-                <ActivityIndicator color={tokens.colors.textPrimary} />
-              ) : (
-                <Text style={styles.primaryButtonLabel}>Sign in</Text>
-              )}
-            </Pressable>
-          </View>
+          <EmptyState
+            icon="lock-closed-outline"
+            title="Sign in required"
+            description="Sign in to open your MicBoxx conversations and send messages."
+            action={{
+              label: "Sign in",
+              onPress: () => void signIn(),
+              loading: isSigningIn,
+            }}
+          />
         ) : error ? (
-          <View style={styles.center}>
-            <Text style={styles.emptyTitle}>Unable to load conversation</Text>
-            <Text style={styles.emptyText}>{error}</Text>
-            {canRetry ? (
-              <Pressable
-                onPress={retry}
-                style={({ pressed }) => [
-                  styles.secondaryButton,
-                  pressed && styles.pressed,
+          <ErrorState
+            title="Unable to load conversation"
+            message={error}
+            onRetry={canRetry ? retry : undefined}
+          />
+        ) : loading || !isReady ? (
+          <View style={styles.listContent}>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <View
+                key={`bubble-skeleton-${index}`}
+                style={[
+                  styles.skeletonBubbleWrap,
+                  index % 2 === 0 ? styles.skeletonBubbleMine : styles.skeletonBubbleTheirs,
                 ]}
               >
-                <Text style={styles.secondaryButtonLabel}>Retry</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : loading || !isReady ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={tokens.colors.accent} />
-            <Text style={styles.emptyText}>Loading conversation…</Text>
+                <Skeleton width={index % 2 === 0 ? "60%" : "40%"} height={36} borderRadius={18} />
+              </View>
+            ))}
           </View>
         ) : (
           <>
@@ -207,12 +188,10 @@ export default function ConversationScreen() {
                 />
               )}
               ListEmptyComponent={
-                <View style={styles.emptyConversation}>
-                  <Text style={styles.emptyTitle}>No messages yet</Text>
-                  <Text style={styles.emptyText}>
-                    Say hello to start the conversation.
-                  </Text>
-                </View>
+                <EmptyState
+                  title="No messages yet"
+                  description="Say hello to start the conversation."
+                />
               }
               ListFooterComponent={
                 <ConversationContext
@@ -231,7 +210,7 @@ export default function ConversationScreen() {
           </>
         )}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -294,31 +273,12 @@ function ContextCard({
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
-  threadPanel: {
-    marginHorizontal: 14,
-    marginTop: 8,
-    borderRadius: 18,
-    borderColor: tokens.colors.borderStrong,
-    backgroundColor: "rgba(255,255,255,0.025)",
-    overflow: "hidden",
-  },
-  header: {
-    paddingHorizontal: 14,
-    paddingTop: 8,
-    paddingBottom: 12,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(255,255,255,0.025)",
-  },
   signalRail: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   signalChip: {
     borderRadius: tokens.radii.pill,
@@ -424,13 +384,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-  emptyText: {
-    color: tokens.colors.textSecondary,
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
+  skeletonBubbleWrap: {
+    width: "100%",
+    marginBottom: 12,
   },
-  pressed: {
-    opacity: 0.84,
+  skeletonBubbleMine: {
+    alignItems: "flex-end",
+  },
+  skeletonBubbleTheirs: {
+    alignItems: "flex-start",
   },
 });

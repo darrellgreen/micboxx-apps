@@ -9,7 +9,7 @@ import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import { ExpoTrackUploadAdapter } from "@/features/media/ExpoTrackUploadAdapter";
 import { ErrorText, Field, TextField } from "@/shared/ui/form";
-import { AnimatedPressable, Button, Screen, Surface } from "@micboxx/ui";
+import { AnimatedPressable, AppHeader, Button, Screen, Surface } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function UploadTrackScreen() {
@@ -60,11 +60,7 @@ export default function UploadTrackScreen() {
   }
 
   return (
-    <Screen style={styles.screen}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Upload track</Text>
-        <Text style={styles.headerSubtitle}>Add a new track to your catalog</Text>
-      </View>
+    <Screen style={styles.screen} header={<AppHeader variant="flow" title="Upload Track" fallbackRoute="/(tabs)/create" />}>
 
       <View style={styles.formContainer}>
         {/* 1. Audio File */}
@@ -234,21 +230,7 @@ function UploadZone({
 const styles = StyleSheet.create({
   screen: {
     paddingHorizontal: 16,
-    paddingTop: 60,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: tokens.colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    color: tokens.colors.textSecondary,
-    marginTop: 4,
+    paddingTop: 0,
   },
   formContainer: {
     gap: 16,

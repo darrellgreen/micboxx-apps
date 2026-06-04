@@ -5,7 +5,8 @@ import { View } from "react-native";
 import type { DashboardAlbum, DashboardAlbumOptions } from "@/contracts/creator";
 import { getAlbumOptions, getAlbumStatus, updateAlbumMetadata } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
-import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 export default function EditAlbumScreen() {
   const { albumId } = useLocalSearchParams<{ albumId?: string }>();
@@ -81,7 +82,10 @@ export default function EditAlbumScreen() {
   }
 
   return (
-    <ScreenShell title="Edit album" subtitle="Metadata and track membership for the selected album.">
+    <Screen
+      header={<AppHeader variant="detail" title="Edit Album" fallbackRoute="/(tabs)/catalog" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    >
       <Panel title={album?.title ?? "Album"} description="Update the album without leaving the creator shell.">
         <Field label="Title">
           <TextField value={title} onChangeText={setTitle} />
@@ -120,6 +124,6 @@ export default function EditAlbumScreen() {
         {error ? <ErrorText>{error}</ErrorText> : null}
         <PillButton label={saving ? "Saving…" : "Save album"} tone="accent" onPress={() => void handleSave()} />
       </Panel>
-    </ScreenShell>
+    </Screen>
   );
 }

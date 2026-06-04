@@ -30,20 +30,20 @@ export const tokens = {
     ctaGlow: "rgba(0,179,166,0.22)",
 
     // ── Canvas / backgrounds ─────────────────────────────────────────────
-    bgApp: "#0D1117",
-    bgSurface: "#151B23",
-    bgElevated: "#1D2630",
-    bgInput: "#1D2630",
-    bgInk: "#0A0E14",
-    bgSurfaceMuted: "rgba(21,27,35,0.84)",
-    canvas: "#0D1117",
-    panel: "#151B23",
-    panelStrong: "#1D2630",
-    panelMuted: "rgba(21,27,35,0.84)",
-    panelGlassStrong: "rgba(21,27,35,0.84)",
-    surfacePrimary: "#1A222E",
-    surfaceSection: "#151B23",
-    surfaceInline: "#0F141C",
+    bgApp: "#0C0F14",
+    bgSurface: "#111620",
+    bgElevated: "#161D28",
+    bgInput: "#161D28",
+    bgInk: "#080A0F",
+    bgSurfaceMuted: "rgba(17,22,32,0.90)",
+    canvas: "#0C0F14",
+    panel: "#111620",
+    panelStrong: "#161D28",
+    panelMuted: "rgba(17,22,32,0.90)",
+    panelGlassStrong: "rgba(17,22,32,0.90)",
+    surfacePrimary: "#161D28",
+    surfaceSection: "#111620",
+    surfaceInline: "#0C0F14",
 
     // ── Text ─────────────────────────────────────────────────────────────
     textPrimary: "#F7FAFC",
@@ -55,12 +55,12 @@ export const tokens = {
     textSubtle: "#A9B4C0",
 
     // ── Borders ──────────────────────────────────────────────────────────
-    borderSubtle: "#2A3642",
-    borderStrong: "rgba(255,255,255,0.10)",
-    border: "#2A3642",
+    borderSubtle: "rgba(255,255,255,0.08)",
+    borderStrong: "rgba(255,255,255,0.12)",
+    border: "rgba(255,255,255,0.08)",
     borderGlass: "rgba(255,255,255,0.10)",
     borderAccent: "rgba(0,179,166,0.35)",
-    gridSoft: "rgba(255,255,255,0.08)",
+    gridSoft: "rgba(255,255,255,0.06)",
 
     // ── Semantic ─────────────────────────────────────────────────────────
     success: "#47C27A",

@@ -12,7 +12,8 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { ErrorState, Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 type TrackFilter = "all" | "ready" | "published" | "failed";
 
@@ -91,17 +92,17 @@ export default function DashboardTracksScreen() {
   );
 
   return (
-    <ScreenShell
-      title="Tracks"
-      subtitle="Manage uploads, publishing, and processing health."
-      actions={
+    <Screen
+      header={<AppHeader variant="detail" title="Tracks" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    >
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <PillButton
           label="Upload track"
           tone="accent"
           onPress={() => router.push("/create/upload")}
         />
-      }
-    >
+      </View>
       <ChipTabs
         value={filter}
         onChange={(next) => setFilter(next as TrackFilter)}
@@ -158,6 +159,6 @@ export default function DashboardTracksScreen() {
           ))}
         </ListShell>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }

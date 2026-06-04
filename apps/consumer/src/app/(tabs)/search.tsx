@@ -8,9 +8,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { SectionHeader, TrackRow } from "@/components/discover";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { ArtistCard } from "@micboxx/media";
@@ -83,8 +82,8 @@ export default function SearchScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View
           style={[

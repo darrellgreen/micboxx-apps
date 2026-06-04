@@ -6,7 +6,8 @@ import { View } from "react-native";
 import { ExpoAlbumUploadAdapter } from "@/features/media/ExpoAlbumUploadAdapter";
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
-import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 export default function CreateAlbumScreen() {
   const [title, setTitle] = useState("");
@@ -40,11 +41,9 @@ export default function CreateAlbumScreen() {
   }
 
   return (
-    <ScreenShell
-      title=""
-      subtitle=""
-      headerTitle="Create album"
-      headerSubtitle="Start a new release"
+    <Screen
+      header={<AppHeader variant="detail" title="Create Album" fallbackRoute="/(tabs)/create" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
     >
       <Panel title="Album details">
         <Field label="Title">
@@ -61,6 +60,6 @@ export default function CreateAlbumScreen() {
         {validationError || uploader.state.error ? <ErrorText>{validationError || uploader.state.error}</ErrorText> : null}
         <PillButton label={uploader.state.status === "uploading" ? "Creating…" : "Create album"} tone="accent" onPress={() => void handleCreate()} />
       </Panel>
-    </ScreenShell>
+    </Screen>
   );
 }

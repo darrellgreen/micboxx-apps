@@ -2,10 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { AnimatedPressable } from "@micboxx/ui";
+import { StyleSheet, Text, View } from "react-native";
+import { Screen, Button, AnimatedPressable } from "@micboxx/ui";
 import { useAuth } from "@/features/auth/provider";
 import { tokens } from "@micboxx/theme";
 
@@ -24,7 +22,7 @@ export default function SignInScreen() {
   const busy = isHydrating || isSigningIn;
 
   return (
-    <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
+    <Screen scroll={false} safeAreaEdges={["top", "bottom"]}>
       {/* Close / back button */}
       <View style={s.topBar}>
         <AnimatedPressable
@@ -93,49 +91,32 @@ export default function SignInScreen() {
               <Text style={s.signedInLabel}>Signed in</Text>
             </View>
 
-            <AnimatedPressable
-              style={s.signOutBtn}
+            <Button
+              label="Sign out"
               onPress={() => void signOut()}
               disabled={busy}
-            >
-              {busy ? (
-                <ActivityIndicator
-                  size="small"
-                  color={tokens.colors.textSecondary}
-                />
-              ) : (
-                <Text style={s.signOutLabel}>Sign out</Text>
-              )}
-            </AnimatedPressable>
+              loading={busy}
+              tone="secondary"
+            />
           </>
         ) : (
           <>
-            <AnimatedPressable
-              style={s.primaryBtn}
-              scaleValue={0.93}
+            <Button
+              label="Sign in with MicBoxx"
               onPress={() => void signIn()}
               disabled={busy}
-            >
-              {busy ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="log-in-outline" size={20} color="#fff" />
-                  <Text style={s.primaryLabel}>Sign in with MicBoxx</Text>
-                </>
-              )}
-            </AnimatedPressable>
+              loading={busy}
+              tone="primary"
+            />
 
-            <AnimatedPressable
-              style={s.ghostBtn}
-              haptic="none"
+            <Button
+              label="Create an account"
               onPress={() => {
                 router.push("/sign-up");
               }}
               disabled={busy}
-            >
-              <Text style={s.ghostLabel}>Create account</Text>
-            </AnimatedPressable>
+              tone="ghost"
+            />
 
             <AnimatedPressable
               style={s.ghostBtn}
@@ -162,15 +143,11 @@ export default function SignInScreen() {
           </>
         )}
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
   topBar: {
     paddingHorizontal: 20,
     paddingTop: 8,

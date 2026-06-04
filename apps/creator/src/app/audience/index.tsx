@@ -5,16 +5,13 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { Avatar } from "@micboxx/ui";
+import { ChipTabs } from "@/shared/ui/dashboard-primitives";
+import { AppHeader, Screen, Avatar, Skeleton, EmptyState, ErrorState } from "@micboxx/ui";
 import type { UserConversationInboxItem } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { useInbox } from "@/features/social/hooks/useInbox";
@@ -80,155 +77,80 @@ export default function AudienceInboxScreen() {
     return counts;
   }, [items]);
 
+  const composeButton = (
+    <Pressable
+      onPress={() => router.push("/audience/inbox/new" as never)}
+      style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+      accessibilityLabel="Start a new message"
+    >
+      <Ionicons name="create-outline" size={18} color={tokens.colors.textPrimary} />
+    </Pressable>
+  );
+
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <Screen
+      scroll={false}
+      header={<AppHeader variant="detail" title="Inbox" fallbackRoute="/(tabs)/dashboard" rightContent={composeButton} />}
+      contentContainerStyle={styles.screenContent}
+    >
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.headerPanel}>
-        <ScreenHeader
-          title="Inbox"
-          subtitle={
-            totalUnread > 0
-              ? `${totalUnread} unread across your MicBoxx conversations.`
-              : "Music-aware conversations with creators, fans, and collaborators."
-          }
+      <View style={styles.searchRow}>
+        <Ionicons name="search-outline" size={17} color={tokens.colors.textMuted} />
+        <TextInput
+          value={searchValue}
+          onChangeText={setSearchValue}
+          placeholder="Search people, threads, or release context"
+          placeholderTextColor={tokens.colors.textMuted}
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={styles.searchInput}
         />
-
-        <View style={styles.headerActions}>
+        {searchValue.length > 0 ? (
           <Pressable
-            onPress={() => router.push("/audience/inbox/new" as never)}
-            style={({ pressed }) => [
-              styles.iconButton,
-              pressed && styles.pressed,
-            ]}
-            accessibilityLabel="Start a new message"
+            onPress={() => setSearchValue("")}
+            style={({ pressed }) => pressed && styles.pressed}
           >
-            <Ionicons
-              name="create-outline"
-              size={18}
-              color={tokens.colors.textPrimary}
-            />
+            <Ionicons name="close-circle" size={18} color={tokens.colors.textSecondary} />
           </Pressable>
-          <View style={styles.countPill}>
-            <Text style={styles.countPillText}>{items.length}</Text>
-          </View>
-        </View>
-
-        <View style={styles.searchRow}>
-          <Ionicons
-            name="search-outline"
-            size={17}
-            color={tokens.colors.textMuted}
-          />
-          <TextInput
-            value={searchValue}
-            onChangeText={setSearchValue}
-            placeholder="Search people, threads, or release context"
-            placeholderTextColor={tokens.colors.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={styles.searchInput}
-          />
-          {searchValue.length > 0 ? (
-            <Pressable
-              onPress={() => setSearchValue("")}
-              style={({ pressed }) => pressed && styles.pressed}
-            >
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color={tokens.colors.textSecondary}
-              />
-            </Pressable>
-          ) : null}
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRail}
-        >
-          {FILTER_OPTIONS.map((option) => {
-            const active = activeFilter === option.value;
-
-            return (
-              <Pressable
-                key={option.value}
-                onPress={() => setActiveFilter(option.value)}
-                style={({ pressed }) => [
-                  styles.filterChip,
-                  active && styles.filterChipActive,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityState={{ selected: active }}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    active && styles.filterChipTextActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-                <Text
-                  style={[
-                    styles.filterCount,
-                    active && styles.filterChipTextActive,
-                  ]}
-                >
-                  {filterCounts[option.value]}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        ) : null}
       </View>
 
+      <ChipTabs
+        value={activeFilter}
+        onChange={(next) => setActiveFilter(next as ConversationFilter)}
+        options={FILTER_OPTIONS.map((option) => ({
+          key: option.value,
+          label: option.label,
+          count: filterCounts[option.value],
+        }))}
+      />
+
       {!session ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyTitle}>Sign in required</Text>
-          <Text style={styles.emptyText}>
-            Direct messages are available once your MicBoxx account is signed
-            in.
-          </Text>
-          <Pressable
-            onPress={() => void signIn()}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            {isSigningIn ? (
-              <ActivityIndicator color={tokens.colors.textPrimary} />
-            ) : (
-              <Text style={styles.primaryButtonLabel}>Sign in</Text>
-            )}
-          </Pressable>
-        </View>
+        <EmptyState
+          icon="lock-closed-outline"
+          title="Sign in required"
+          description="Direct messages are available once your MicBoxx account is signed in."
+          action={{
+            label: "Sign in",
+            onPress: () => void signIn(),
+            loading: isSigningIn,
+          }}
+        />
       ) : error ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyTitle}>Unable to load messages</Text>
-          <Text style={styles.emptyText}>{error}</Text>
-          {canRetry ? (
-            <Pressable
-              onPress={retry}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonLabel}>Retry</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <ErrorState
+          title="Unable to load messages"
+          message={error}
+          onRetry={canRetry ? retry : undefined}
+        />
       ) : loading || !isReady ? (
         <View style={styles.listContent}>
           {Array.from({ length: 6 }).map((_, index) => (
             <View key={`message-skeleton-${index}`} style={styles.skeletonRow}>
-              <View style={styles.skeletonAvatar} />
+              <Skeleton width={44} height={44} borderRadius={22} />
               <View style={styles.skeletonCopy}>
-                <View style={styles.skeletonLineWide} />
-                <View style={styles.skeletonLine} />
+                <Skeleton width="64%" height={12} borderRadius={6} />
+                <Skeleton width="40%" height={10} borderRadius={6} />
               </View>
             </View>
           ))}
@@ -237,38 +159,24 @@ export default function AudienceInboxScreen() {
         <FlatList
           data={filteredItems}
           keyExtractor={(item) => item.id}
+          style={styles.list}
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           renderItem={({ item }) => <ConversationRow item={item} />}
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <View style={styles.emptySkeletonStack}>
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <View key={`empty-message-${index}`} style={styles.emptyGhost}>
-                    <View style={styles.emptyGhostAvatar} />
-                    <View style={styles.emptyGhostCopy}>
-                      <View style={styles.emptyGhostLineShort} />
-                      <View style={styles.emptyGhostLine} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>{emptyCopy.title}</Text>
-                <Text style={styles.emptyText}>{emptyCopy.body}</Text>
-              </View>
-            </View>
+            <EmptyState
+              title={emptyCopy.title}
+              description={emptyCopy.body}
+            />
           }
         />
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 function ConversationRow({ item }: { item: UserConversationInboxItem }) {
   const label = getConversationLabel(item);
-  const role = resolveParticipantRole(item);
-  const relationshipCue = getRelationshipCue(item, role);
   const unread = item.unreadCount > 0;
 
   return (
@@ -310,20 +218,6 @@ function ConversationRow({ item }: { item: UserConversationInboxItem }) {
           </View>
         </View>
 
-        <View style={styles.tokenRow}>
-          <View style={styles.roleChip}>
-            <Text style={styles.roleChipText}>{role}</Text>
-          </View>
-          <View style={styles.contextChip}>
-            <Text style={styles.contextChipText}>{relationshipCue}</Text>
-          </View>
-          {unread ? (
-            <View style={styles.needsReplyChip}>
-              <Text style={styles.needsReplyText}>Needs reply</Text>
-            </View>
-          ) : null}
-        </View>
-
         <Text
           numberOfLines={2}
           style={[styles.previewText, unread && styles.previewTextUnread]}
@@ -336,29 +230,12 @@ function ConversationRow({ item }: { item: UserConversationInboxItem }) {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: tokens.colors.bgApp,
-  },
-  headerPanel: {
-    marginHorizontal: 14,
-    marginTop: 8,
-    marginBottom: 8,
-    borderRadius: 18,
-    borderColor: tokens.colors.borderStrong,
-    backgroundColor: "rgba(255,255,255,0.025)",
-    overflow: "hidden",
+  screenContent: {
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 14,
+    gap: 12,
   },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 4,
-    marginBottom: 12,
+  list: {
+    flex: 1,
   },
   iconButton: {
     width: 42,
@@ -369,25 +246,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.04)",
     borderColor: "rgba(255,255,255,0.10)",
   },
-  countPill: {
-    minWidth: 36,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderColor: "rgba(255,255,255,0.10)",
-    paddingHorizontal: 10,
-  },
-  countPillText: {
-    color: "rgba(247,250,252,0.72)",
-    fontSize: 12,
-    fontWeight: "800",
-  },
   searchRow: {
     minHeight: 44,
-    marginHorizontal: 14,
-    marginTop: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -402,43 +262,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 0,
   },
-  filterRail: {
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 14,
-  },
-  filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: tokens.radii.pill,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(255,255,255,0.04)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  filterChipActive: {
-    borderColor: tokens.colors.borderAccent,
-    backgroundColor: tokens.colors.accentDim,
-  },
-  filterChipText: {
-    color: "rgba(247,250,252,0.58)",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  filterChipTextActive: {
-    color: tokens.colors.accent,
-  },
-  filterCount: {
-    color: "rgba(247,250,252,0.50)",
-    fontSize: 10,
-    fontWeight: "800",
-  },
   listContent: {
-    paddingHorizontal: 14,
     paddingTop: 8,
     paddingBottom: 34,
   },
@@ -508,54 +332,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.bgInk,
     fontSize: 10,
     fontWeight: "900",
-  },
-  tokenRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 10,
-  },
-  roleChip: {
-    borderRadius: tokens.radii.pill,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(0,0,0,0.20)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  roleChipText: {
-    color: "rgba(247,250,252,0.66)",
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
-  contextChip: {
-    borderRadius: tokens.radii.pill,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(255,255,255,0.04)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  contextChipText: {
-    color: "rgba(247,250,252,0.62)",
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 1.1,
-    textTransform: "uppercase",
-  },
-  needsReplyChip: {
-    borderRadius: tokens.radii.pill,
-    borderColor: "rgba(0,179,166,0.28)",
-    backgroundColor: "rgba(0,179,166,0.10)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  needsReplyText: {
-    color: tokens.colors.accent,
-    fontSize: 9,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-    textTransform: "uppercase",
   },
   previewText: {
     color: "rgba(247,250,252,0.56)",

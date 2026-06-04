@@ -8,6 +8,8 @@
 
 export { AnimatedPressable } from './animated-pressable';
 export { AppBackdrop } from './app-backdrop';
+export { AppHeader } from './app-header';
+export type { AppHeaderProps, HeaderVariant } from './app-header';
 export { Avatar } from './avatar';
 export { BottomActionSheet } from './bottom-action-sheet';
 export type { BottomActionSheetItem } from './bottom-action-sheet';

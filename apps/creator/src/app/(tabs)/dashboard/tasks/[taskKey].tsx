@@ -2,7 +2,8 @@ import { useLocalSearchParams } from "expo-router";
 import { Text, StyleSheet } from "react-native";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { EmptyState, Panel, ScreenShell } from "@/shared/ui/layout";
+import { EmptyState, Panel } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function DashboardTaskDetailScreen() {
@@ -13,7 +14,10 @@ export default function DashboardTaskDetailScreen() {
   );
 
   return (
-    <ScreenShell title="Task detail" subtitle="Operational creator work that MicBoxx surfaced from real state.">
+    <Screen
+      header={<AppHeader variant="detail" title="Task" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={styles.screenContent}
+    >
       {task ? (
         <Panel title={task.title}>
           <Text style={styles.copy}>{task.description}</Text>
@@ -25,11 +29,15 @@ export default function DashboardTaskDetailScreen() {
           description="This task is no longer active or does not exist for the current creator state."
         />
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   copy: {
     color: tokens.colors.textSecondary,
     fontSize: 14,

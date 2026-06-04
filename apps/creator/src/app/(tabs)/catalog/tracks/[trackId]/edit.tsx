@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import type { DashboardTrack, DashboardUploadOptions } from "@/contracts/creator";
 import { getTrackStatus, getUploadOptions, updateTrackMetadata } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
-import { Panel, PillButton, ScreenShell } from "@/shared/ui/layout";
+import { Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { View } from "react-native";
 
 export default function EditTrackScreen() {
@@ -80,7 +81,10 @@ export default function EditTrackScreen() {
   }
 
   return (
-    <ScreenShell title="Edit track" subtitle="Metadata and commerce editing for the selected track.">
+    <Screen
+      header={<AppHeader variant="detail" title="Edit Track" fallbackRoute="/(tabs)/catalog" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    >
       <Panel title={track?.title ?? "Track"} description="Update track metadata without leaving the creator app.">
         <Field label="Title">
           <TextField value={title} onChangeText={setTitle} />
@@ -132,6 +136,6 @@ export default function EditTrackScreen() {
         {error ? <ErrorText>{error}</ErrorText> : null}
         <PillButton label={saving ? "Saving…" : "Save track"} tone="accent" onPress={() => void handleSave()} />
       </Panel>
-    </ScreenShell>
+    </Screen>
   );
 }

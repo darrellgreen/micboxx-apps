@@ -138,7 +138,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 2,
+    paddingHorizontal: 16,
     paddingVertical: 10,
   },
   logoIcon: {

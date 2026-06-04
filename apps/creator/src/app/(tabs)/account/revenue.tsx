@@ -19,9 +19,9 @@ import {
   EmptyState,
   KeyValueRow,
   Panel,
-  ScreenShell,
   SectionTitle,
 } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function RevenueScreen() {
@@ -46,9 +46,9 @@ export default function RevenueScreen() {
   }, [filterKey, revenue]);
 
   return (
-    <ScreenShell
-      title="Revenue snapshot"
-      subtitle="Snapshot-only creator revenue view with top earning release ranking."
+    <Screen
+      header={<AppHeader variant="detail" title="Revenue" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={styles.screenContent}
     >
       {!revenue ? (
         <EmptyState title="No revenue snapshot" description="Revenue data is missing or not available for this account yet." />
@@ -195,7 +195,7 @@ export default function RevenueScreen() {
           )}
         </>
       )}
-    </ScreenShell>
+    </Screen>
   );
 }
 
@@ -237,6 +237,10 @@ function formatReadinessState(state: "ready" | "needs_action" | "blocked") {
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
   summaryRow: {
     flexDirection: "row",
     gap: 12,

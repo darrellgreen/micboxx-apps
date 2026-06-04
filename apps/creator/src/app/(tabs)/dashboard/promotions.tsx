@@ -1,21 +1,22 @@
 import { router } from "expo-router";
 import { Text, View } from "react-native";
 
-import { Panel, PillButton, ScreenShell, SectionTitle } from "@/shared/ui/layout";
+import { Panel, PillButton, SectionTitle } from "@/shared/ui/layout";
+import { AppHeader, Screen } from "@micboxx/ui";
 
 export default function DashboardPromotionsScreen() {
   return (
-    <ScreenShell
-      title="Promotions"
-      subtitle="Track-centered boost workspace for campaign funding and performance."
-      actions={
+    <Screen
+      header={<AppHeader variant="detail" title="Promotions" fallbackRoute="/(tabs)/dashboard" />}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    >
+      <View>
         <PillButton
           label="Open monetization"
           tone="accent"
           onPress={() => router.push("/dashboard/monetization")}
         />
-      }
-    >
+      </View>
       <Panel
         title="Promotion workspace"
         description="Promotions parity has been added to mobile navigation and screen structure. Campaign APIs are next."
@@ -42,6 +43,6 @@ export default function DashboardPromotionsScreen() {
           description="Spend, reach, and conversion summary for completed boosts."
         />
       </View>
-    </ScreenShell>
+    </Screen>
   );
 }

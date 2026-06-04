@@ -2,7 +2,6 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
   NewMusicAlbums,
@@ -613,37 +612,37 @@ export default function HomeScreen() {
         (isLoggedIn && recentError)),
   );
 
+  const hubHeader = <ScreenHeader leftIcon="menu" />;
+
   if (isSettlingInitialData) {
     return (
-      <Screen scroll={false} header={<ScreenHeader leftIcon="menu" />}>
-        <View style={s.scrollContent}>
-          {[1, 2].map((lane) => (
-            <View key={lane} style={lane > 1 ? s.laneGap : undefined}>
-              <View style={{ flexDirection: "row", gap: 8, marginBottom: 14 }}>
-                <Skeleton width={80} height={18} borderRadius={6} />
-                <Skeleton width={60} height={18} borderRadius={6} />
-              </View>
-              <View style={s.trackList}>
-                {[1, 2, 3, 4].map((row) => (
-                  <View key={row} style={s.skeletonRow}>
-                    <Skeleton width={50} height={50} borderRadius={8} />
-                    <View style={{ flex: 1, gap: 8 }}>
-                      <Skeleton width="70%" height={12} borderRadius={6} />
-                      <Skeleton width="45%" height={10} borderRadius={6} />
-                    </View>
-                  </View>
-                ))}
-              </View>
+      <Screen scroll={false} header={hubHeader}>
+        {[1, 2].map((lane) => (
+          <View key={lane} style={lane > 1 ? s.laneGap : undefined}>
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 14 }}>
+              <Skeleton width={80} height={18} borderRadius={6} />
+              <Skeleton width={60} height={18} borderRadius={6} />
             </View>
-          ))}
-        </View>
+            <View style={s.trackList}>
+              {[1, 2, 3, 4].map((row) => (
+                <View key={row} style={s.skeletonRow}>
+                  <Skeleton width={50} height={50} borderRadius={8} />
+                  <View style={{ flex: 1, gap: 8 }}>
+                    <Skeleton width="70%" height={12} borderRadius={6} />
+                    <Skeleton width="45%" height={10} borderRadius={6} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
       </Screen>
     );
   }
 
   if (!hasAnyContent && hasStartupError) {
     return (
-      <Screen scroll={false} header={<ScreenHeader leftIcon="menu" />}>
+      <Screen scroll={false} header={hubHeader}>
         <ErrorState message="Unable to load home right now" onRetry={onRefresh} />
       </Screen>
     );
@@ -651,14 +650,14 @@ export default function HomeScreen() {
 
   if (!hasAnyContent) {
     return (
-      <Screen scroll={false} header={<ScreenHeader leftIcon="menu" />}>
+      <Screen scroll={false} header={hubHeader}>
         <EmptyState title="Nothing to show yet" icon="musical-notes-outline" />
       </Screen>
     );
   }
 
   return (
-    <Screen scroll={false} header={<ScreenHeader leftIcon="menu" />} noPaddingHorizontal noPaddingBottom>
+    <Screen scroll={false} noPaddingHorizontal noPaddingBottom contentContainerStyle={{ paddingTop: 0 }} header={hubHeader}>
       <FlatList
         data={homeSections}
         keyExtractor={extractKey}
@@ -677,7 +676,6 @@ export default function HomeScreen() {
 /* ─── Styles ─────────────────────────────────────────────────────────────── */
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 160 },
   loadingWrap: {
