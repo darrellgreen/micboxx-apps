@@ -1,13 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Share, StyleSheet, Text, View } from "react-native";
+import { Share, StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 
 import type { DashboardTrack } from "@/contracts/creator";
 import { getTrackStatus, publishTrack, requeueTrack, unpublishTrack } from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
-import { Screen, AnimatedPressable } from "@micboxx/ui";
+import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx/ui";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
 
@@ -34,7 +34,28 @@ export default function TrackDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [menuVisible, setMenuVisible] = useState(false);
+  const { showToast } = useToast();
   const unreadCount = useUnreadNotificationCount();
+
+  const menuItems = [
+    {
+      key: "share",
+      label: "Share Track",
+      icon: "share-outline" as const,
+      onPress: () => void handleShare(),
+    },
+    {
+      key: "edit",
+      label: "Edit Track",
+      icon: "pencil-outline" as const,
+      onPress: () => {
+        if (trackId) {
+          router.push(`/catalog/tracks/${trackId}/edit` as never);
+        }
+      },
+    },
+  ];
 
   const load = useCallback(async () => {
     if (!trackId) return;
@@ -64,8 +85,28 @@ export default function TrackDetailScreen() {
             ? await unpublishTrack(trackId)
             : await requeueTrack(trackId);
       setTrack(nextTrack);
+
+      showToast({
+        tone: action === "publish" ? "success" : "info",
+        title: action === "publish"
+          ? "Track Published"
+          : action === "unpublish"
+            ? "Track Draft Saved"
+            : "Requeued for Processing",
+        message: action === "publish"
+          ? "Track is now live for streaming."
+          : action === "unpublish"
+            ? "Track reverted to private draft."
+            : "Track processing was restarted.",
+      });
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Track action failed.");
+      const errMsg = nextError instanceof Error ? nextError.message : "Track action failed.";
+      setError(errMsg);
+      showToast({
+        tone: "error",
+        title: "Update Failed",
+        message: errMsg,
+      });
     }
   }
 
@@ -78,8 +119,11 @@ export default function TrackDetailScreen() {
         url: shareUrl,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Share action failed";
-      Alert.alert("Unable to Share", msg);
+      showToast({
+        tone: "error",
+        title: "Share Failed",
+        message: err instanceof Error ? err.message : "Unable to open share sheet.",
+      });
     }
   };
 
@@ -120,7 +164,7 @@ export default function TrackDetailScreen() {
             </View>
           </AnimatedPressable>
 
-          <AnimatedPressable style={styles.circularBtn} onPress={() => {}} haptic="selection">
+          <AnimatedPressable style={styles.circularBtn} onPress={() => setMenuVisible(true)} haptic="selection">
             <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
           </AnimatedPressable>
         </View>
@@ -136,7 +180,7 @@ export default function TrackDetailScreen() {
         <Panel title="Loading track" description="Reading the current dashboard track payload." />
       ) : (
         <>
-          <TrackHeroCard track={track} onShare={handleShare} />
+          <TrackHeroCard track={track} />
           
           <PerformanceSnapshot trackId={track.id} />
           
@@ -157,6 +201,13 @@ export default function TrackDetailScreen() {
               <Text style={styles.copy}>{track.status.error}</Text>
             </Panel>
           ) : null}
+
+          <BottomActionSheet
+            visible={menuVisible}
+            title="Track Options"
+            items={menuItems}
+            onClose={() => setMenuVisible(false)}
+          />
         </>
       )}
     </Screen>

@@ -298,7 +298,7 @@ export default function TracksListScreen() {
               <Path d="M 74 12 A 14 14 0 0 0 60 2" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="none" />
             </Svg>
           </View>
-          <Text style={styles.footerText}>You've reached the end</Text>
+          <Text style={styles.footerText}>{"You've reached the end"}</Text>
         </View>
       ) : null}
     </Screen>

@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@micboxx/theme": "*"
+    "@micboxx/theme": "*",
+    "react-native-toast-message": "^2.3.3"
   },
   "peerDependencies": {
     "expo-blur": "*",
@@ -22,7 +23,7 @@
     "react-native-svg": "*"
   },
   "devDependencies": {
-    "typescript": "~5.9.0",
-    "@types/react": "~19.1.0"
+    "@types/react": "~19.1.0",
+    "typescript": "~5.9.0"
   }
 }

@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 
 import { AccountDrawerProvider } from "@/components/navigation/account-drawer";
-import { AppBackdrop } from "@micboxx/ui";
+import { AppBackdrop, ToastProvider } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { AccountPreferencesProvider } from "@/features/account/provider";
 import { AuthProvider } from "@/features/auth/provider";
@@ -151,23 +151,24 @@ function RootLayout() {
             <PlayerProvider>
               <ThemeProvider value={navigationTheme}>
                 <AccountDrawerProvider>
-                  <View
-                    style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}
-                  >
-                    <AppBackdrop />
-                    <Stack
-                      screenOptions={{
-                        headerTransparent: true,
-                        headerShadowVisible: false,
-                        headerTintColor: tokens.colors.textPrimary,
-                        headerStyle: {
-                          backgroundColor: "transparent",
-                        },
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
+                  <ToastProvider>
+                    <View
+                      style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}
                     >
+                      <AppBackdrop />
+                      <Stack
+                        screenOptions={{
+                          headerTransparent: true,
+                          headerShadowVisible: false,
+                          headerTintColor: tokens.colors.textPrimary,
+                          headerStyle: {
+                            backgroundColor: "transparent",
+                          },
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      >
                       <Stack.Screen
                         name="(tabs)"
                         options={{ headerShown: false }}
@@ -227,10 +228,11 @@ function RootLayout() {
                           },
                         }}
                       />
-                    </Stack>
-                    <MiniPlayerGate />
-                    <StatusBar style="light" />
-                  </View>
+                      </Stack>
+                      <MiniPlayerGate />
+                      <StatusBar style="light" />
+                    </View>
+                  </ToastProvider>
                 </AccountDrawerProvider>
               </ThemeProvider>
             </PlayerProvider>

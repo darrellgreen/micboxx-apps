@@ -21,6 +21,8 @@ export { ShimmerPlaceholder } from './shimmer-placeholder';
 export { EmptyState, ErrorState, Skeleton } from './state';
 export { Surface } from './surface';
 export { Heading, BodyText, Subtext } from './typography';
+export { ToastProvider, useToast } from './toast';
+export type { ToastOptions, ToastTone } from './toast';
 export { VerifiedBadge } from './verified-badge';
 
 // Haptic utilities

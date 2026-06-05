@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider } from "react-redux";
 
 import { AccountDrawerProvider } from "@/components/navigation/account-drawer";
-import { AppBackdrop } from "@micboxx/ui";
+import { AppBackdrop, ToastProvider } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { AuthProvider } from "@/features/auth/provider";
 import { CreatorBootstrapProvider } from "@/features/bootstrap/provider";
@@ -61,21 +61,22 @@ export default function RootLayout() {
             <CreatorBootstrapProvider>
               <ThemeProvider value={navigationTheme}>
                 <AccountDrawerProvider>
-                  <View style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}>
-                    <AppBackdrop />
-                    <Stack
-                      screenOptions={{
-                        headerTransparent: true,
-                        headerShadowVisible: false,
-                        headerTintColor: tokens.colors.textPrimary,
-                        headerStyle: {
-                          backgroundColor: "transparent",
-                        },
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    >
+                  <ToastProvider>
+                    <View style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}>
+                      <AppBackdrop />
+                      <Stack
+                        screenOptions={{
+                          headerTransparent: true,
+                          headerShadowVisible: false,
+                          headerTintColor: tokens.colors.textPrimary,
+                          headerStyle: {
+                            backgroundColor: "transparent",
+                          },
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      >
                       <Stack.Screen
                         name="index"
                         options={{ headerShown: false }}
@@ -246,9 +247,10 @@ export default function RootLayout() {
                           },
                         }}
                       />
-                    </Stack>
-                    <StatusBar style="light" />
-                  </View>
+                      </Stack>
+                      <StatusBar style="light" />
+                    </View>
+                  </ToastProvider>
                 </AccountDrawerProvider>
               </ThemeProvider>
             </CreatorBootstrapProvider>

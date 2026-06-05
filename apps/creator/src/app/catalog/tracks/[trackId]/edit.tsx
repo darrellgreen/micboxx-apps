@@ -1,15 +1,16 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 
-import type { DashboardTrack, DashboardUploadOptions } from "@/contracts/creator";
+import type { DashboardTrack, DashboardUploadOptions, TrackMetadataUpdate } from "@/contracts/creator";
 import { getTrackStatus, getUploadOptions, updateTrackMetadata } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
 import { Panel, PillButton } from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
+import { AppHeader, Screen, useToast } from "@micboxx/ui";
 import { View } from "react-native";
 
 export default function EditTrackScreen() {
   const { trackId } = useLocalSearchParams<{ trackId?: string }>();
+  const { showToast } = useToast();
   const [track, setTrack] = useState<DashboardTrack | null>(null);
   const [options, setOptions] = useState<DashboardUploadOptions | null>(null);
   const [title, setTitle] = useState("");
@@ -22,6 +23,7 @@ export default function EditTrackScreen() {
   const [isPurchasable, setIsPurchasable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const canEditCommerce = Boolean(track?.permissions.canEditCommerce);
 
   useEffect(() => {
     let active = true;
@@ -62,17 +64,27 @@ export default function EditTrackScreen() {
     setSaving(true);
     setError(null);
     try {
-      const nextTrack = await updateTrackMetadata(trackId, {
+      const payload: TrackMetadataUpdate = {
         title: title.trim(),
         description: description.trim(),
-        genreId: Number(genreId),
-        albumId: Number(albumId),
-        isPurchasable,
-        purchasePrice: isPurchasable ? purchasePrice.trim() : null,
-        purchaseCurrency: isPurchasable ? purchaseCurrency.trim().toUpperCase() : null,
-        isSubscriberOnly,
-      });
+        genreId: genreId ? Number(genreId) : null,
+        albumId: albumId ? Number(albumId) : null,
+      };
+
+      if (canEditCommerce) {
+        payload.isPurchasable = isPurchasable;
+        payload.purchasePrice = isPurchasable ? purchasePrice.trim() : null;
+        payload.purchaseCurrency = isPurchasable ? purchaseCurrency.trim().toUpperCase() : null;
+        payload.isSubscriberOnly = isSubscriberOnly;
+      }
+
+      const nextTrack = await updateTrackMetadata(trackId, payload);
       setTrack(nextTrack);
+      showToast({
+        title: "Track changes saved",
+        message: "Your track is up to date.",
+        tone: "success",
+      });
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Track could not be saved.");
     } finally {
@@ -116,21 +128,25 @@ export default function EditTrackScreen() {
             ))}
           </View>
         </Field>
-        <Field label="Monetization">
-          <View style={formStyles.chipRow}>
-            <PillButton label="Draft only" tone={!isPurchasable ? "accent" : "subtle"} onPress={() => setIsPurchasable(false)} />
-            <PillButton label="Sellable" tone={isPurchasable ? "accent" : "subtle"} onPress={() => setIsPurchasable(true)} />
-            <PillButton label="Subscriber only" tone={isSubscriberOnly ? "accent" : "subtle"} onPress={() => setIsSubscriberOnly((current) => !current)} />
-          </View>
-        </Field>
-        {isPurchasable ? (
+        {canEditCommerce ? (
           <>
-            <Field label="Price">
-              <TextField value={purchasePrice} onChangeText={setPurchasePrice} keyboardType="numeric" />
+            <Field label="Monetization">
+              <View style={formStyles.chipRow}>
+                <PillButton label="Draft only" tone={!isPurchasable ? "accent" : "subtle"} onPress={() => setIsPurchasable(false)} />
+                <PillButton label="Sellable" tone={isPurchasable ? "accent" : "subtle"} onPress={() => setIsPurchasable(true)} />
+                <PillButton label="Subscriber only" tone={isSubscriberOnly ? "accent" : "subtle"} onPress={() => setIsSubscriberOnly((current) => !current)} />
+              </View>
             </Field>
-            <Field label="Currency">
-              <TextField value={purchaseCurrency} onChangeText={setPurchaseCurrency} />
-            </Field>
+            {isPurchasable ? (
+              <>
+                <Field label="Price">
+                  <TextField value={purchasePrice} onChangeText={setPurchasePrice} keyboardType="numeric" />
+                </Field>
+                <Field label="Currency">
+                  <TextField value={purchaseCurrency} onChangeText={setPurchaseCurrency} />
+                </Field>
+              </>
+            ) : null}
           </>
         ) : null}
         {error ? <ErrorText>{error}</ErrorText> : null}

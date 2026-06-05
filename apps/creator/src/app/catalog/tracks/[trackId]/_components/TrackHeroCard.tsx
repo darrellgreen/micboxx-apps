@@ -8,10 +8,9 @@ import type { DashboardTrack } from "@/contracts/creator";
 
 interface TrackHeroCardProps {
   track: DashboardTrack;
-  onShare: () => void;
 }
 
-export function TrackHeroCard({ track, onShare }: TrackHeroCardProps) {
+export function TrackHeroCard({ track }: TrackHeroCardProps) {
   const releaseYear = track.timestamps.createdAt
     ? new Date(track.timestamps.createdAt).getFullYear()
     : 2026; // Match mockup default if empty
@@ -45,11 +44,11 @@ export function TrackHeroCard({ track, onShare }: TrackHeroCardProps) {
             </View>
           )}
           {/* Pencil Edit Icon Overlay */}
-          <AnimatedPressable style={styles.editIconOverlay} onPress={() => {}}>
+          <AnimatedPressable style={styles.editIconOverlay} onPress={() => router.push(`/catalog/tracks/${track.id}/edit` as never)}>
             <Ionicons name="pencil" size={14} color="#FFFFFF" />
           </AnimatedPressable>
         </View>
-
+ 
         <View style={styles.infoCol}>
           {renderStatusBadge()}
           
@@ -81,12 +80,12 @@ export function TrackHeroCard({ track, onShare }: TrackHeroCardProps) {
         </AnimatedPressable>
 
         <AnimatedPressable
-          style={[styles.btnBase, styles.btnShare]}
-          onPress={onShare}
+          style={[styles.btnBase, styles.btnEdit]}
+          onPress={() => router.push(`/catalog/tracks/${track.id}/edit` as never)}
           haptic="selection"
         >
-          <Ionicons name="share-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.btnLabel}>Share</Text>
+          <Ionicons name="pencil-outline" size={16} color="#FFFFFF" />
+          <Text style={styles.btnLabel}>Edit</Text>
         </AnimatedPressable>
       </View>
     </View>
@@ -192,7 +191,7 @@ const styles = StyleSheet.create({
   btnAnalytics: {
     backgroundColor: "#00B3A6",
   },
-  btnShare: {
+  btnEdit: {
     backgroundColor: "rgba(255, 255, 255, 0.08)",
   },
   btnLabel: {

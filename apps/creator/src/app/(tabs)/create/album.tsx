@@ -7,7 +7,7 @@ import { ExpoAlbumUploadAdapter } from "@/features/media/ExpoAlbumUploadAdapter"
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import { ErrorText, Field, TextField, formStyles } from "@/shared/ui/form";
 import { Panel, PillButton } from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
+import { AppHeader, Screen, useToast } from "@micboxx/ui";
 
 export default function CreateAlbumScreen() {
   const [title, setTitle] = useState("");
@@ -15,6 +15,7 @@ export default function CreateAlbumScreen() {
   const artworkPicker = useMediaPicker(ExpoMediaPickerAdapter);
   const uploader = useAlbumUpload(ExpoAlbumUploadAdapter);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   async function pickArtwork() {
     await artworkPicker.pickImage();
@@ -32,6 +33,12 @@ export default function CreateAlbumScreen() {
       const albumId = await uploader.uploadAlbum(artworkPicker.asset, {
         title: title.trim(),
         description: description.trim(),
+      });
+
+      showToast({
+        tone: "success",
+        title: "Album Created",
+        message: "Ready to upload tracks into this album.",
       });
 
       router.replace(`/create/upload-push?albumId=${albumId}` as never);

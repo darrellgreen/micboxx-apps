@@ -2,12 +2,21 @@ import { Switch, View, Text, StyleSheet } from "react-native";
 import { useAuth } from "@/features/auth/provider";
 import { useAccountPreferences } from "@/features/account/provider";
 import { Panel, PillButton } from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
+import { AppHeader, Screen, useToast } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
   const { preferences, setAdvancedModeEnabled } = useAccountPreferences();
+  const { showToast } = useToast();
+
+  const handleToggleAdvancedMode = (val: boolean) => {
+    void setAdvancedModeEnabled(val);
+    showToast({
+      tone: "info",
+      title: val ? "Advanced Mode Enabled" : "Standard Mode Restored",
+    });
+  };
 
   return (
     <Screen
@@ -19,7 +28,7 @@ export default function SettingsScreen() {
           <Text style={styles.label}>Advanced Mode</Text>
           <Switch 
             value={preferences.advancedModeEnabled}
-            onValueChange={(val) => void setAdvancedModeEnabled(val)}
+            onValueChange={handleToggleAdvancedMode}
             trackColor={{ false: "#1E293B", true: "#7AC414" }}
             thumbColor="#FFFFFF"
           />

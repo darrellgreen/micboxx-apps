@@ -2,17 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { AppHeader, Screen, Skeleton, EmptyState, ErrorState } from "@micboxx/ui";
+import { AppHeader, Screen, Skeleton, EmptyState, ErrorState, useToast } from "@micboxx/ui";
 import type { DirectMessage } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
 import { ComposeBar } from "@/features/social/components/ComposeBar";
@@ -46,6 +43,7 @@ export default function ConversationScreen() {
   } = useConversation(conversationId);
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const { showToast } = useToast();
   const listRef = useRef<FlatList<DirectMessage>>(null);
 
   const selectedInboxItem = useMemo(
@@ -115,11 +113,17 @@ export default function ConversationScreen() {
         body,
       });
       setBody("");
+      showToast({
+        tone: "success",
+        title: "Message Sent",
+        message: "Your direct message has been sent.",
+      });
     } catch (nextError) {
-      Alert.alert(
-        "Message not sent",
-        nextError instanceof Error ? nextError.message : "Please try again.",
-      );
+      showToast({
+        tone: "error",
+        title: "Message Not Sent",
+        message: nextError instanceof Error ? nextError.message : "Please try again.",
+      });
     } finally {
       setSending(false);
     }

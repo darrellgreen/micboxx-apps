@@ -1,13 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Share, StyleSheet, Text, View } from "react-native";
+import { Share, StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 
 import type { DashboardAlbum } from "@/contracts/creator";
-import { getAlbumStatus, publishAlbum, unpublishAlbum } from "@/shared/api/creator-dashboard";
+import { getAlbumStatus } from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
-import { Screen, AnimatedPressable } from "@micboxx/ui";
+import { Screen, AnimatedPressable, useToast } from "@micboxx/ui";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
 import { useAccountPreferences } from "@/features/account/provider";
@@ -41,6 +41,7 @@ export default function AlbumDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const { showToast } = useToast();
   const unreadCount = useUnreadNotificationCount();
 
   const load = useCallback(async () => {
@@ -69,8 +70,11 @@ export default function AlbumDetailScreen() {
         url: shareUrl,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Share action failed";
-      Alert.alert("Unable to Share", msg);
+      showToast({
+        tone: "error",
+        title: "Share Failed",
+        message: err instanceof Error ? err.message : "Unable to open share sheet.",
+      });
     }
   };
 
