@@ -310,6 +310,9 @@ export interface DashboardAlbum {
     verifiedBadge?: boolean;
   } | null;
   artworkUrl: string | null;
+  upc?: string;
+  labelImprint?: string;
+  explicitContent?: boolean | null;
   commerce: {
     isPurchasable: boolean;
     price: string | null;

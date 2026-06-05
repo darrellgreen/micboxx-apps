@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { StyleSheet, Text, View, Pressable } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
-import { Button, VerifiedBadge, AnimatedPressable } from "@micboxx/ui";
+import { VerifiedBadge, AnimatedPressable } from "@micboxx/ui";
 import type { DashboardTrack } from "@/contracts/creator";
 
 interface TrackHeroCardProps {

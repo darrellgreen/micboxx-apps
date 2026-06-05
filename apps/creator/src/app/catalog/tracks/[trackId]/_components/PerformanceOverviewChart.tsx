@@ -1,7 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Polyline, Stop } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
 import { tokens } from "@micboxx/theme";
+import { AnimatedPressable } from "@micboxx/ui";
 
 interface PerformanceOverviewChartProps {
   trackId: number;
@@ -11,7 +13,6 @@ const CARD_BG = "#131820";
 
 export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartProps) {
   // Hardcode coordinates to match the mockup path exactly:
-  // Points: May 28 (2), then 5, May 30 (10), then 7, Jun 1 (4), then 5.5, Jun 3 (7.5)
   const mockupValues = [2, 5, 10, 7, 4, 5.5, 7.5];
   const dates = ["May 28", "May 30", "Jun 1", "Jun 3"];
 
@@ -47,7 +48,11 @@ export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartPr
     <View style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.title}>Performance Overview</Text>
-        <Text style={styles.periodText}>Last 7 Days</Text>
+        
+        <AnimatedPressable style={styles.timeDropdown} onPress={() => {}}>
+          <Text style={styles.periodText}>Last 7 Days</Text>
+          <Ionicons name="chevron-down" size={12} color="#00B3A6" style={styles.dropdownIcon} />
+        </AnimatedPressable>
       </View>
 
       <View style={styles.chartContainer}>
@@ -64,7 +69,7 @@ export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartPr
         <View style={styles.canvasContainer}>
           <Svg style={styles.svg}>
             <Defs>
-              <LinearGradient id="chart-area-grad" x1="0" y1="0" x2="0" y2="1">
+              <LinearGradient id="chart-area-grad-root" x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0%" stopColor="#00B3A6" stopOpacity={0.2} />
                 <Stop offset="100%" stopColor="#00B3A6" stopOpacity={0.0} />
               </LinearGradient>
@@ -88,7 +93,7 @@ export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartPr
             })}
 
             {/* Area under the curve */}
-            <Path d={`M 0 ${baseline} L ${coordinates.map(p => `${(p.x - paddingLeft).toFixed(1)},${p.y.toFixed(1)}`).join(" ")} L ${chartWidth} ${baseline} Z`} fill="url(#chart-area-grad)" />
+            <Path d={`M 0 ${baseline} L ${coordinates.map(p => `${(p.x - paddingLeft).toFixed(1)},${p.y.toFixed(1)}`).join(" ")} L ${chartWidth} ${baseline} Z`} fill="url(#chart-area-grad-root)" />
 
             {/* Line curve */}
             <Polyline
@@ -150,10 +155,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
+  timeDropdown: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.05)",
+  },
   periodText: {
     color: "#00B3A6",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
+  },
+  dropdownIcon: {
+    marginLeft: 4,
   },
   chartContainer: {
     flexDirection: "row",

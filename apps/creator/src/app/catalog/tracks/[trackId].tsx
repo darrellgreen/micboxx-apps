@@ -83,11 +83,10 @@ export default function TrackDetailScreen() {
     }
   };
 
-  // Re-create the custom header layout from the mockup
   const renderCustomHeader = () => {
     return (
       <View style={styles.headerContainer}>
-        {/* Left: Back button in circular background */}
+        {/* Left: Back button */}
         <AnimatedPressable
           style={styles.circularBtn}
           onPress={() => {
@@ -102,13 +101,13 @@ export default function TrackDetailScreen() {
           <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
         </AnimatedPressable>
 
-        {/* Center: Title and Subtitle */}
+        {/* Center: Title & Subtitle */}
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Track Details</Text>
           <Text style={styles.headerSubtitle}>Manage and edit your track</Text>
         </View>
 
-        {/* Right: Notification Bell & Ellipsis menu */}
+        {/* Right: Notifications & Ellipsis Menu */}
         <View style={styles.headerRightContainer}>
           <AnimatedPressable
             style={styles.circularBtn}
@@ -137,22 +136,16 @@ export default function TrackDetailScreen() {
         <Panel title="Loading track" description="Reading the current dashboard track payload." />
       ) : (
         <>
-          {/* Hero Section */}
           <TrackHeroCard track={track} onShare={handleShare} />
           
-          {/* Metrics Snapshots */}
           <PerformanceSnapshot trackId={track.id} />
           
-          {/* Tab Selection */}
           <TrackTabs activeTab={activeTab} onChangeTab={setActiveTab} />
           
-          {/* Active Tab rendering */}
           {activeTab === "overview" ? (
             <>
               <PerformanceOverviewChart trackId={track.id} />
-              
               <AudienceSummaryCards trackId={track.id} />
-              
               <TrackStatusPanel track={track} onAction={runAction} />
             </>
           ) : (

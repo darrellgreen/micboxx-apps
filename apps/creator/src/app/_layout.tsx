@@ -144,6 +144,66 @@ export default function RootLayout() {
                         },
                       }}
                     />
+                    <Stack.Screen
+                      name="catalog/tracks/index"
+                      options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                        contentStyle: {
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                    />
+                    <Stack.Screen
+                      name="catalog/albums/index"
+                      options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                        contentStyle: {
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                    />
+                    <Stack.Screen
+                      name="catalog/tracks/[trackId]"
+                      options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                        contentStyle: {
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                    />
+                    <Stack.Screen
+                      name="catalog/tracks/[trackId]/edit"
+                      options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                        contentStyle: {
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                    />
+                    <Stack.Screen
+                      name="catalog/albums/[albumId]"
+                      options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                        contentStyle: {
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                    />
+                    <Stack.Screen
+                      name="catalog/albums/[albumId]/edit"
+                      options={{
+                        headerShown: false,
+                        animation: "slide_from_right",
+                        contentStyle: {
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                    />
                   </Stack>
                   <StatusBar style="light" />
                 </View>

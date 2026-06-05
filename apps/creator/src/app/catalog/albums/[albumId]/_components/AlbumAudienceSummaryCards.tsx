@@ -3,26 +3,17 @@ import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Rect, Path, Line } from "react-native-svg";
 import { tokens } from "@micboxx/theme";
 
-interface AudienceSummaryCardsProps {
-  trackId: number;
-}
-
 const CARD_BG = "#131820";
 
 // Donut calculations: R = 18, circumference = 2 * PI * 18 = 113.1
 const C = 113.1;
 
-export function AudienceSummaryCards({ trackId }: AudienceSummaryCardsProps) {
-  // Mockup values:
-  // Teal: 50% (56.55 length)
-  // Green: 30% (33.93 length)
-  // Purple: 15% (16.96 length)
-  // Blue: 5% (5.66 length)
+export function AlbumAudienceSummaryCards() {
   const segments = [
-    { label: "MicBoxx", percent: 50, color: "#00B3A6", strokeDasharray: `${56.55} ${C}`, strokeDashoffset: 0 },
-    { label: "Mobile App", percent: 30, color: "#79C96B", strokeDasharray: `${33.93} ${C}`, strokeDashoffset: -56.55 },
-    { label: "Web Player", percent: 15, color: "#a78bfa", strokeDasharray: `${16.96} ${C}`, strokeDashoffset: -90.48 },
-    { label: "Other", percent: 5, color: "#3b82f6", strokeDasharray: `${5.66} ${C}`, strokeDashoffset: -107.44 },
+    { label: "MicBoxx", percent: 52, color: "#00B3A6", strokeDasharray: `${58.81} ${C}`, strokeDashoffset: 0 },
+    { label: "Mobile App", percent: 28, color: "#79C96B", strokeDasharray: `${31.67} ${C}`, strokeDashoffset: -58.81 },
+    { label: "Web Player", percent: 14, color: "#a78bfa", strokeDasharray: `${15.83} ${C}`, strokeDashoffset: -90.48 },
+    { label: "Other", percent: 6, color: "#3b82f6", strokeDasharray: `${6.79} ${C}`, strokeDashoffset: -106.31 },
   ];
 
   return (
@@ -30,8 +21,8 @@ export function AudienceSummaryCards({ trackId }: AudienceSummaryCardsProps) {
       {/* Geography Card */}
       <View style={[styles.card, styles.geoCard]}>
         <Text style={styles.cardSubtitle}>Top Listener City</Text>
-        <Text style={styles.cityName}>New York, NY</Text>
-        <Text style={styles.listenersCount}>3 listeners</Text>
+        <Text style={styles.cityName}>Miami, FL</Text>
+        <Text style={styles.listenersCount}>48 listeners</Text>
         
         {/* SVG Skyline graphic at the bottom of the card */}
         <View style={styles.skyline}>
@@ -61,7 +52,7 @@ export function AudienceSummaryCards({ trackId }: AudienceSummaryCardsProps) {
 
       {/* Source Breakdown Card */}
       <View style={styles.card}>
-        <Text style={styles.cardSubtitle}>Source Breakdown</Text>
+        <Text style={styles.cardSubtitle}>Top Discovery Source</Text>
         
         <View style={styles.donutRow}>
           {/* Donut Chart */}
