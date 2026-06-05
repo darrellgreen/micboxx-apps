@@ -279,7 +279,7 @@ export default function DashboardScreen() {
       {/* ── Welcome ────────────────────────────────────────────────── */}
       <View style={s.welcome}>
         <Text style={s.welcomeTitle}>Welcome back, {displayName} 👋</Text>
-        <Text style={s.welcomeSubtitle}>Here's what's happening with your music today.</Text>
+        <Text style={s.welcomeSubtitle}>Here{"'"}s what{"'"}s happening with your music today.</Text>
       </View>
 
       {/* ── Overview ───────────────────────────────────────────────── */}
@@ -413,7 +413,7 @@ export default function DashboardScreen() {
           <ActionBtn
             icon="disc-outline"
             label="Album"
-            onPress={() => router.push("/create/album" as never)}
+            onPress={() => router.push("/create/album-push" as never)}
           />
           <ActionBtn
             icon="radio-outline"
@@ -423,7 +423,7 @@ export default function DashboardScreen() {
           <ActionBtn
             icon="person-outline"
             label="Profile"
-            onPress={() => router.push("/account/profile" as never)}
+            onPress={() => router.push("/account-push" as never)}
           />
         </View>
       </View>
@@ -455,7 +455,7 @@ export default function DashboardScreen() {
           <Text style={s.insightStar}>✨</Text>
           <View style={s.insightLeft}>
             <Text style={s.insightHeadline}>Keep the momentum going</Text>
-            <Text style={s.insightBody}>You're getting more plays this week.</Text>
+            <Text style={s.insightBody}>You{"'"}re getting more plays this week.</Text>
             <View style={s.insightTrend}>
               <Ionicons name="arrow-up" size={12} color={tokens.colors.accent} />
               <Text style={s.insightTrendText}>{trend.percent}% vs last 7 days</Text>

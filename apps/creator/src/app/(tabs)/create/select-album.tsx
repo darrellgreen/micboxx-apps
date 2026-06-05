@@ -18,11 +18,11 @@ export default function SelectAlbumScreen() {
       ) : (
         albums.map((album) => (
           <Panel key={album.id} title={album.title} description={album.published ? "Published album" : "Draft album"}>
-            <PillButton label="Upload into this album" tone="accent" onPress={() => router.push(`/create/upload?albumId=${album.id}` as never)} />
+            <PillButton label="Upload into this album" tone="accent" onPress={() => router.push(`/create/upload-push?albumId=${album.id}` as never)} />
           </Panel>
         ))
       )}
-      <PillButton label="Create album" onPress={() => router.push("/create/album")} />
+      <PillButton label="Create album" onPress={() => router.push("/create/album-push")} />
     </Screen>
   );
 }

@@ -30,6 +30,7 @@ interface ScreenHeaderProps {
   onRightPress?: () => void;
   rightBadgeCount?: number;
   onAvatarPress?: () => void;
+  showBackButton?: boolean;
 }
 
 export function ScreenHeader({
@@ -42,6 +43,7 @@ export function ScreenHeader({
   onRightPress,
   rightBadgeCount,
   onAvatarPress,
+  showBackButton = false,
 }: ScreenHeaderProps) {
   const { openDrawer } = useAccountDrawer();
   const unreadNotificationCount = useUnreadNotificationCount();
@@ -60,16 +62,29 @@ export function ScreenHeader({
 
   return (
     <View style={s.container}>
-      <AnimatedPressable
-        style={s.menuButton}
-        hitSlop={8}
-        onPress={openDrawer}
-        haptic="selection"
-        accessibilityRole="button"
-        accessibilityLabel="Open creator menu"
-      >
-        <Ionicons name="menu-outline" size={23} color={tokens.colors.textPrimary} />
-      </AnimatedPressable>
+      {showBackButton ? (
+        <AnimatedPressable
+          style={s.menuButton}
+          hitSlop={8}
+          onPress={() => router.back()}
+          haptic="selection"
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={23} color={tokens.colors.textPrimary} />
+        </AnimatedPressable>
+      ) : (
+        <AnimatedPressable
+          style={s.menuButton}
+          hitSlop={8}
+          onPress={openDrawer}
+          haptic="selection"
+          accessibilityRole="button"
+          accessibilityLabel="Open creator menu"
+        >
+          <Ionicons name="menu-outline" size={23} color={tokens.colors.textPrimary} />
+        </AnimatedPressable>
+      )}
 
       <View style={s.identity}>
         {centerContent ? (

@@ -60,7 +60,7 @@ export default function UploadTrackScreen() {
   }
 
   return (
-    <Screen style={styles.screen} header={<AppHeader variant="flow" title="Upload Track" fallbackRoute="/(tabs)/create" />}>
+    <Screen contentContainerStyle={styles.screen} header={<AppHeader variant="detail" title="Upload Track" fallbackRoute="/(tabs)/create" />}>
 
       <View style={styles.formContainer}>
         {/* 1. Audio File */}
@@ -230,13 +230,14 @@ function UploadZone({
 const styles = StyleSheet.create({
   screen: {
     paddingHorizontal: 16,
-    paddingTop: 0,
+    gap: 12,
   },
   formContainer: {
     gap: 16,
   },
   section: {
     gap: 16,
+    borderWidth: 0,
   },
   sectionTitle: {
     fontSize: 16,

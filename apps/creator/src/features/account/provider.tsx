@@ -30,6 +30,7 @@ interface AccountPreferencesContextValue {
   setPushNotificationsEnabled: (enabled: boolean) => Promise<void>;
   setAutoplayPreviewEnabled: (enabled: boolean) => Promise<void>;
   setExplicitFilterEnabled: (enabled: boolean) => Promise<void>;
+  setAdvancedModeEnabled: (enabled: boolean) => Promise<void>;
 }
 
 const AccountPreferencesContext =
@@ -114,6 +115,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
         await writeStoredLocalAppPreferences({
           autoplayPreview: next.autoplayPreview,
           explicitFilter: next.explicitFilter,
+          advancedModeEnabled: next.advancedModeEnabled,
         });
       } catch (nextError) {
         setPreferences(previous);
@@ -145,6 +147,39 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
         await writeStoredLocalAppPreferences({
           autoplayPreview: next.autoplayPreview,
           explicitFilter: next.explicitFilter,
+          advancedModeEnabled: next.advancedModeEnabled,
+        });
+      } catch (nextError) {
+        setPreferences(previous);
+        setError(
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to save local preferences.",
+        );
+      } finally {
+        setIsSavingLocalPreferences(false);
+      }
+    },
+    [preferences],
+  );
+
+  const setAdvancedModeEnabled = useCallback(
+    async (enabled: boolean) => {
+      const previous = preferences;
+      const next = {
+        ...preferences,
+        advancedModeEnabled: enabled,
+      };
+
+      setPreferences(next);
+      setIsSavingLocalPreferences(true);
+      setError(null);
+
+      try {
+        await writeStoredLocalAppPreferences({
+          autoplayPreview: next.autoplayPreview,
+          explicitFilter: next.explicitFilter,
+          advancedModeEnabled: next.advancedModeEnabled,
         });
       } catch (nextError) {
         setPreferences(previous);
@@ -206,6 +241,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
       setPushNotificationsEnabled,
       setAutoplayPreviewEnabled,
       setExplicitFilterEnabled,
+      setAdvancedModeEnabled,
     }),
     [
       currentUserUuid,
@@ -217,6 +253,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
       setAutoplayPreviewEnabled,
       setExplicitFilterEnabled,
       setPushNotificationsEnabled,
+      setAdvancedModeEnabled,
     ],
   );
 

@@ -10,6 +10,7 @@ import { ErrorState, Panel } from "@/shared/ui/layout";
 import { Screen, AnimatedPressable } from "@micboxx/ui";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
+import { useAccountPreferences } from "@/features/account/provider";
 
 import { AlbumHeroCard } from "./[albumId]/_components/AlbumHeroCard";
 import { AlbumPerformanceSnapshot } from "./[albumId]/_components/AlbumPerformanceSnapshot";
@@ -34,6 +35,8 @@ function ComingSoonStub({ tab }: { tab: string }) {
 
 export default function AlbumDetailScreen() {
   const { albumId } = useLocalSearchParams<{ albumId?: string }>();
+  const { preferences } = useAccountPreferences();
+  const advancedModeEnabled = preferences?.advancedModeEnabled ?? false;
   const [album, setAlbum] = useState<DashboardAlbum | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +153,7 @@ export default function AlbumDetailScreen() {
               
               {/* Side by side validation panels */}
               <View style={styles.sideBySide}>
-                <AlbumReleaseHealthPanel />
+                {advancedModeEnabled && <AlbumReleaseHealthPanel />}
                 <AlbumReleaseInfoPanel album={album} />
               </View>
 

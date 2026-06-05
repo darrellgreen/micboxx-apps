@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen, AnimatedPressable, Avatar } from "@micboxx/ui";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
@@ -16,6 +16,7 @@ type AccountNavItem = {
 
 export default function AccountHomeScreen() {
   const bootstrap = useCreatorBootstrap();
+  const pathname = usePathname();
 
   const navItems: AccountNavItem[] = [
     {
@@ -75,6 +76,7 @@ export default function AccountHomeScreen() {
         <ScreenHeader
           title="Account"
           subtitle="Profile, settings, and creator access"
+          showBackButton={pathname === "/account-push"}
         />
       </View>
         <AnimatedPressable

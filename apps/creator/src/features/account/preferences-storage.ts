@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export interface LocalAppPreferences {
   autoplayPreview: boolean;
   explicitFilter: boolean;
+  advancedModeEnabled: boolean;
 }
 
 export interface AccountNotificationPreferences {
@@ -15,6 +16,7 @@ export interface AccountPreferences
 export const DEFAULT_LOCAL_APP_PREFERENCES: LocalAppPreferences = {
   autoplayPreview: true,
   explicitFilter: false,
+  advancedModeEnabled: false,
 };
 
 export const DEFAULT_ACCOUNT_NOTIFICATION_PREFERENCES: AccountNotificationPreferences =
@@ -46,7 +48,8 @@ function isLocalAppPreferences(value: unknown): value is LocalAppPreferences {
 
   return (
     typeof value.autoplayPreview === "boolean" &&
-    typeof value.explicitFilter === "boolean"
+    typeof value.explicitFilter === "boolean" &&
+    typeof value.advancedModeEnabled === "boolean"
   );
 }
 

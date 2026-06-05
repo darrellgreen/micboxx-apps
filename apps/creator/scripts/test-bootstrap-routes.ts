@@ -76,7 +76,7 @@ function testResolveCreateEntryHref() {
       tracksSummary: null,
       uploadOptions: null,
     }),
-    "/create/album",
+    "/create/album-push",
   );
 
   assert.equal(
@@ -131,7 +131,7 @@ function testResolveCreateEntryHref() {
         albums: [{ id: 77 }],
       } as any,
     }),
-    "/create/upload?albumId=77",
+    "/create/upload-push?albumId=77",
   );
 
   assert.equal(
@@ -140,7 +140,7 @@ function testResolveCreateEntryHref() {
       tracksSummary: null,
       uploadOptions: null,
     }),
-    "/create/select-album",
+    "/create/select-album-push",
   );
 }
 

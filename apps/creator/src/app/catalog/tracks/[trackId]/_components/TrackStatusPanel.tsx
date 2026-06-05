@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 import { AnimatedPressable } from "@micboxx/ui";
 import type { DashboardTrack } from "@/contracts/creator";
+import { useAccountPreferences } from "@/features/account/provider";
 
 interface TrackStatusPanelProps {
   track: DashboardTrack;
@@ -13,8 +14,49 @@ interface TrackStatusPanelProps {
 const CARD_BG = "#131820";
 
 export function TrackStatusPanel({ track, onAction }: TrackStatusPanelProps) {
-  // Use mockup date by default if unavailable
-  const publishedDateText = "Jun 3, 2026 at 2:41 PM";
+  const { preferences } = useAccountPreferences();
+  const advancedModeEnabled = preferences?.advancedModeEnabled ?? false;
+
+  let publishedDateText = "Not published";
+  const dateToFormat = track.status.publishAt || track.timestamps.createdAt;
+  if (dateToFormat) {
+    try {
+      const date = new Date(dateToFormat);
+      publishedDateText = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      publishedDateText = "Not published";
+    }
+  }
+
+  const visibilityVal = track.status.published ? "Public" : "Private";
+
+  const pricingVal = track.commerce.isPurchasable
+    ? `${track.commerce.price ? `$${track.commerce.price}` : "0.00"} ${track.commerce.currency || "USD"}`
+    : "Not for sale";
+
+  const subOnlyVal = track.commerce.isSubscriberOnly ? "Yes" : "No";
+
+  let processedAtText = "Not processed";
+  if (track.status.processedAt) {
+    try {
+      const date = new Date(track.status.processedAt);
+      processedAtText = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      processedAtText = "Not processed";
+    }
+  }
 
   return (
     <View style={styles.card}>
@@ -28,8 +70,10 @@ export function TrackStatusPanel({ track, onAction }: TrackStatusPanelProps) {
             <Text style={styles.label}>Status</Text>
           </View>
           <View style={styles.rightCol}>
-            <Text style={[styles.value, styles.greenText]}>Published</Text>
-            <AnimatedPressable style={styles.pillBtn} onPress={() => onAction("unpublish")}>
+            <Text style={[styles.value, styles.greenText]}>
+              {track.status.published ? "Published" : "Draft"}
+            </Text>
+            <AnimatedPressable style={styles.pillBtn} onPress={() => onAction(track.status.published ? "unpublish" : "publish")}>
               <Text style={styles.btnText}>Update Status</Text>
             </AnimatedPressable>
           </View>
@@ -56,12 +100,62 @@ export function TrackStatusPanel({ track, onAction }: TrackStatusPanelProps) {
             <Text style={styles.label}>Visibility</Text>
           </View>
           <View style={styles.rightCol}>
-            <Text style={[styles.value, styles.greenText]}>Public</Text>
+            <Text style={[styles.value, styles.greenText]}>{visibilityVal}</Text>
             <AnimatedPressable style={styles.pillBtn} onPress={() => {}}>
               <Text style={styles.btnText}>Change</Text>
             </AnimatedPressable>
           </View>
         </View>
+
+        {/* Row: Pricing */}
+        <View style={styles.row}>
+          <View style={styles.leftCol}>
+            <Ionicons name="cash-outline" size={18} color="#00B3A6" />
+            <Text style={styles.label}>Pricing</Text>
+          </View>
+          <View style={styles.rightCol}>
+            <Text style={[styles.value, styles.whiteText]}>{pricingVal}</Text>
+          </View>
+        </View>
+
+        {/* Row: Subscriber Only */}
+        <View style={styles.row}>
+          <View style={styles.leftCol}>
+            <Ionicons name="people-outline" size={18} color="#00B3A6" />
+            <Text style={styles.label}>Subscriber Only</Text>
+          </View>
+          <View style={styles.rightCol}>
+            <Text style={[styles.value, styles.whiteText]}>{subOnlyVal}</Text>
+          </View>
+        </View>
+
+        {advancedModeEnabled && (
+          <>
+            {/* Row: Processing Attempts */}
+            <View style={styles.row}>
+              <View style={styles.leftCol}>
+                <Ionicons name="construct-outline" size={18} color="#00B3A6" />
+                <Text style={styles.label}>Processing Attempts</Text>
+              </View>
+              <View style={styles.rightCol}>
+                <Text style={[styles.value, styles.whiteText]}>
+                  {track.status.attempts} / {track.status.maxAttempts || 3}
+                </Text>
+              </View>
+            </View>
+
+            {/* Row: Processed At */}
+            <View style={styles.row}>
+              <View style={styles.leftCol}>
+                <Ionicons name="time-outline" size={18} color="#00B3A6" />
+                <Text style={styles.label}>Processed At</Text>
+              </View>
+              <View style={styles.rightCol}>
+                <Text style={[styles.value, styles.whiteText]}>{processedAtText}</Text>
+              </View>
+            </View>
+          </>
+        )}
       </View>
     </View>
   );

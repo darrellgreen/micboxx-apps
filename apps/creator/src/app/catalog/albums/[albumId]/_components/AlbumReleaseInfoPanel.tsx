@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 import { AnimatedPressable } from "@micboxx/ui";
 import type { DashboardAlbum } from "@/contracts/creator";
+import { useAccountPreferences } from "@/features/account/provider";
 
 const CARD_BG = "#131820";
 
@@ -34,6 +35,9 @@ interface AlbumReleaseInfoPanelProps {
 }
 
 export function AlbumReleaseInfoPanel({ album }: AlbumReleaseInfoPanelProps) {
+  const { preferences } = useAccountPreferences();
+  const advancedModeEnabled = preferences?.advancedModeEnabled ?? false;
+
   // Format release date from publishAt or fallback to createdAt
   let releaseDateVal = "Not set";
   const dateToFormat = album.status.publishAt || album.timestamps.createdAt;
@@ -56,6 +60,10 @@ export function AlbumReleaseInfoPanel({ album }: AlbumReleaseInfoPanelProps) {
     
   const catNumVal = "Not set"; // Catalog number not yet in database entity schema
   
+  const upcVal = album.upc && album.upc.trim() !== ""
+    ? album.upc
+    : "Not assigned";
+
   const explicitVal = album.explicitContent === true
     ? "Yes"
     : album.explicitContent === false
@@ -70,9 +78,14 @@ export function AlbumReleaseInfoPanel({ album }: AlbumReleaseInfoPanelProps) {
       
       <View style={styles.rowsContainer}>
         <ReleaseInfoRow label="Release Date" value={releaseDateVal} />
-        <ReleaseInfoRow label="Label" value={labelVal} />
-        <ReleaseInfoRow label="Catalog Number" value={catNumVal} />
-        <ReleaseInfoRow label="Explicit Content" value={explicitVal} />
+        {advancedModeEnabled && (
+          <>
+            <ReleaseInfoRow label="Label" value={labelVal} />
+            <ReleaseInfoRow label="Catalog Number" value={catNumVal} />
+            <ReleaseInfoRow label="UPC" value={upcVal} />
+            <ReleaseInfoRow label="Explicit Content" value={explicitVal} />
+          </>
+        )}
         <ReleaseInfoRow label="Visibility" value={visibilityVal} isGreenValue={album.status.published} />
       </View>
     </View>

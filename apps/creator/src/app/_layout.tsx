@@ -20,6 +20,7 @@ import {
 import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
 import { ConsoleAnalyticsAdapter } from "@/features/analytics/adapter";
+import { AccountPreferencesProvider } from "@/features/account/provider";
 
 configureMicboxxApi({
   baseUrl: env.drupalBaseUrl,
@@ -55,161 +56,203 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <AuthProvider>
-          <SocialAuthGate />
-          <CreatorBootstrapProvider>
-            <ThemeProvider value={navigationTheme}>
-              <AccountDrawerProvider>
-                <View style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}>
-                  <AppBackdrop />
-                  <Stack
-                    screenOptions={{
-                      headerTransparent: true,
-                      headerShadowVisible: false,
-                      headerTintColor: tokens.colors.textPrimary,
-                      headerStyle: {
-                        backgroundColor: "transparent",
-                      },
-                      contentStyle: {
-                        backgroundColor: "transparent",
-                      },
-                    }}
-                  >
-                    <Stack.Screen
-                      name="index"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="welcome"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="sign-in"
-                      options={{
-                        headerShown: false,
-                        presentation: "modal",
-                        animation: "slide_from_bottom",
-                        contentStyle: {
-                          backgroundColor: tokens.colors.bgApp,
+          <AccountPreferencesProvider>
+            <SocialAuthGate />
+            <CreatorBootstrapProvider>
+              <ThemeProvider value={navigationTheme}>
+                <AccountDrawerProvider>
+                  <View style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}>
+                    <AppBackdrop />
+                    <Stack
+                      screenOptions={{
+                        headerTransparent: true,
+                        headerShadowVisible: false,
+                        headerTintColor: tokens.colors.textPrimary,
+                        headerStyle: {
+                          backgroundColor: "transparent",
                         },
-                      }}
-                    />
-                    <Stack.Screen
-                      name="creator-access"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="handoff/create-account"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="handoff/reset-password"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="auth/callback"
-                      options={{
-                        headerShown: false,
-                        presentation: "transparentModal",
-                        animation: "fade",
-                        contentStyle: {
-                          backgroundColor: tokens.colors.bgApp,
-                        },
-                      }}
-                    />
-                    <Stack.Screen
-                      name="onboarding"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="(tabs)"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="audience"
-                      options={{
-                        headerShown: false,
-                        animation: "slide_from_right",
                         contentStyle: {
                           backgroundColor: "transparent",
                         },
                       }}
-                    />
-                    <Stack.Screen
-                      name="rooms/[albumId]"
-                      options={{
-                        headerShown: false,
-                        animation: "slide_from_right",
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    />
-                    <Stack.Screen
-                      name="catalog/tracks/index"
-                      options={{
-                        headerShown: false,
-                        animation: "slide_from_right",
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    />
-                    <Stack.Screen
-                      name="catalog/albums/index"
-                      options={{
-                        headerShown: false,
-                        animation: "slide_from_right",
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    />
-                    <Stack.Screen
-                      name="catalog/tracks/[trackId]"
-                      options={{
-                        headerShown: false,
-                        animation: "slide_from_right",
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    />
-                    <Stack.Screen
-                      name="catalog/tracks/[trackId]/edit"
-                      options={{
-                        headerShown: false,
-                        animation: "slide_from_right",
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    />
-                    <Stack.Screen
-                      name="catalog/albums/[albumId]"
-                      options={{
-                        headerShown: false,
-                        animation: "slide_from_right",
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    />
-                    <Stack.Screen
-                      name="catalog/albums/[albumId]/edit"
-                      options={{
-                        headerShown: false,
-                        animation: "slide_from_right",
-                        contentStyle: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    />
-                  </Stack>
-                  <StatusBar style="light" />
-                </View>
-              </AccountDrawerProvider>
-            </ThemeProvider>
-          </CreatorBootstrapProvider>
+                    >
+                      <Stack.Screen
+                        name="index"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="welcome"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="sign-in"
+                        options={{
+                          headerShown: false,
+                          presentation: "modal",
+                          animation: "slide_from_bottom",
+                          contentStyle: {
+                            backgroundColor: tokens.colors.bgApp,
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="creator-access"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="handoff/create-account"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="handoff/reset-password"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="auth/callback"
+                        options={{
+                          headerShown: false,
+                          presentation: "transparentModal",
+                          animation: "fade",
+                          contentStyle: {
+                            backgroundColor: tokens.colors.bgApp,
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="onboarding"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="(tabs)"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="audience"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="rooms/[albumId]"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="catalog/tracks/index"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="catalog/albums/index"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="catalog/tracks/[trackId]"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="catalog/tracks/[trackId]/edit"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="catalog/albums/[albumId]"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="catalog/albums/[albumId]/edit"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="create/upload-push"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="create/album-push"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="create/select-album-push"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
+                        name="account-push"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                    </Stack>
+                    <StatusBar style="light" />
+                  </View>
+                </AccountDrawerProvider>
+              </ThemeProvider>
+            </CreatorBootstrapProvider>
+          </AccountPreferencesProvider>
         </AuthProvider>
       </Provider>
     </GestureHandlerRootView>

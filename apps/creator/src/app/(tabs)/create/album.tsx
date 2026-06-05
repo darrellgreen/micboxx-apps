@@ -34,7 +34,7 @@ export default function CreateAlbumScreen() {
         description: description.trim(),
       });
 
-      router.replace(`/create/upload?albumId=${albumId}` as never);
+      router.replace(`/create/upload-push?albumId=${albumId}` as never);
     } catch {
       // Handled by uploader state
     }
