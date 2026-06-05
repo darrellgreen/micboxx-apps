@@ -2,18 +2,16 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
-import { AnimatedPressable } from "@micboxx/ui";
 import type { DashboardTrack } from "@/contracts/creator";
 import { useAccountPreferences } from "@/features/account/provider";
 
 interface TrackStatusPanelProps {
   track: DashboardTrack;
-  onAction: (action: "publish" | "unpublish" | "requeue") => void;
 }
 
 const CARD_BG = "#131820";
 
-export function TrackStatusPanel({ track, onAction }: TrackStatusPanelProps) {
+export function TrackStatusPanel({ track }: TrackStatusPanelProps) {
   const { preferences } = useAccountPreferences();
   const advancedModeEnabled = preferences?.advancedModeEnabled ?? false;
 
@@ -73,9 +71,6 @@ export function TrackStatusPanel({ track, onAction }: TrackStatusPanelProps) {
             <Text style={[styles.value, styles.greenText]}>
               {track.status.published ? "Published" : "Draft"}
             </Text>
-            <AnimatedPressable style={styles.pillBtn} onPress={() => onAction(track.status.published ? "unpublish" : "publish")}>
-              <Text style={styles.btnText}>Update Status</Text>
-            </AnimatedPressable>
           </View>
         </View>
 
@@ -87,9 +82,6 @@ export function TrackStatusPanel({ track, onAction }: TrackStatusPanelProps) {
           </View>
           <View style={styles.rightCol}>
             <Text style={[styles.value, styles.whiteText]}>{publishedDateText}</Text>
-            <AnimatedPressable style={styles.pillBtn} onPress={() => {}}>
-              <Text style={styles.btnText}>Edit Date</Text>
-            </AnimatedPressable>
           </View>
         </View>
 
@@ -101,9 +93,6 @@ export function TrackStatusPanel({ track, onAction }: TrackStatusPanelProps) {
           </View>
           <View style={styles.rightCol}>
             <Text style={[styles.value, styles.greenText]}>{visibilityVal}</Text>
-            <AnimatedPressable style={styles.pillBtn} onPress={() => {}}>
-              <Text style={styles.btnText}>Change</Text>
-            </AnimatedPressable>
           </View>
         </View>
 

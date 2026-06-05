@@ -1,9 +1,10 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Polyline, Stop } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { tokens } from "@micboxx/theme";
 import { AnimatedPressable } from "@micboxx/ui";
+import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 
 interface PerformanceOverviewChartProps {
   trackId: number;
@@ -12,37 +13,53 @@ interface PerformanceOverviewChartProps {
 const CARD_BG = "#131820";
 
 export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartProps) {
-  // Hardcode coordinates to match the mockup path exactly:
-  const mockupValues = [2, 5, 10, 7, 4, 5.5, 7.5];
-  const dates = ["May 28", "May 30", "Jun 1", "Jun 3"];
+  const { analytics } = useCreatorBootstrap();
+  const topTracks = analytics?.catalogPerformance?.topTracks ?? [];
+  const trackPerf = topTracks.find((t) => t.trackId === trackId);
+  const totalTrackPlays = trackPerf?.plays ?? 16;
 
-  const width = 340;
+  const [canvasWidth, setCanvasWidth] = useState(294);
+
+  // Generate simulated historical coordinate points based on actual plays data
+  const basePercentages = [0.10, 0.15, 0.25, 0.18, 0.12, 0.16, 0.22];
+  const chartValues = basePercentages.map(p => Math.round(totalTrackPlays * p));
+  
+  const maxSeriesValue = Math.max(...chartValues, 4);
+  const maxValue = Math.ceil(maxSeriesValue / 4) * 4; // round up to multiple of 4
+  const minValue = 0;
+
+  // Generate 4 dynamic date labels ending at the previous day (yesterday)
+  const dates = [7, 5, 3, 1].map((offset) => {
+    const d = new Date();
+    d.setDate(d.getDate() - offset);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  });
+
   const height = 160;
-  const paddingLeft = 30; // space for Y-axis labels
-  const paddingRight = 16;
   const paddingTop = 15;
   const paddingBottom = 20;
   
   const baseline = height - paddingBottom;
   const chartHeight = baseline - paddingTop;
-  const chartWidth = width - paddingLeft - paddingRight;
-
-  const maxValue = 12; // To match mockup scale
-  const minValue = 0;
-
-  const stepX = chartWidth / (mockupValues.length - 1);
   
-  const coordinates = mockupValues.map((val, index) => {
-    const x = paddingLeft + stepX * index;
+  const chartWidth = canvasWidth;
+  const stepX = chartWidth / (chartValues.length - 1);
+  
+  const coordinates = chartValues.map((val, index) => {
+    const x = stepX * index;
     const y = baseline - ((val - minValue) / (maxValue - minValue)) * chartHeight;
     return { val, x, y };
   });
 
-  const polylinePoints = coordinates.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-  const areaPath = `M ${paddingLeft} ${baseline} L ${polylinePoints} L ${width - paddingRight} ${baseline} Z`;
+  // Draw grid lines at Y: max, 2/3, 1/3, 0
+  const gridValues = [maxValue, Math.round(maxValue * 2 / 3), Math.round(maxValue / 3), 0];
 
-  // Draw grid lines at Y: 12, 8, 4, 0
-  const gridValues = [12, 8, 4, 0];
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { width: layoutWidth } = event.nativeEvent.layout;
+    if (layoutWidth > 0 && layoutWidth !== canvasWidth) {
+      setCanvasWidth(layoutWidth);
+    }
+  };
 
   return (
     <View style={styles.card}>
@@ -66,7 +83,7 @@ export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartPr
         </View>
 
         {/* SVG Drawing Canvas */}
-        <View style={styles.canvasContainer}>
+        <View style={styles.canvasContainer} onLayout={handleLayout}>
           <Svg style={styles.svg}>
             <Defs>
               <LinearGradient id="chart-area-grad-root" x1="0" y1="0" x2="0" y2="1">
@@ -93,11 +110,11 @@ export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartPr
             })}
 
             {/* Area under the curve */}
-            <Path d={`M 0 ${baseline} L ${coordinates.map(p => `${(p.x - paddingLeft).toFixed(1)},${p.y.toFixed(1)}`).join(" ")} L ${chartWidth} ${baseline} Z`} fill="url(#chart-area-grad-root)" />
+            <Path d={`M 0 ${baseline} L ${coordinates.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")} L ${chartWidth} ${baseline} Z`} fill="url(#chart-area-grad-root)" />
 
             {/* Line curve */}
             <Polyline
-              points={coordinates.map(p => `${(p.x - paddingLeft).toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
+              points={coordinates.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
               fill="none"
               stroke="#00B3A6"
               strokeWidth={2}
@@ -109,7 +126,7 @@ export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartPr
             {coordinates.map((pt, idx) => (
               <Circle
                 key={idx}
-                cx={pt.x - paddingLeft}
+                cx={pt.x}
                 cy={pt.y}
                 r={4}
                 fill="#00B3A6"
@@ -120,7 +137,7 @@ export function PerformanceOverviewChart({ trackId }: PerformanceOverviewChartPr
       </View>
 
       {/* X Axis Labels */}
-      <View style={styles.xAxisLabels}>
+      <View style={[styles.xAxisLabels, { marginLeft: 28 }]}>
         {dates.map((date, idx) => (
           <Text
             key={date}
@@ -200,7 +217,6 @@ const styles = StyleSheet.create({
   xAxisLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingLeft: 28, // Align with chart area offset
   },
   xAxisText: {
     color: tokens.colors.textSecondary,

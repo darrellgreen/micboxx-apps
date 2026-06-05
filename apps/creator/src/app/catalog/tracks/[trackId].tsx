@@ -5,7 +5,7 @@ import { Share, StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 
 import type { DashboardTrack } from "@/contracts/creator";
-import { getTrackStatus, publishTrack, requeueTrack, unpublishTrack } from "@/shared/api/creator-dashboard";
+import { getTrackStatus } from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
 import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx/ui";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
@@ -74,41 +74,6 @@ export default function TrackDetailScreen() {
     void load();
   }, [load]);
 
-  async function runAction(action: "publish" | "unpublish" | "requeue") {
-    if (!trackId) return;
-    setError(null);
-    try {
-      const nextTrack =
-        action === "publish"
-          ? await publishTrack(trackId)
-          : action === "unpublish"
-            ? await unpublishTrack(trackId)
-            : await requeueTrack(trackId);
-      setTrack(nextTrack);
-
-      showToast({
-        tone: action === "publish" ? "success" : "info",
-        title: action === "publish"
-          ? "Track Published"
-          : action === "unpublish"
-            ? "Track Draft Saved"
-            : "Requeued for Processing",
-        message: action === "publish"
-          ? "Track is now live for streaming."
-          : action === "unpublish"
-            ? "Track reverted to private draft."
-            : "Track processing was restarted.",
-      });
-    } catch (nextError) {
-      const errMsg = nextError instanceof Error ? nextError.message : "Track action failed.";
-      setError(errMsg);
-      showToast({
-        tone: "error",
-        title: "Update Failed",
-        message: errMsg,
-      });
-    }
-  }
 
   const handleShare = async () => {
     if (!track) return;
@@ -190,7 +155,7 @@ export default function TrackDetailScreen() {
             <>
               <PerformanceOverviewChart trackId={track.id} />
               <AudienceSummaryCards trackId={track.id} />
-              <TrackStatusPanel track={track} onAction={runAction} />
+              <TrackStatusPanel track={track} />
             </>
           ) : (
             <ComingSoonStub tab={activeTab} />
