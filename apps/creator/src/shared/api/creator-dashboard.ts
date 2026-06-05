@@ -315,6 +315,15 @@ export async function requeueTrack(
   return response.track;
 }
 
+export async function deleteTrack(
+  trackId: string | number,
+): Promise<void> {
+  await creatorFetch<void>(
+    `/v1/dashboard/tracks/${trackId}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function getAlbumOptions(): Promise<DashboardAlbumOptions> {
   return creatorFetch<DashboardAlbumOptions>("/v1/dashboard/albums/options");
 }
