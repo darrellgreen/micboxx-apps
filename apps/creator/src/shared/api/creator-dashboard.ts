@@ -5,6 +5,10 @@ import type {
   DashboardAlbum,
   DashboardAlbumList,
   DashboardAlbumOptions,
+  DashboardPromotionCampaign,
+  DashboardPromotionFundingCheckout,
+  DashboardPromotionFundingTopup,
+  DashboardPromotionList,
   DashboardRoomList,
   DashboardTrack,
   DashboardTrackList,
@@ -314,6 +318,43 @@ export async function requeueTrack(
   );
 
   return response.track;
+}
+
+export async function getDashboardPromotions(): Promise<DashboardPromotionList> {
+  return creatorFetch<DashboardPromotionList>("/v1/dashboard/promotions");
+}
+
+export async function requestTrackPromotion(input: {
+  trackId: number;
+  packageKey: string;
+}): Promise<DashboardPromotionCampaign> {
+  const response = await creatorFetch<{ promotion: DashboardPromotionCampaign }>(
+    "/v1/dashboard/promotions",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+
+  return response.promotion;
+}
+
+export async function createPromotionFundingSession(input: {
+  presetKey: string;
+  successUrl: string;
+  cancelUrl: string;
+  idempotencyKey?: string;
+}): Promise<{
+  topup: DashboardPromotionFundingTopup;
+  checkout: DashboardPromotionFundingCheckout;
+}> {
+  return creatorFetch<{
+    topup: DashboardPromotionFundingTopup;
+    checkout: DashboardPromotionFundingCheckout;
+  }>("/v1/dashboard/promotions/balance/fund", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function deleteTrack(

@@ -1,16 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 import { VerifiedBadge, AnimatedPressable } from "@micboxx/ui";
 import type { DashboardTrack } from "@/contracts/creator";
 
 interface TrackHeroCardProps {
   track: DashboardTrack;
+  boostActionLabel?: string;
+  boostActionLoading?: boolean;
+  onBoostPress: () => void;
 }
 
-export function TrackHeroCard({ track }: TrackHeroCardProps) {
+export function TrackHeroCard({
+  track,
+  boostActionLabel = "Boost Track",
+  boostActionLoading = false,
+  onBoostPress,
+}: TrackHeroCardProps) {
   const releaseYear = track.timestamps.createdAt
     ? new Date(track.timestamps.createdAt).getFullYear()
     : 2026; // Match mockup default if empty
@@ -71,21 +79,27 @@ export function TrackHeroCard({ track }: TrackHeroCardProps) {
 
       <View style={styles.actionsRow}>
         <AnimatedPressable
-          style={[styles.btnBase, styles.btnAnalytics]}
-          onPress={() => router.push("/dashboard/analytics")}
-          haptic="selection"
-        >
-          <Ionicons name="stats-chart" size={16} color="#FFFFFF" />
-          <Text style={styles.btnLabel}>View Analytics</Text>
-        </AnimatedPressable>
-
-        <AnimatedPressable
           style={[styles.btnBase, styles.btnEdit]}
           onPress={() => router.push(`/catalog/tracks/${track.id}/edit` as never)}
           haptic="selection"
         >
           <Ionicons name="pencil-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.btnLabel}>Edit</Text>
+          <Text style={styles.btnLabel}>Edit Track</Text>
+        </AnimatedPressable>
+
+        <AnimatedPressable
+          style={[styles.btnBase, styles.btnBoost]}
+          onPress={onBoostPress}
+          haptic="selection"
+        >
+          {boostActionLoading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="megaphone" size={16} color="#FFFFFF" />
+          )}
+          <Text style={styles.btnLabel} numberOfLines={1}>
+            {boostActionLabel}
+          </Text>
         </AnimatedPressable>
       </View>
     </View>
@@ -151,14 +165,14 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "800",
     color: "#00B3A6",
-    letterSpacing: 0.5,
+    letterSpacing: 0,
   },
   title: {
     color: tokens.colors.textPrimary,
     fontSize: 20,
     fontWeight: "800",
     lineHeight: 24,
-    letterSpacing: -0.2,
+    letterSpacing: 0,
   },
   artistRow: {
     flexDirection: "row",
@@ -188,11 +202,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  btnAnalytics: {
-    backgroundColor: "#00B3A6",
-  },
   btnEdit: {
     backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
+  btnBoost: {
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: "#00B3A6",
   },
   btnLabel: {
     color: "#FFFFFF",

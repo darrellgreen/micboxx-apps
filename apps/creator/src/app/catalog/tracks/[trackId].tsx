@@ -1,11 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { Share, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Linking, Share, StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 
-import type { DashboardTrack } from "@/contracts/creator";
-import { getTrackStatus } from "@/shared/api/creator-dashboard";
+import type {
+  DashboardPromotionCampaign,
+  DashboardPromotionList,
+  DashboardTrack,
+} from "@/contracts/creator";
+import {
+  deleteTrack,
+  getDashboardPromotions,
+  getTrackStatus,
+} from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
 import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx/ui";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
@@ -17,6 +25,7 @@ import { TrackTabs } from "./[trackId]/_components/TrackTabs";
 import { PerformanceOverviewChart } from "./[trackId]/_components/PerformanceOverviewChart";
 import { AudienceSummaryCards } from "./[trackId]/_components/AudienceSummaryCards";
 import { TrackStatusPanel } from "./[trackId]/_components/TrackStatusPanel";
+import { TrackPromotionSheet } from "./[trackId]/_components/TrackPromotionSheet";
 
 function ComingSoonStub({ tab }: { tab: string }) {
   const title = tab.charAt(0).toUpperCase() + tab.slice(1);
@@ -28,17 +37,57 @@ function ComingSoonStub({ tab }: { tab: string }) {
   );
 }
 
+function findLatestCampaign(
+  dashboard: DashboardPromotionList | null,
+  track: DashboardTrack | null,
+): DashboardPromotionCampaign | null {
+  if (!dashboard || !track) return null;
+
+  return dashboard.campaigns.find((campaign) => campaign.track.id === track.id) ?? null;
+}
+
+function getBoostActionLabel(
+  dashboard: DashboardPromotionList | null,
+  track: DashboardTrack | null,
+  loading: boolean,
+) {
+  if (loading && !dashboard) return "Loading Boost";
+
+  const campaign = findLatestCampaign(dashboard, track);
+  if (
+    campaign &&
+    campaign.status !== "completed" &&
+    campaign.status !== "rejected" &&
+    campaign.status !== "canceled"
+  ) {
+    return "View Boost";
+  }
+
+  return "Boost Track";
+}
+
 export default function TrackDetailScreen() {
   const { trackId } = useLocalSearchParams<{ trackId?: string }>();
   const [track, setTrack] = useState<DashboardTrack | null>(null);
+  const [promotionDashboard, setPromotionDashboard] =
+    useState<DashboardPromotionList | null>(null);
   const [loading, setLoading] = useState(true);
+  const [promotionsLoading, setPromotionsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [promotionError, setPromotionError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [menuVisible, setMenuVisible] = useState(false);
+  const [promotionSheetVisible, setPromotionSheetVisible] = useState(false);
   const { showToast } = useToast();
   const unreadCount = useUnreadNotificationCount();
 
   const menuItems = [
+    {
+      key: "preview",
+      label: "Preview Track",
+      icon: "play-circle-outline" as const,
+      onPress: () => void handlePreview(),
+    },
     {
       key: "share",
       label: "Share Track",
@@ -46,16 +95,29 @@ export default function TrackDetailScreen() {
       onPress: () => void handleShare(),
     },
     {
-      key: "edit",
-      label: "Edit Track",
-      icon: "pencil-outline" as const,
-      onPress: () => {
-        if (trackId) {
-          router.push(`/catalog/tracks/${trackId}/edit` as never);
-        }
-      },
+      key: "delete",
+      label: "Delete Track",
+      icon: "trash-outline" as const,
+      tone: "destructive" as const,
+      onPress: () => handleDelete(),
     },
   ];
+
+  const loadPromotions = useCallback(async () => {
+    setPromotionsLoading(true);
+    try {
+      setPromotionDashboard(await getDashboardPromotions());
+      setPromotionError(null);
+    } catch (nextError) {
+      setPromotionError(
+        nextError instanceof Error
+          ? nextError.message
+          : "Unable to load promotion options.",
+      );
+    } finally {
+      setPromotionsLoading(false);
+    }
+  }, []);
 
   const load = useCallback(async () => {
     if (!trackId) return;
@@ -63,22 +125,58 @@ export default function TrackDetailScreen() {
     setError(null);
     try {
       setTrack(await getTrackStatus(trackId));
+      void loadPromotions();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Unable to load track.");
     } finally {
       setLoading(false);
     }
-  }, [trackId]);
+  }, [loadPromotions, trackId]);
+
+  const refreshTrackAndPromotions = useCallback(async () => {
+    if (!trackId) return;
+
+    const [nextTrack] = await Promise.all([
+      getTrackStatus(trackId),
+      loadPromotions(),
+    ]);
+    setTrack(nextTrack);
+  }, [loadPromotions, trackId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  const boostActionLabel = useMemo(
+    () => getBoostActionLabel(promotionDashboard, track, promotionsLoading),
+    [promotionDashboard, promotionsLoading, track],
+  );
+
+  const getTrackUrl = useCallback(() => {
+    if (!track) return null;
+    return track.publicHref || `https://micboxx.com/track/${track.uuid}`;
+  }, [track]);
+
+  const handlePreview = async () => {
+    const previewUrl = getTrackUrl();
+    if (!previewUrl) return;
+
+    try {
+      await Linking.openURL(previewUrl);
+    } catch (err) {
+      showToast({
+        tone: "error",
+        title: "Preview Failed",
+        message: err instanceof Error ? err.message : "Unable to open track preview.",
+      });
+    }
+  };
 
   const handleShare = async () => {
-    if (!track) return;
+    const shareUrl = getTrackUrl();
+    if (!track || !shareUrl) return;
+
     try {
-      const shareUrl = track.publicHref || `https://micboxx.com/track/${track.uuid}`;
       await Share.share({
         message: `Check out my track "${track.title}" on MicBoxx! ${shareUrl}`,
         url: shareUrl,
@@ -91,6 +189,39 @@ export default function TrackDetailScreen() {
       });
     }
   };
+
+  function handleDelete() {
+    if (!trackId) return;
+
+    Alert.alert(
+      "Delete Track",
+      "Are you sure you want to permanently delete this track?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteTrack(trackId);
+              showToast({
+                tone: "success",
+                title: "Track Deleted",
+                message: "Track was permanently removed.",
+              });
+              router.replace("/(tabs)/catalog");
+            } catch (err) {
+              showToast({
+                tone: "error",
+                title: "Delete Failed",
+                message: err instanceof Error ? err.message : "Unable to delete track.",
+              });
+            }
+          },
+        },
+      ],
+    );
+  }
 
   const renderCustomHeader = () => {
     return (
@@ -145,7 +276,12 @@ export default function TrackDetailScreen() {
         <Panel title="Loading track" description="Reading the current dashboard track payload." />
       ) : (
         <>
-          <TrackHeroCard track={track} />
+          <TrackHeroCard
+            track={track}
+            boostActionLabel={boostActionLabel}
+            boostActionLoading={promotionsLoading && !promotionDashboard}
+            onBoostPress={() => setPromotionSheetVisible(true)}
+          />
           
           <PerformanceSnapshot trackId={track.id} />
           
@@ -172,6 +308,15 @@ export default function TrackDetailScreen() {
             title="Track Options"
             items={menuItems}
             onClose={() => setMenuVisible(false)}
+          />
+          <TrackPromotionSheet
+            visible={promotionSheetVisible}
+            track={track}
+            dashboard={promotionDashboard}
+            loading={promotionsLoading}
+            error={promotionError}
+            onClose={() => setPromotionSheetVisible(false)}
+            onRefresh={refreshTrackAndPromotions}
           />
         </>
       )}

@@ -13,6 +13,7 @@ export type { AppHeaderProps, HeaderVariant } from './app-header';
 export { Avatar } from './avatar';
 export { BottomActionSheet } from './bottom-action-sheet';
 export type { BottomActionSheetItem } from './bottom-action-sheet';
+export { BottomSheetScrollView, BottomSheetSurface } from './bottom-sheet-surface';
 export { Button } from './button';
 export { AccentHeading, SectionHeading } from './gradient-text';
 export { Pill } from './pill';

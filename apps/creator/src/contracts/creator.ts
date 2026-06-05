@@ -260,6 +260,179 @@ export interface TrackMetadataUpdate {
   isSubscriberOnly?: boolean;
 }
 
+export type DashboardPromotionPolicyMode =
+  | "auto_approve"
+  | "review_required"
+  | "blocked";
+
+export type DashboardPromotionStatus =
+  | "funding_required"
+  | "funded"
+  | "awaiting_review"
+  | "awaiting_payment"
+  | "active"
+  | "completed"
+  | "rejected"
+  | "payment_failed"
+  | "canceled";
+
+export type DashboardPromotionReviewState =
+  | "under_review"
+  | "approved"
+  | "rejected";
+
+export type DashboardPromotionPaymentState =
+  | "not_required"
+  | "checkout_required"
+  | "checkout_open"
+  | "paid"
+  | "failed";
+
+export type DashboardPromotionBalanceState =
+  | "not_allocated"
+  | "reserved"
+  | "consumed"
+  | "released"
+  | "refunded"
+  | "canceled"
+  | "legacy_external";
+
+export type DashboardPromotionDeliveryState =
+  | "not_ready"
+  | "active"
+  | "completed";
+
+export interface DashboardPromotionPolicy {
+  mode: DashboardPromotionPolicyMode;
+  eligible: boolean;
+  maxPackageKey: string | null;
+  reason: string | null;
+}
+
+export interface DashboardPromotionBalance {
+  currency: string;
+  available: string;
+  reserved: string;
+  spent: string;
+  refunded: string;
+  adjustment: string;
+  availableMinor: number;
+  reservedMinor: number;
+  spentMinor: number;
+  refundedMinor: number;
+  adjustmentMinor: number;
+}
+
+export interface DashboardPromotionFundingPreset {
+  key: string;
+  label: string;
+  currency: string;
+  amount: string;
+  amountMinor: number;
+}
+
+export interface DashboardPromotionFundingTopup {
+  id: number;
+  uuid: string;
+  presetKey: string;
+  amount: string;
+  amountMinor: number;
+  currency: string;
+  status: string;
+  orderId: number | null;
+  providerReference: string | null;
+  depositEntryUuid: string | null;
+  settledAt: string | null;
+}
+
+export interface DashboardPromotionFundingCheckout {
+  id: string;
+  url: string;
+  status: string;
+  paymentStatus: string;
+  mode: string;
+}
+
+export interface DashboardPromotionPackage {
+  key: string;
+  label: string;
+  description: string;
+  price: {
+    amount: string;
+    currency: string;
+  };
+  durationDays: number;
+  placements: string[];
+}
+
+export interface DashboardPromotionTrackSummary {
+  id: number;
+  title: string;
+  artistName: string | null;
+  slug: string;
+  publicHref: string;
+  artworkUrl: string | null;
+  published: boolean;
+  featured: boolean;
+}
+
+export interface DashboardPromotionEligibleTrack
+  extends DashboardPromotionTrackSummary {
+  canCreateCampaign: boolean;
+  reason: string | null;
+}
+
+export interface DashboardPromotionCampaign {
+  id: number;
+  uuid: string;
+  track: DashboardPromotionTrackSummary;
+  package: {
+    key: string;
+    label: string;
+    price: {
+      amount: string;
+      currency: string;
+    };
+    durationDays: number;
+    placements: string[];
+  };
+  approvalMode: DashboardPromotionPolicyMode;
+  status: DashboardPromotionStatus;
+  reviewState: DashboardPromotionReviewState;
+  paymentState: DashboardPromotionPaymentState;
+  balanceState: DashboardPromotionBalanceState;
+  deliveryState: DashboardPromotionDeliveryState;
+  requestedAt: string | null;
+  reviewedAt: string | null;
+  reviewedByUserId: number | null;
+  startAt: string | null;
+  endAt: string | null;
+  actions: {
+    canCheckout?: boolean;
+    canApprove?: boolean;
+    canReject?: boolean;
+  };
+  results: {
+    impressions: number | null;
+    clicks: number | null;
+    promotedPlays: number | null;
+    spend: string;
+  };
+  reason: string | null;
+}
+
+export interface DashboardPromotionList {
+  policy: DashboardPromotionPolicy;
+  balance: DashboardPromotionBalance;
+  fundingPresets: DashboardPromotionFundingPreset[];
+  packages: DashboardPromotionPackage[];
+  eligibleTracks: DashboardPromotionEligibleTrack[];
+  campaigns: DashboardPromotionCampaign[];
+  meta: {
+    policyNote: string;
+  };
+}
+
 export interface DashboardAlbumTrackOption {
   id: number;
   title: string;

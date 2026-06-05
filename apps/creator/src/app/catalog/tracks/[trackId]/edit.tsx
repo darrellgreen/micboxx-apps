@@ -81,6 +81,7 @@ export default function EditTrackScreen() {
   
   const [albumSheetVisible, setAlbumSheetVisible] = useState(false);
   const [publishSheetVisible, setPublishSheetVisible] = useState(false);
+  const [overflowSheetVisible, setOverflowSheetVisible] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -266,7 +267,7 @@ export default function EditTrackScreen() {
             </View>
           </AnimatedPressable>
 
-          <AnimatedPressable style={styles.circularBtn} onPress={() => {}} haptic="selection">
+          <AnimatedPressable style={styles.circularBtn} onPress={() => setOverflowSheetVisible(true)} haptic="selection">
             <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
           </AnimatedPressable>
         </View>
@@ -304,6 +305,18 @@ export default function EditTrackScreen() {
       key: "unpublish",
       label: "Unpublish Track",
       onPress: () => void handleAction("unpublish"),
+    },
+  ];
+
+  const overflowSheetItems = [
+    {
+      key: "delete",
+      label: "Delete Track",
+      icon: "trash-outline" as const,
+      tone: "destructive" as const,
+      onPress: () => {
+        handleDelete();
+      },
     },
   ];
 
@@ -350,21 +363,7 @@ export default function EditTrackScreen() {
           </View>
         </View>
 
-        <View style={styles.heroActions}>
-          <AnimatedPressable style={styles.previewBtn} onPress={() => {}} haptic="selection">
-            <Ionicons name="play" size={16} color="#0C0F14" style={{ marginRight: 6 }} />
-            <Text style={styles.previewBtnText}>Preview Track</Text>
-          </AnimatedPressable>
 
-          <AnimatedPressable
-            style={styles.analyticsBtn}
-            onPress={() => router.push("/dashboard/analytics")}
-            haptic="selection"
-          >
-            <Ionicons name="stats-chart" size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
-            <Text style={styles.analyticsBtnText}>View Analytics</Text>
-          </AnimatedPressable>
-        </View>
       </View>
 
       <View style={styles.divider} />
@@ -469,37 +468,6 @@ export default function EditTrackScreen() {
         </AnimatedPressable>
       </View>
 
-      <Text style={styles.sectionLabel}>ACTIONS</Text>
-
-      <View style={styles.actionsGrid}>
-        <AnimatedPressable
-          style={styles.actionGridCard}
-          onPress={() => void handleAction("requeue")}
-          haptic="selection"
-        >
-          <Ionicons name="sync-outline" size={20} color={TEAL_ACCENT} style={styles.actionCardIcon} />
-          <Text style={styles.actionCardText}>{"Requeue\nProcessing"}</Text>
-        </AnimatedPressable>
-
-        <AnimatedPressable
-          style={styles.actionGridCard}
-          onPress={() => void handleAction("unpublish")}
-          haptic="selection"
-        >
-          <Ionicons name="pause-outline" size={20} color="#E6B85C" style={styles.actionCardIcon} />
-          <Text style={styles.actionCardText}>{"Unpublish\nTrack"}</Text>
-        </AnimatedPressable>
-
-        <AnimatedPressable
-          style={styles.actionGridCard}
-          onPress={handleDelete}
-          haptic="selection"
-        >
-          <Ionicons name="trash-outline" size={20} color="#D95C5C" style={styles.actionCardIcon} />
-          <Text style={[styles.actionCardText, styles.deleteActionText]}>{"Delete\nTrack"}</Text>
-        </AnimatedPressable>
-      </View>
-
       <AnimatedPressable
         style={[styles.saveChangesBtn, saving && styles.saveChangesBtnDisabled]}
         onPress={() => void handleSave()}
@@ -523,6 +491,13 @@ export default function EditTrackScreen() {
         title="Update Status"
         items={publishSheetItems}
         onClose={() => setPublishSheetVisible(false)}
+      />
+
+      <BottomActionSheet
+        visible={overflowSheetVisible}
+        title="Track Options"
+        items={overflowSheetItems}
+        onClose={() => setOverflowSheetVisible(false)}
       />
     </Screen>
   );
@@ -687,7 +662,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   previewBtnText: {
-    color: "#0C0F14",
+    color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -791,7 +766,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   genreChipTextSelected: {
-    color: "#0C0F14",
+    color: "#FFFFFF",
     fontWeight: "700",
   },
   selectorCard: {
@@ -873,7 +848,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   saveChangesBtnText: {
-    color: "#0C0F14",
+    color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "700",
   },
