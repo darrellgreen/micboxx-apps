@@ -16,9 +16,10 @@ import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNot
 type TrackFilter = "all" | "draft" | "scheduled" | "published" | "failed";
 
 function matchesFilter(track: DashboardTrackSummary, filter: TrackFilter) {
-  if (filter === "draft") return track.status.releaseState === "draft";
-  if (filter === "scheduled") return track.status.releaseState === "scheduled";
-  if (filter === "published") return track.status.releaseState === "published";
+  const state = track.status.published ? "published" : track.status.releaseState;
+  if (filter === "draft") return state === "draft";
+  if (filter === "scheduled") return state === "scheduled";
+  if (filter === "published") return state === "published";
   if (filter === "failed") return track.status.processing === "failed";
   return true;
 }
@@ -87,13 +88,18 @@ export default function TracksListScreen() {
   }, []);
 
   const filterCounts = useMemo(() => {
-    const draft = items.filter((item) => item.status.releaseState === "draft").length;
-    const scheduled = items.filter(
-      (item) => item.status.releaseState === "scheduled",
-    ).length;
-    const published = items.filter(
-      (item) => item.status.releaseState === "published",
-    ).length;
+    const draft = items.filter((item) => {
+      const state = item.status.published ? "published" : item.status.releaseState;
+      return state === "draft";
+    }).length;
+    const scheduled = items.filter((item) => {
+      const state = item.status.published ? "published" : item.status.releaseState;
+      return state === "scheduled";
+    }).length;
+    const published = items.filter((item) => {
+      const state = item.status.published ? "published" : item.status.releaseState;
+      return state === "published";
+    }).length;
     const failed = items.filter((item) => item.status.processing === "failed").length;
     return {
       all: items.length,
@@ -217,7 +223,8 @@ export default function TracksListScreen() {
           {filteredItems.map((track, index) => {
             const durationText = formatDuration(track.duration || 180);
             const dateText = formatDate(track.timestamps.createdAt);
-            const isPublished = track.status.releaseState === "published";
+            const isPublished = track.status.published;
+            const displayState = track.status.published ? "published" : track.status.releaseState;
             
             return (
               <View key={track.id}>
@@ -261,7 +268,7 @@ export default function TracksListScreen() {
                   <View style={styles.trackRight}>
                     <View style={[styles.statusBadge, isPublished && styles.statusBadgePublished]}>
                       <Text style={[styles.statusBadgeText, isPublished && styles.statusBadgeTextPublished]}>
-                        {track.status.releaseState.toUpperCase()}
+                        {displayState.toUpperCase()}
                       </Text>
                     </View>
                     <Text style={styles.dateText}>{dateText}</Text>

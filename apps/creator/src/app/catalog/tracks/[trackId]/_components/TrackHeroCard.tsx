@@ -24,7 +24,7 @@ export function TrackHeroCard({
     : 2026; // Match mockup default if empty
 
   const renderStatusBadge = () => {
-    const state = track.status.releaseState || "published";
+    const state = (track.status.published || track.status.releaseState === "published") ? "published" : track.status.releaseState;
     const displayState = state.toUpperCase();
     
     return (

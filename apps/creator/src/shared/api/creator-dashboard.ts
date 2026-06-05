@@ -481,3 +481,32 @@ export async function getTrackGeography(
     `/v1/dashboard/tracks/${trackId}/analytics/geography?days=${days}`,
   );
 }
+
+export interface PlayTimeseriesData {
+  days: number;
+  totalPlays: number;
+  series: Array<{
+    date: string;
+    label: string;
+    plays: number;
+  }>;
+}
+
+export async function getTrackPlays(
+  trackId: string | number,
+  days: number,
+): Promise<PlayTimeseriesData> {
+  return creatorFetch<PlayTimeseriesData>(
+    `/v1/dashboard/tracks/${trackId}/analytics/plays?days=${days}`,
+  );
+}
+
+export async function getAlbumPlays(
+  albumId: string | number,
+  days: number,
+): Promise<PlayTimeseriesData> {
+  return creatorFetch<PlayTimeseriesData>(
+    `/v1/dashboard/albums/${albumId}/analytics/plays?days=${days}`,
+  );
+}
+

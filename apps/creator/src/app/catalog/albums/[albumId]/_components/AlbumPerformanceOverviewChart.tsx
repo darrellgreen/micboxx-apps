@@ -1,69 +1,160 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, Defs, Line, LinearGradient, Path, Polyline, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Polyline, Stop, ClipPath, Rect } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { tokens } from "@micboxx/theme";
-import { AnimatedPressable, BottomActionSheet } from "@micboxx/ui";
+import { AnimatedPressable, BottomActionSheet, ShimmerPlaceholder } from "@micboxx/ui";
+import { useLocalSearchParams } from "expo-router";
+import { getAlbumPlays, type PlayTimeseriesData } from "@/shared/api/creator-dashboard";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedProps,
+  withTiming,
+  ReduceMotion,
+  Easing,
+  type SharedValue,
+} from "react-native-reanimated";
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedLine = Animated.createAnimatedComponent(Line);
+
+interface AnimatedDotProps {
+  cx: number;
+  cy: number;
+  circleRadius: number;
+  index: number;
+  totalPoints: number;
+  chartProgress: SharedValue<number>;
+}
+
+function AnimatedDot({ cx, cy, circleRadius, index, totalPoints, chartProgress }: AnimatedDotProps) {
+  const animatedProps = useAnimatedProps(() => {
+    const startThreshold = (index / totalPoints) * 0.7;
+    const rawProgress = (chartProgress.value - startThreshold) / 0.15;
+    const progress = Math.max(0, Math.min(1, rawProgress));
+    
+    let scale = progress;
+    if (index === totalPoints - 1 && chartProgress.value > 0.95) {
+      const pulseFactor = Math.sin((chartProgress.value - 0.95) * Math.PI * 20) * 0.15;
+      scale = progress + Math.max(0, pulseFactor);
+    }
+
+    return {
+      r: circleRadius * scale,
+      opacity: progress,
+    };
+  });
+
+  return (
+    <AnimatedCircle
+      cx={cx}
+      cy={cy}
+      fill="#00B3A6"
+      animatedProps={animatedProps}
+    />
+  );
+}
 
 const CARD_BG = "#131820";
 
 export function AlbumPerformanceOverviewChart() {
+  const { albumId } = useLocalSearchParams<{ albumId: string }>();
+  const id = albumId ? parseInt(albumId, 10) : 88;
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<PlayTimeseriesData | null>(null);
+
   const [selectedDays, setSelectedDays] = useState<7 | 14 | 30>(7);
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  // Scale plays based on the selected period
-  const periodPlaysMultiplier = selectedDays === 14 ? 1.8 : selectedDays === 30 ? 3.5 : 1.0;
-  const baseValues = [100, 180, 360, 220, 120, 170, 255];
-  const totalAlbumPlays = 1400;
-  
-  // Ensure the daily average increases for longer periods to show positive performance scaling
-  const averagePlaysPerDay = (totalAlbumPlays / 7) * (selectedDays === 14 ? 1.4 : selectedDays === 30 ? 1.8 : 1.0);
+  // Reanimated Shared Values
+  const cardOpacity = useSharedValue(0);
+  const cardTranslateY = useSharedValue(8);
+  const chartProgress = useSharedValue(0);
 
-  // Generate simulated daily plays based on total period plays using sine wave + growth trends
-  const chartValues = (() => {
-    if (selectedDays === 7) {
-      return baseValues;
+  // Mount Animation for the whole card
+  useEffect(() => {
+    cardOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
+    cardTranslateY.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.ease) });
+  }, []);
+
+  // Fetch album plays dynamically
+  useEffect(() => {
+    let active = true;
+    
+    async function fetchData() {
+      setLoading(true);
+      setError(null);
+      chartProgress.value = 0;
+      
+      try {
+        const payload = await getAlbumPlays(id, selectedDays);
+        if (active) {
+          setData(payload);
+          chartProgress.value = withTiming(1, {
+            duration: 850,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            reduceMotion: ReduceMotion.System,
+          });
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : "Failed to load plays.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
     }
 
-    const points: number[] = [];
-    for (let i = 0; i < selectedDays; i++) {
-      const growth = (i / (selectedDays - 1 || 1)) * 0.35; // positive growth trend from left to right (recent days)
-      const trend = Math.sin((i / (selectedDays - 1 || 1)) * Math.PI * 2.5) * 0.2;
-      const subTrend = Math.sin((i / (selectedDays - 1 || 1)) * Math.PI * 6) * 0.1;
-      const pseudoRand = (((i * 23 + 7) % 10) / 10) * 0.15 - 0.075;
-      const multiplier = Math.max(0.1, 0.85 + growth + trend + subTrend + pseudoRand);
-      points.push(Math.round(averagePlaysPerDay * multiplier));
-    }
-    return points;
-  })();
+    void fetchData();
 
-  // Generate dynamic date labels based on the selected period
-  const dateOffsets = selectedDays === 14
-    ? [14, 10, 6, 2]
-    : selectedDays === 30
-      ? [30, 20, 10, 2]
-      : [7, 5, 3, 1];
+    return () => {
+      active = false;
+    };
+  }, [id, selectedDays]);
 
-  const dates = dateOffsets.map((offset) => {
-    const d = new Date();
-    d.setDate(d.getDate() - offset);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  });
+  // Card container animated style
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: cardOpacity.value,
+    transform: [{ translateY: cardTranslateY.value }],
+  }));
 
-  const width = 340;
-  const height = 160;
-  const paddingLeft = 32; // space for Y-axis labels
-  const paddingRight = 16;
-  const paddingTop = 15;
-  const paddingBottom = 20;
-  
-  const baseline = height - paddingBottom;
-  const chartHeight = baseline - paddingTop;
-  const chartWidth = width - paddingLeft - paddingRight;
+  const series = data?.series ?? [];
+  const validSeries = series.filter((pt) => pt.plays !== null && pt.plays !== undefined);
+  const totalPlays = data?.totalPlays ?? 0;
+  const chartValues = validSeries.map((pt) => Number(pt.plays));
 
   const maxSeriesValue = Math.max(...chartValues, 40);
   const maxValue = Math.ceil(maxSeriesValue / 40) * 40; // round up to multiple of 40 for clean grid ticks
   const minValue = 0;
+
+  // Generate dynamic date labels aligned exactly with graph boundaries
+  const dateOffsets = selectedDays === 14
+    ? [13, 9, 4, 0]
+    : selectedDays === 30
+      ? [29, 20, 10, 0]
+      : [6, 4, 2, 0];
+
+  const dates = dateOffsets.map((offset) => {
+    const index = selectedDays - 1 - offset;
+    return validSeries[index]?.label ?? "";
+  });
+
+  const width = 340;
+  const height = 120;
+  const paddingLeft = 32; // space for Y-axis labels
+  const paddingRight = 16;
+  const paddingTop = 10;
+  const paddingBottom = 10;
+  
+  const baseline = height - paddingBottom; // 110
+  const chartHeight = baseline - paddingTop; // 100
+  const chartWidth = width - paddingLeft - paddingRight;
 
   const stepX = chartWidth / (chartValues.length - 1 || 1);
   
@@ -95,17 +186,46 @@ export function AlbumPerformanceOverviewChart() {
     },
   ];
 
-  return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Performance Overview</Text>
-        
-        <AnimatedPressable style={styles.timeDropdown} onPress={() => setSheetVisible(true)}>
-          <Text style={styles.periodText}>Last {selectedDays} Days</Text>
-          <Ionicons name="chevron-down" size={12} color="#00B3A6" style={styles.dropdownIcon} />
-        </AnimatedPressable>
-      </View>
+  const animatedRectProps = useAnimatedProps(() => ({
+    width: chartWidth * chartProgress.value,
+  }));
 
+  const animatedGridProps = useAnimatedProps(() => ({
+    opacity: chartProgress.value,
+  }));
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={{ height: 120, justifyContent: "center", alignItems: "center" }}>
+          <ShimmerPlaceholder width="100%" height={100} borderRadius={8} />
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={{ height: 120, justifyContent: "center", alignItems: "center", gap: 8 }}>
+          <Ionicons name="alert-circle-outline" size={36} color={tokens.colors.danger} />
+          <Text style={{ color: tokens.colors.textSecondary, fontSize: 13, fontWeight: "500", textAlign: "center", paddingHorizontal: 16 }}>
+            {error}
+          </Text>
+        </View>
+      );
+    }
+
+    if (totalPlays === 0 || series.length === 0) {
+      return (
+        <View style={{ height: 120, justifyContent: "center", alignItems: "center", gap: 8 }}>
+          <Ionicons name="bar-chart-outline" size={36} color={tokens.colors.textMuted} />
+          <Text style={{ color: tokens.colors.textSecondary, fontSize: 13, fontWeight: "500" }}>
+            No plays recorded for this period
+          </Text>
+        </View>
+      );
+    }
+
+    return (
       <View style={styles.chartContainer}>
         {/* Y Axis Labels (Left) */}
         <View style={styles.yAxisLabels}>
@@ -124,13 +244,22 @@ export function AlbumPerformanceOverviewChart() {
                 <Stop offset="0%" stopColor="#00B3A6" stopOpacity={0.25} />
                 <Stop offset="100%" stopColor="#00B3A6" stopOpacity={0.0} />
               </LinearGradient>
+              <ClipPath id="album-chart-clip">
+                <AnimatedRect
+                  x={0}
+                  y={0}
+                  width={0}
+                  height={height}
+                  animatedProps={animatedRectProps}
+                />
+              </ClipPath>
             </Defs>
 
             {/* Grid lines */}
             {gridValues.map((val) => {
               const y = baseline - ((val - minValue) / (maxValue - minValue)) * chartHeight;
               return (
-                <Line
+                <AnimatedLine
                   key={val}
                   x1={0}
                   x2={chartWidth}
@@ -139,12 +268,17 @@ export function AlbumPerformanceOverviewChart() {
                   stroke="rgba(255, 255, 255, 0.05)"
                   strokeDasharray="3 5"
                   strokeWidth={1}
+                  animatedProps={animatedGridProps}
                 />
               );
             })}
 
             {/* Area under the curve */}
-            <Path d={`M 0 ${baseline} L ${coordinates.map(p => `${(p.x - paddingLeft).toFixed(1)},${p.y.toFixed(1)}`).join(" ")} L ${chartWidth} ${baseline} Z`} fill="url(#chart-area-grad-album)" />
+            <Path
+              d={`M 0 ${baseline} L ${coordinates.map(p => `${(p.x - paddingLeft).toFixed(1)},${p.y.toFixed(1)}`).join(" ")} L ${chartWidth} ${baseline} Z`}
+              fill="url(#chart-area-grad-album)"
+              clipPath="url(#album-chart-clip)"
+            />
 
             {/* Line curve */}
             <Polyline
@@ -154,37 +288,69 @@ export function AlbumPerformanceOverviewChart() {
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
+              clipPath="url(#album-chart-clip)"
             />
 
             {/* Solid teal circular dots at data vertices */}
             {coordinates.map((pt, idx) => (
-              <Circle
+              <AnimatedDot
                 key={idx}
                 cx={pt.x - paddingLeft}
                 cy={pt.y}
-                r={circleRadius}
-                fill="#00B3A6"
+                circleRadius={circleRadius}
+                index={idx}
+                totalPoints={coordinates.length}
+                chartProgress={chartProgress}
               />
             ))}
           </Svg>
         </View>
       </View>
+    );
+  };
+
+  return (
+    <Animated.View style={[styles.card, cardAnimatedStyle]}>
+      <View style={styles.header}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Performance Overview</Text>
+          <Text style={styles.subtitle}>Plays over time</Text>
+        </View>
+        
+        <AnimatedPressable style={styles.timeDropdown} onPress={() => setSheetVisible(true)}>
+          <Text style={styles.periodText}>Last {selectedDays} Days</Text>
+          <Ionicons name="chevron-down" size={12} color="#00B3A6" style={styles.dropdownIcon} />
+        </AnimatedPressable>
+      </View>
+
+      {renderContent()}
 
       {/* X Axis Labels */}
-      <View style={styles.xAxisLabels}>
-        {dates.map((date, idx) => (
-          <Text
-            key={date}
-            style={[
-              styles.xAxisText,
-              idx === 0 && { textAlign: "left" },
-              idx === dates.length - 1 && { textAlign: "right" },
-            ]}
-          >
-            {date}
+      {!loading && !error && totalPlays > 0 && series.length > 0 && (
+        <View style={styles.xAxisLabels}>
+          {dates.map((date, idx) => (
+            <Text
+              key={idx}
+              style={[
+                styles.xAxisText,
+                idx === 0 && { textAlign: "left" },
+                idx === dates.length - 1 && { textAlign: "right" },
+              ]}
+            >
+              {date}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {/* Bottom Summary Footer */}
+      {!loading && !error && data && data.totalPlays > 0 && (
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            {totalPlays.toLocaleString()} plays this period
           </Text>
-        ))}
-      </View>
+        </View>
+      )}
 
       <BottomActionSheet
         visible={sheetVisible}
@@ -192,7 +358,7 @@ export function AlbumPerformanceOverviewChart() {
         items={sheetItems}
         onClose={() => setSheetVisible(false)}
       />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -239,7 +405,8 @@ const styles = StyleSheet.create({
   yAxisLabels: {
     width: 24,
     justifyContent: "space-between",
-    paddingVertical: 1,
+    paddingTop: 10,
+    paddingBottom: 10,
     alignItems: "flex-end",
   },
   yAxisText: {
@@ -266,5 +433,27 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     width: 60,
     textAlign: "center",
+  },
+  titleContainer: {
+    gap: 2,
+  },
+  subtitle: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.05)",
+  },
+  footerText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

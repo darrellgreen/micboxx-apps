@@ -461,7 +461,7 @@ export default function EditTrackScreen() {
           <View style={styles.selectorLeft}>
             <View style={styles.greenDot} />
             <Text style={styles.selectorValue}>
-              {track?.status?.releaseState ? capitalize(track.status.releaseState) : "Published"}
+              {track ? (track.status.published || track.status.releaseState === "published" ? "Published" : capitalize(track.status.releaseState)) : "Published"}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
