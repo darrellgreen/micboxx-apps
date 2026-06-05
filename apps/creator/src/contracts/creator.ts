@@ -726,3 +726,31 @@ export interface CreatorBootstrapSummary<
   catalogReadiness: CreatorCatalogReadiness;
   audienceSummary: CreatorAudienceSummary<TConversation, TNotification>;
 }
+
+export interface TrackGeographyCountry {
+  countryCode: string;
+  qualifiedPlays: number;
+  sharePercent: number;
+}
+
+export interface TrackGeographyRegion {
+  regionCode: string;
+  countryCode: string;
+  qualifiedPlays: number;
+  sharePercent: number;
+}
+
+export interface TrackGeographyCity {
+  city: string;
+  regionCode: string;
+  countryCode: string;
+  qualifiedPlays: number;
+  sharePercent: number;
+}
+
+export interface TrackGeographyPayload {
+  topCity: TrackGeographyCity | null;
+  countries: TrackGeographyCountry[];
+  regions: TrackGeographyRegion[];
+  cities: TrackGeographyCity[];
+}

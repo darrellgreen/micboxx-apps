@@ -11,6 +11,7 @@ import type {
   DashboardUploadOptions,
   DashboardUserProfile,
   TrackMetadataUpdate,
+  TrackGeographyPayload,
   UserProfileUpdate,
 } from "@/contracts/creator";
 import { env } from "@/config/env";
@@ -429,4 +430,13 @@ export async function unscheduleAlbum(
   );
 
   return response.album;
+}
+
+export async function getTrackGeography(
+  trackId: string | number,
+  days = 30,
+): Promise<TrackGeographyPayload> {
+  return creatorFetch<TrackGeographyPayload>(
+    `/v1/dashboard/tracks/${trackId}/analytics/geography?days=${days}`,
+  );
 }
