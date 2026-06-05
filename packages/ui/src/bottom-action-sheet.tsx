@@ -37,7 +37,9 @@ export function BottomActionSheet({
     onClose();
     const pendingAction = pendingActionRef.current;
     pendingActionRef.current = null;
-    pendingAction?.();
+    if (pendingAction) {
+      setTimeout(pendingAction, 50);
+    }
   }, [onClose]);
 
   return (
