@@ -54,6 +54,24 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+function cleanDescription(desc: string | null): string {
+  if (!desc) return "";
+  const lines = desc.split("\n");
+  const cleanedLines = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (
+      line.startsWith("Release type:") ||
+      line.startsWith("Release date:") ||
+      line.startsWith("Genre:")
+    ) {
+      continue;
+    }
+    cleanedLines.push(lines[i]);
+  }
+  return cleanedLines.join("\n").trim();
+}
+
 export default function EditAlbumScreen() {
   const { albumId } = useLocalSearchParams<{ albumId?: string }>();
   const { showToast } = useToast();
@@ -90,7 +108,7 @@ export default function EditAlbumScreen() {
         setAlbum(nextAlbum);
         setOptions(nextOptions);
         setTitle(nextAlbum.title);
-        setDescription(nextAlbum.description ?? "");
+        setDescription(cleanDescription(nextAlbum.description));
         setTrackIds(nextAlbum.tracks.map((track) => track.trackId));
         setPurchasePrice(nextAlbum.commerce.price ?? "");
         setPurchaseCurrency(nextAlbum.commerce.currency ?? "USD");
