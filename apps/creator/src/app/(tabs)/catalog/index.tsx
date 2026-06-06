@@ -234,14 +234,14 @@ export default function CatalogHomeScreen() {
 
         <AnimatedPressable
           style={s.quickCard}
-          onPress={() => router.push("/create/album" as never)}
+          onPress={() => router.push("/create/release" as never)}
         >
           <View style={[s.quickIconCircle, { backgroundColor: "rgba(167,139,250,0.15)" }]}>
             <Ionicons name="disc" size={22} color="#a78bfa" />
           </View>
           <View style={s.quickText}>
-            <Text style={[s.quickLabel, { color: "#a78bfa" }]}>Create Album</Text>
-            <Text style={s.quickSub}>Add a new album</Text>
+            <Text style={[s.quickLabel, { color: "#a78bfa" }]}>Create Release</Text>
+            <Text style={s.quickSub}>Add a new release</Text>
           </View>
         </AnimatedPressable>
       </View>

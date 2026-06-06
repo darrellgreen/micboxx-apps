@@ -71,7 +71,8 @@
           "project": "react-native",
           "organization": "fever-llc"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

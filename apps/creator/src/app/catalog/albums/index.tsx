@@ -147,15 +147,15 @@ export default function AlbumsListScreen() {
 
   return (
     <Screen header={renderCustomHeader()} contentContainerStyle={styles.screenContent}>
-      {/* Create Album button - Left Aligned */}
+      {/* Create Release button - Left Aligned */}
       <View style={styles.actionsRow}>
         <AnimatedPressable
           style={styles.uploadBtn}
-          onPress={() => router.push("/create/album")}
+          onPress={() => router.push("/create/release")}
           haptic="selection"
         >
           <Ionicons name="disc-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.uploadBtnLabel}>Create Album</Text>
+          <Text style={styles.uploadBtnLabel}>Create Release</Text>
         </AnimatedPressable>
       </View>
 

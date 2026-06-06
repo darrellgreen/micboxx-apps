@@ -85,12 +85,16 @@ export default function EditAlbumScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [trackIds, setTrackIds] = useState<number[]>([]);
+  const [genreId, setGenreId] = useState<number | null>(null);
+  const [secondaryGenreId, setSecondaryGenreId] = useState<number | null>(null);
   const [purchasePrice, setPurchasePrice] = useState("");
   const [purchaseCurrency, setPurchaseCurrency] = useState("USD");
   const [isPurchasable, setIsPurchasable] = useState(false);
 
   const [artworkDirty, setArtworkDirty] = useState(false);
   const [monetizationSheetVisible, setMonetizationSheetVisible] = useState(false);
+  const [primaryGenreSheetVisible, setPrimaryGenreSheetVisible] = useState(false);
+  const [secondaryGenreSheetVisible, setSecondaryGenreSheetVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
@@ -111,6 +115,8 @@ export default function EditAlbumScreen() {
         setTitle(nextAlbum.title);
         setDescription(cleanDescription(nextAlbum.description));
         setTrackIds(nextAlbum.tracks.map((track) => track.trackId));
+        setGenreId(nextAlbum.genre?.id ?? null);
+        setSecondaryGenreId(nextAlbum.secondaryGenre?.id ?? null);
         setPurchasePrice(nextAlbum.commerce.price ?? "");
         setPurchaseCurrency(nextAlbum.commerce.currency ?? "USD");
         setIsPurchasable(nextAlbum.commerce.isPurchasable);
@@ -170,10 +176,15 @@ export default function EditAlbumScreen() {
         title: title.trim(),
         description: description.trim(),
         trackIds,
-        isPurchasable,
-        purchasePrice: isPurchasable ? purchasePrice.trim() : null,
-        purchaseCurrency: isPurchasable ? purchaseCurrency.trim().toUpperCase() : null,
+        genreId: genreId ?? null,
+        secondaryGenreId: secondaryGenreId ?? null,
       };
+
+      if (album?.permissions?.canEditCommerce) {
+        payload.isPurchasable = isPurchasable;
+        payload.purchasePrice = isPurchasable ? purchasePrice.trim() : null;
+        payload.purchaseCurrency = isPurchasable ? purchaseCurrency.trim().toUpperCase() : null;
+      }
 
       let nextAlbum = await updateAlbumMetadata(albumId, payload);
 
@@ -214,10 +225,15 @@ export default function EditAlbumScreen() {
         title: title.trim(),
         description: description.trim(),
         trackIds,
-        isPurchasable,
-        purchasePrice: isPurchasable ? purchasePrice.trim() : null,
-        purchaseCurrency: isPurchasable ? purchaseCurrency.trim().toUpperCase() : null,
+        genreId: genreId ?? null,
+        secondaryGenreId: secondaryGenreId ?? null,
       };
+
+      if (album?.permissions?.canEditCommerce) {
+        payload.isPurchasable = isPurchasable;
+        payload.purchasePrice = isPurchasable ? purchasePrice.trim() : null;
+        payload.purchaseCurrency = isPurchasable ? purchaseCurrency.trim().toUpperCase() : null;
+      }
 
       let nextAlbum = await updateAlbumMetadata(albumId, payload);
 
@@ -396,6 +412,41 @@ export default function EditAlbumScreen() {
     },
   ];
 
+  const availableGenres = options?.genres ?? [];
+
+  const primaryGenreSheetItems = availableGenres.map((g) => ({
+    key: String(g.id),
+    label: g.name,
+    icon: "musical-notes-outline" as const,
+    onPress: () => {
+      setGenreId(g.id);
+      // If secondary matches new primary, auto-clear it
+      if (secondaryGenreId === g.id) {
+        setSecondaryGenreId(null);
+      }
+    },
+  }));
+
+  const secondaryGenreSheetItems = [
+    {
+      key: "none",
+      label: "None",
+      icon: "close-circle-outline" as const,
+      onPress: () => setSecondaryGenreId(null),
+    },
+    ...availableGenres
+      .filter((g) => g.id !== genreId)
+      .map((g) => ({
+        key: String(g.id),
+        label: g.name,
+        icon: "musical-notes-outline" as const,
+        onPress: () => setSecondaryGenreId(g.id),
+      })),
+  ];
+
+  const selectedGenre = availableGenres.find((g) => g.id === genreId);
+  const selectedSecondaryGenre = availableGenres.find((g) => g.id === secondaryGenreId);
+
 
   const releaseState = album?.status.releaseState || "draft";
   const displayStatus = capitalize(releaseState);
@@ -501,6 +552,42 @@ export default function EditAlbumScreen() {
         </View>
       </View>
 
+      <Text style={styles.sectionLabel}>GENRE</Text>
+
+      <View style={styles.fieldContainer}>
+        <Text style={styles.fieldLabel}>Primary Genre</Text>
+        <AnimatedPressable
+          style={styles.selectorCard}
+          onPress={() => setPrimaryGenreSheetVisible(true)}
+          haptic="selection"
+        >
+          <View style={styles.selectorLeft}>
+            <Ionicons name="musical-notes-outline" size={16} color={selectedGenre ? "#12D6C5" : tokens.colors.textSecondary} />
+            <Text style={[styles.selectorValue, !selectedGenre && styles.selectorPlaceholder]}>
+              {selectedGenre?.name ?? "Select a genre"}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
+        </AnimatedPressable>
+      </View>
+
+      <View style={styles.fieldContainer}>
+        <Text style={styles.fieldLabel}>Secondary Genre <Text style={styles.optionalLabel}>(optional)</Text></Text>
+        <AnimatedPressable
+          style={[styles.selectorCard, !genreId && styles.selectorCardDisabled]}
+          onPress={() => genreId ? setSecondaryGenreSheetVisible(true) : undefined}
+          haptic={genreId ? "selection" : undefined}
+        >
+          <View style={styles.selectorLeft}>
+            <Ionicons name="musical-notes-outline" size={16} color={selectedSecondaryGenre ? "#a78bfa" : tokens.colors.textSecondary} />
+            <Text style={[styles.selectorValue, !selectedSecondaryGenre && styles.selectorPlaceholder]}>
+              {selectedSecondaryGenre?.name ?? (genreId ? "None" : "Select primary genre first")}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
+        </AnimatedPressable>
+      </View>
+
       <Text style={styles.sectionLabel}>TRACKS ON THIS RELEASE</Text>
 
       <View style={styles.trackListContainer}>
@@ -548,56 +635,60 @@ export default function EditAlbumScreen() {
         )}
       </View>
 
-      <Text style={styles.sectionLabel}>MONETIZATION</Text>
+      {album?.permissions?.canEditCommerce && (
+        <>
+          <Text style={styles.sectionLabel}>MONETIZATION</Text>
 
-      <View style={styles.fieldContainer}>
-        <Text style={styles.fieldLabel}>Settings</Text>
-        <AnimatedPressable
-          style={styles.selectorCard}
-          onPress={() => setMonetizationSheetVisible(true)}
-          haptic="selection"
-        >
-          <View style={styles.selectorLeft}>
-            <View style={styles.greenDot} />
-            <Text style={styles.selectorValue}>
-              {isPurchasable ? "Sell this release" : "Not for sale"}
-            </Text>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Settings</Text>
+            <AnimatedPressable
+              style={styles.selectorCard}
+              onPress={() => setMonetizationSheetVisible(true)}
+              haptic="selection"
+            >
+              <View style={styles.selectorLeft}>
+                <View style={styles.greenDot} />
+                <Text style={styles.selectorValue}>
+                  {isPurchasable ? "Sell this release" : "Not for sale"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
+            </AnimatedPressable>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
-        </AnimatedPressable>
-      </View>
 
-      {isPurchasable && (
-        <View style={styles.commerceFields}>
-          <View style={[styles.fieldContainer, { flex: 1 }]}>
-            <Text style={styles.fieldLabel}>Price</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                value={purchasePrice}
-                onChangeText={setPurchasePrice}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-                placeholderTextColor="rgba(255, 255, 255, 0.3)"
-              />
+          {isPurchasable && (
+            <View style={styles.commerceFields}>
+              <View style={[styles.fieldContainer, { flex: 1 }]}>
+                <Text style={styles.fieldLabel}>Price</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.textInput}
+                    value={purchasePrice}
+                    onChangeText={setPurchasePrice}
+                    placeholder="0.00"
+                    keyboardType="decimal-pad"
+                    placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                  />
+                </View>
+              </View>
+
+              <View style={[styles.fieldContainer, { flex: 1 }]}>
+                <Text style={styles.fieldLabel}>Currency</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.textInput}
+                    value={purchaseCurrency}
+                    onChangeText={setPurchaseCurrency}
+                    maxLength={3}
+                    placeholder="USD"
+                    autoCapitalize="characters"
+                    placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                  />
+                </View>
+              </View>
             </View>
-          </View>
-
-          <View style={[styles.fieldContainer, { flex: 1 }]}>
-            <Text style={styles.fieldLabel}>Currency</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                value={purchaseCurrency}
-                onChangeText={setPurchaseCurrency}
-                maxLength={3}
-                placeholder="USD"
-                autoCapitalize="characters"
-                placeholderTextColor="rgba(255, 255, 255, 0.3)"
-              />
-            </View>
-          </View>
-        </View>
+          )}
+        </>
       )}
 
       <View style={styles.buttonContainer}>
@@ -645,6 +736,20 @@ export default function EditAlbumScreen() {
         title="Monetization Settings"
         items={monetizationSheetItems}
         onClose={() => setMonetizationSheetVisible(false)}
+      />
+
+      <BottomActionSheet
+        visible={primaryGenreSheetVisible}
+        title="Primary Genre"
+        items={primaryGenreSheetItems}
+        onClose={() => setPrimaryGenreSheetVisible(false)}
+      />
+
+      <BottomActionSheet
+        visible={secondaryGenreSheetVisible}
+        title="Secondary Genre"
+        items={secondaryGenreSheetItems}
+        onClose={() => setSecondaryGenreSheetVisible(false)}
       />
 
 
@@ -970,6 +1075,18 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "700",
+  },
+  selectorCardDisabled: {
+    opacity: 0.45,
+  },
+  selectorPlaceholder: {
+    color: "rgba(255, 255, 255, 0.3)",
+    fontWeight: "400",
+  },
+  optionalLabel: {
+    color: tokens.colors.textSecondary,
+    fontWeight: "400",
+    fontSize: 12,
   },
   headerSaveButton: {
     minHeight: 34,

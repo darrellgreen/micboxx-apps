@@ -449,6 +449,7 @@ export interface DashboardAlbumTrackOption {
 
 export interface DashboardAlbumOptions {
   currentUser: DashboardCurrentUser;
+  genres: (DashboardOption & { name: string })[];
   tracks: DashboardAlbumTrackOption[];
 }
 
@@ -486,6 +487,14 @@ export interface DashboardAlbum {
   upc?: string;
   labelImprint?: string;
   explicitContent?: boolean | null;
+  genre: {
+    id: number;
+    name: string;
+  } | null;
+  secondaryGenre: {
+    id: number;
+    name: string;
+  } | null;
   commerce: {
     isPurchasable: boolean;
     price: string | null;
@@ -609,6 +618,8 @@ export interface AlbumMetadataUpdate {
   title?: string;
   description?: string;
   trackIds?: number[];
+  genreId?: number | null;
+  secondaryGenreId?: number | null;
   isPurchasable?: boolean;
   purchasePrice?: string | null;
   purchaseCurrency?: string | null;

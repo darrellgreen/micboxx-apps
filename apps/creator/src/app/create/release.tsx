@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -19,20 +20,23 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMediaPicker, type MediaAsset } from "@micboxx/media";
 
-import type { DashboardAlbum } from "@/contracts/creator";
+import type { DashboardAlbum, DashboardAlbumOptions } from "@/contracts/creator";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import {
   createAlbum,
-  publishAlbum,
+  getAlbumOptions,
   replaceAlbumArtwork,
+  scheduleAlbum,
   updateAlbumMetadata,
 } from "@/shared/api/creator-dashboard";
-import { AnimatedPressable, AppHeader, Screen, useToast } from "@micboxx/ui";
+import { FormSelectorRow } from "@/shared/ui/selector-row";
+import { AnimatedPressable, AppHeader, BottomActionSheet, BottomSheetSurface, Screen, useToast } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 type ReleaseType = "single" | "ep" | "album";
 type WizardStep = 1 | 2 | 3 | 4;
+type PickerMode = "date" | "time";
 
 const RELEASE_TYPES: Array<{
   key: ReleaseType;
@@ -48,7 +52,7 @@ const STEPS: Array<{ step: WizardStep; label: string }> = [
   { step: 1, label: "Details" },
   { step: 2, label: "Tracks" },
   { step: 3, label: "Review" },
-  { step: 4, label: "Publish" },
+  { step: 4, label: "Schedule" },
 ];
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -61,6 +65,24 @@ function formatReleaseDate(date: Date): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function formatReleaseTime(date: Date): string {
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatReleaseDateTime(date: Date): string {
+  return `${formatReleaseDate(date)} at ${formatReleaseTime(date)}`;
+}
+
+function getDefaultReleaseDate(): Date {
+  const next = new Date();
+  next.setDate(next.getDate() + 1);
+  next.setHours(9, 0, 0, 0);
+  return next;
 }
 
 function formatDuration(totalSeconds: number): string {
@@ -77,15 +99,13 @@ function toAlbumDescription(input: {
   description: string;
   releaseType: ReleaseType;
   releaseDate: Date;
-  genreName: string | null;
 }): string {
   const lines = [
     input.subtitle.trim() ? input.subtitle.trim() : null,
     input.description.trim() ? input.description.trim() : null,
     "",
     `Release type: ${input.releaseType.toUpperCase()}`,
-    `Release date: ${formatReleaseDate(input.releaseDate)}`,
-    input.genreName ? `Genre: ${input.genreName}` : null,
+    `Release date: ${formatReleaseDateTime(input.releaseDate)}`,
   ].filter((line): line is string => line !== null);
 
   return lines.join("\n").trim();
@@ -111,8 +131,14 @@ export default function CreateReleaseScreen() {
   const [releaseType, setReleaseType] = useState<ReleaseType>("single");
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [releaseDate, setReleaseDate] = useState(() => new Date());
-  const [genreId, setGenreId] = useState<string>("");
+  const [releaseDate, setReleaseDate] = useState(getDefaultReleaseDate);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [pickerMode, setPickerMode] = useState<PickerMode>("date");
+  const [albumOptions, setAlbumOptions] = useState<DashboardAlbumOptions | null>(null);
+  const [genreId, setGenreId] = useState<number | null>(null);
+  const [secondaryGenreId, setSecondaryGenreId] = useState<number | null>(null);
+  const [primaryGenreSheetVisible, setPrimaryGenreSheetVisible] = useState(false);
+  const [secondaryGenreSheetVisible, setSecondaryGenreSheetVisible] = useState(false);
   const [description, setDescription] = useState("");
   const [additionalOpen, setAdditionalOpen] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -121,16 +147,43 @@ export default function CreateReleaseScreen() {
   const [publishing, setPublishing] = useState(false);
   const [artworkDirty, setArtworkDirty] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  const genres = bootstrap.uploadOptions?.genres ?? [];
-  const selectedGenre = useMemo(
-    () => genres.find((genre) => String(genre.id) === genreId) ?? null,
-    [genreId, genres],
-  );
-  const selectedGenreIndex = useMemo(
-    () => genres.findIndex((genre) => String(genre.id) === genreId),
-    [genreId, genres],
-  );
+  const availableGenres = albumOptions?.genres ?? bootstrap.uploadOptions?.genres ?? [];
+  const selectedGenre = availableGenres.find((genre) => genre.id === genreId);
+  const selectedSecondaryGenre = availableGenres.find((genre) => genre.id === secondaryGenreId);
+  const primaryGenreSheetItems = availableGenres.map((genre) => ({
+    key: String(genre.id),
+    label: genre.name,
+    icon: "musical-notes-outline" as const,
+    onPress: () => {
+      setGenreId(genre.id);
+      if (secondaryGenreId === genre.id) {
+        setSecondaryGenreId(null);
+      }
+      markDirty();
+    },
+  }));
+  const secondaryGenreSheetItems = [
+    {
+      key: "none",
+      label: "None",
+      icon: "close-circle-outline" as const,
+      onPress: () => {
+        setSecondaryGenreId(null);
+        markDirty();
+      },
+    },
+    ...availableGenres
+      .filter((genre) => genre.id !== genreId)
+      .map((genre) => ({
+        key: String(genre.id),
+        label: genre.name,
+        icon: "musical-notes-outline" as const,
+        onPress: () => {
+          setSecondaryGenreId(genre.id);
+          markDirty();
+        },
+      })),
+  ];
 
   const canPublish = Boolean(
     savedRelease &&
@@ -145,7 +198,29 @@ export default function CreateReleaseScreen() {
         ? "Review"
         : currentStep === 3
           ? "Continue"
-          : "Publish";
+          : "Schedule Release";
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAlbumOptions() {
+      try {
+        const options = await getAlbumOptions();
+        if (active) {
+          setAlbumOptions(options);
+        }
+      } catch {
+        if (active) {
+          setAlbumOptions(null);
+        }
+      }
+    }
+
+    void loadAlbumOptions();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function markDirty() {
     setHasUnsavedChanges(true);
@@ -185,19 +260,27 @@ export default function CreateReleaseScreen() {
     );
   }
 
-  function cycleReleaseDate() {
-    const next = new Date(releaseDate);
-    next.setDate(next.getDate() + 7);
-    setReleaseDate(next);
-    markDirty();
+  function openDatePicker(mode: PickerMode) {
+    setPickerMode(mode);
+    setDatePickerVisible(true);
   }
 
-  function cycleGenre() {
-    if (genres.length === 0) {
-      return;
-    }
-    const nextIndex = selectedGenreIndex < 0 ? 0 : (selectedGenreIndex + 1) % genres.length;
-    setGenreId(String(genres[nextIndex]?.id ?? ""));
+  function handleReleaseDateTimeChange(selectedDate: Date) {
+    setReleaseDate((current) => {
+      const next = new Date(current);
+
+      if (pickerMode === "date") {
+        next.setFullYear(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth(),
+          selectedDate.getDate(),
+        );
+      } else {
+        next.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
+      }
+
+      return next;
+    });
     markDirty();
   }
 
@@ -244,7 +327,6 @@ export default function CreateReleaseScreen() {
         description,
         releaseType,
         releaseDate,
-        genreName: selectedGenre?.name ?? null,
       });
 
       let nextRelease = savedRelease;
@@ -252,6 +334,8 @@ export default function CreateReleaseScreen() {
         nextRelease = await updateAlbumMetadata(nextRelease.id, {
           title: title.trim(),
           description: descriptionPayload,
+          genreId: genreId ?? null,
+          secondaryGenreId: secondaryGenreId ?? null,
         });
         if (artworkPicker.asset && artworkDirty) {
           nextRelease = await replaceAlbumArtwork(
@@ -264,6 +348,12 @@ export default function CreateReleaseScreen() {
         const formData = new FormData();
         formData.append("title", title.trim());
         formData.append("description", descriptionPayload);
+        if (genreId !== null) {
+          formData.append("genreId", String(genreId));
+        }
+        if (secondaryGenreId !== null) {
+          formData.append("secondaryGenreId", String(secondaryGenreId));
+        }
         formData.append("artwork", {
           uri: artworkPicker.asset!.uri,
           name: artworkPicker.asset!.fileName ?? "release-artwork.jpg",
@@ -274,6 +364,8 @@ export default function CreateReleaseScreen() {
       }
 
       setSavedRelease(nextRelease);
+      setGenreId(nextRelease.genre?.id ?? genreId);
+      setSecondaryGenreId(nextRelease.secondaryGenre?.id ?? secondaryGenreId);
       setHasUnsavedChanges(false);
       await bootstrap.refetch();
       showToast({
@@ -322,33 +414,45 @@ export default function CreateReleaseScreen() {
     }
 
     if (currentStep === 4) {
-      await publishRelease();
+      await scheduleRelease();
     }
   }
 
-  async function publishRelease() {
+  async function scheduleRelease() {
     if (!savedRelease || !canPublish) {
+      return;
+    }
+
+    const publishAt = Math.floor(releaseDate.getTime() / 1000);
+    if (publishAt <= Math.floor(Date.now() / 1000)) {
+      const message = "Choose a future release date and time.";
+      setValidationError(message);
+      showToast({
+        tone: "error",
+        title: "Release time invalid",
+        message,
+      });
       return;
     }
 
     setPublishing(true);
     try {
-      const nextRelease = await publishAlbum(savedRelease.id);
+      const nextRelease = await scheduleAlbum(savedRelease.id, publishAt);
       setSavedRelease(nextRelease);
       setHasUnsavedChanges(false);
       await bootstrap.refetch();
       showToast({
         tone: "success",
-        title: "Release published",
-        message: `${nextRelease.title} is now live.`,
+        title: "Release scheduled",
+        message: `${nextRelease.title} is scheduled for ${formatReleaseDateTime(releaseDate)}.`,
       });
       router.replace(`/catalog/albums/${nextRelease.id}` as never);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to publish release.";
+      const message = error instanceof Error ? error.message : "Unable to schedule release.";
       setValidationError(message);
       showToast({
         tone: "error",
-        title: "Release not published",
+        title: "Release not scheduled",
         message,
       });
     } finally {
@@ -483,18 +587,82 @@ export default function CreateReleaseScreen() {
                 countMax={100}
               />
 
-              <SelectorRow
+              <FormSelectorRow
                 icon="calendar-outline"
                 label="Release Date"
                 value={formatReleaseDate(releaseDate)}
-                onPress={cycleReleaseDate}
+                onPress={() => openDatePicker("date")}
               />
-              <SelectorRow
-                label="Genre (Optional)"
+              <FormSelectorRow
+                icon="time-outline"
+                label="Release Time"
+                value={formatReleaseTime(releaseDate)}
+                onPress={() => openDatePicker("time")}
+              />
+              <FormSelectorRow
+                icon="musical-notes-outline"
+                label="Primary Genre"
                 value={selectedGenre?.name ?? "Select a genre"}
-                onPress={cycleGenre}
+                onPress={() => setPrimaryGenreSheetVisible(true)}
+                placeholder={!selectedGenre}
+              />
+              <FormSelectorRow
+                icon="musical-notes-outline"
+                label="Secondary Genre (Optional)"
+                value={selectedSecondaryGenre?.name ?? (genreId ? "None" : "Select primary genre first")}
+                onPress={() => {
+                  if (genreId) {
+                    setSecondaryGenreSheetVisible(true);
+                  }
+                }}
+                disabled={!genreId}
+                placeholder={!selectedSecondaryGenre}
               />
               </SectionCard>
+
+              <BottomSheetSurface
+                visible={datePickerVisible}
+                onDismiss={() => setDatePickerVisible(false)}
+                enableDynamicSizing={false}
+                enableContentPanningGesture={false}
+                snapPoints={[320]}
+              >
+                <View style={styles.datePickerSheetContent}>
+                  <Text style={styles.datePickerTitle}>
+                    {pickerMode === "date" ? "Release Date" : "Release Time"}
+                  </Text>
+                  <DateTimePicker
+                    value={releaseDate}
+                    mode={pickerMode}
+                    display="spinner"
+                    minimumDate={pickerMode === "date" ? new Date() : undefined}
+                    onChange={(_event, selectedDate) => {
+                      if (selectedDate) {
+                        handleReleaseDateTimeChange(selectedDate);
+                      }
+                      if (Platform.OS === "android") {
+                        setDatePickerVisible(false);
+                      }
+                    }}
+                    style={styles.datePickerControl}
+                    themeVariant="dark"
+                  />
+                </View>
+              </BottomSheetSurface>
+
+              <BottomActionSheet
+                visible={primaryGenreSheetVisible}
+                title="Primary Genre"
+                items={primaryGenreSheetItems}
+                onClose={() => setPrimaryGenreSheetVisible(false)}
+              />
+
+              <BottomActionSheet
+                visible={secondaryGenreSheetVisible}
+                title="Secondary Genre"
+                items={secondaryGenreSheetItems}
+                onClose={() => setSecondaryGenreSheetVisible(false)}
+              />
 
               <ReleaseShapeSection
                 releaseType={releaseType}
@@ -533,7 +701,7 @@ export default function CreateReleaseScreen() {
           ) : null}
 
         {currentStep === 2 ? (
-          <SectionCard title="Add tracks to this release" helper="Upload or attach tracks before publishing.">
+          <SectionCard title="Add tracks to this release" helper="Upload or attach tracks before scheduling.">
             <View style={styles.stepShell}>
               <Ionicons name="musical-notes-outline" size={42} color={tokens.colors.accent} />
               <Text style={styles.stepShellTitle}>{savedRelease?.title ?? title.trim()}</Text>
@@ -552,24 +720,27 @@ export default function CreateReleaseScreen() {
           <SectionCard title="Review release" helper="Confirm details before publishing.">
             <ReviewRow label="Release" value={savedRelease?.title ?? (title.trim() || "Untitled")} />
             <ReviewRow label="Type" value={releaseType.toUpperCase()} />
+            <ReviewRow label="Release Date" value={formatReleaseDateTime(releaseDate)} />
+            <ReviewRow label="Genre" value={selectedGenre?.name ?? "Not set"} />
+            <ReviewRow label="Secondary Genre" value={selectedSecondaryGenre?.name ?? "None"} />
             <ReviewRow label="Tracks" value={`${savedRelease?.counts.tracks ?? 0}`} />
             <ReviewRow label="Status" value={savedRelease?.status.releaseState ?? "draft"} />
           </SectionCard>
         ) : null}
 
         {currentStep === 4 ? (
-          <SectionCard title="Publish" helper="Publishing will be available after tracks are added.">
+          <SectionCard title="Schedule" helper="Scheduling will be available after tracks are added.">
             <View style={styles.stepShell}>
               <Ionicons
                 name={canPublish ? "rocket-outline" : "lock-closed-outline"}
                 size={42}
                 color={canPublish ? tokens.colors.accent : tokens.colors.textSecondary}
               />
-              <Text style={styles.stepShellTitle}>{canPublish ? "Ready for release actions" : "Tracks required"}</Text>
+              <Text style={styles.stepShellTitle}>{canPublish ? "Ready to schedule" : "Tracks required"}</Text>
               <Text style={styles.stepShellCopy}>
                 {canPublish
-                  ? "Publish this release using the existing album-backed release endpoint."
-                  : "Add at least one track before publishing this release."}
+                  ? `This release will go live on ${formatReleaseDateTime(releaseDate)}.`
+                  : "Add at least one track before scheduling this release."}
               </Text>
             </View>
           </SectionCard>
@@ -588,7 +759,7 @@ export default function CreateReleaseScreen() {
             onPress={() => void handleContinue()}
             haptic="selection"
           >
-            <Text style={styles.primaryCtaText}>{publishing ? "Publishing" : footerLabel}</Text>
+            <Text style={styles.primaryCtaText}>{publishing ? "Scheduling" : footerLabel}</Text>
             <Ionicons name="arrow-forward-outline" size={22} color="#FFFFFF" style={styles.primaryCtaIcon} />
           </AnimatedPressable>
         </View>
@@ -661,31 +832,6 @@ function LabeledInput({
         />
         <Text style={styles.countText}>{value.length}/{countMax}</Text>
       </View>
-    </View>
-  );
-}
-
-function SelectorRow({
-  icon,
-  label,
-  value,
-  onPress,
-}: {
-  icon?: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-  onPress: () => void;
-}) {
-  return (
-    <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <AnimatedPressable style={styles.selectorRow} onPress={onPress} haptic="selection">
-        <View style={styles.selectorValue}>
-          {icon ? <Ionicons name={icon} size={21} color={tokens.colors.textPrimary} /> : null}
-          <Text style={styles.selectorText}>{value}</Text>
-        </View>
-        <Ionicons name="chevron-down" size={16} color={tokens.colors.textSecondary} />
-      </AnimatedPressable>
     </View>
   );
 }
@@ -1058,26 +1204,22 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSecondary,
     fontSize: 12,
   },
-  selectorRow: {
-    minHeight: 50,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    paddingHorizontal: 12,
-    flexDirection: "row",
+  datePickerSheetContent: {
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    width: "100%",
   },
-  selectorValue: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  selectorText: {
+  datePickerTitle: {
     color: tokens.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  datePickerControl: {
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 360,
   },
   accordion: {
     borderRadius: 18,

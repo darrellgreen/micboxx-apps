@@ -19,6 +19,7 @@ import type {
   TrackMetadataUpdate,
 } from "@/contracts/creator";
 import { resolveTrackReleaseState } from "@/features/catalog/release-state";
+import { FormSelectorRow } from "@/shared/ui/selector-row";
 import {
   getTrackStatus,
   getUploadOptions,
@@ -403,22 +404,13 @@ export default function EditTrackScreen() {
         </View>
       </View>
 
-      <View style={styles.fieldContainer}>
-        <Text style={styles.fieldLabel}>Genre</Text>
-        <AnimatedPressable
-          style={styles.selectorCard}
-          onPress={() => setGenreSheetVisible(true)}
-          haptic="selection"
-        >
-          <View style={styles.selectorLeft}>
-            <View style={styles.greenDot} />
-            <Text style={styles.selectorValue} numberOfLines={1}>
-              {selectedGenreName}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
-        </AnimatedPressable>
-      </View>
+      <FormSelectorRow
+        icon="musical-notes-outline"
+        label="Genre"
+        value={selectedGenreName}
+        onPress={() => setGenreSheetVisible(true)}
+        placeholder={!selectedGenre}
+      />
 
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>Album</Text>

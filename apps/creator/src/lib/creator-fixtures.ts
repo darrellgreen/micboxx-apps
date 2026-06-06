@@ -256,6 +256,8 @@ function buildAlbum(input: {
   price?: string | null;
   owner: { id: number; displayName: string };
   tracks: DashboardTrack[];
+  genre?: { id: number; name: string } | null;
+  secondaryGenre?: { id: number; name: string } | null;
 }): DashboardAlbum {
   const albumTracks = input.tracks.filter((track) => input.trackIds.includes(track.id));
 
@@ -267,6 +269,8 @@ function buildAlbum(input: {
     description: input.description ?? null,
     owner: input.owner,
     artworkUrl: `https://picsum.photos/seed/album-${input.id}/1200/1200`,
+    genre: input.genre ?? null,
+    secondaryGenre: input.secondaryGenre ?? null,
     commerce: {
       isPurchasable: input.isPurchasable ?? false,
       price: input.price ?? null,
@@ -609,6 +613,8 @@ function buildScenarioState(scenario: CreatorFixtureScenario): CreatorFixtureSta
           price: "5.99",
           owner,
           tracks,
+          genre: { id: 1, name: "Electronic" },
+          secondaryGenre: { id: 2, name: "Alternative" },
         }),
         buildAlbum({
           id: 4103,
@@ -620,6 +626,7 @@ function buildScenarioState(scenario: CreatorFixtureScenario): CreatorFixtureSta
           publishAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
           owner,
           tracks,
+          genre: { id: 1, name: "Electronic" },
         }),
       ];
     }
@@ -667,6 +674,8 @@ function syncAlbumMembership(state: CreatorFixtureState) {
         displayName: state.session.user.displayName,
       },
       tracks: state.tracks,
+      genre: album.genre,
+      secondaryGenre: album.secondaryGenre,
     }),
   );
 }
@@ -739,6 +748,7 @@ function buildUploadOptions(state: CreatorFixtureState): DashboardUploadOptions 
 function buildAlbumOptions(state: CreatorFixtureState): DashboardAlbumOptions {
   return {
     currentUser: buildUploadOptions(state).currentUser,
+    genres,
     tracks: state.tracks.map((track) => ({
       id: track.id,
       title: track.title,

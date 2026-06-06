@@ -66,12 +66,19 @@ export function AlbumReleaseInfoPanel({ album }: AlbumReleaseInfoPanelProps) {
 
   const visibilityVal = album.status.published ? "Public" : "Private";
 
+  const genreVal = album.genre?.name ?? "Not set";
+  const secondaryGenreVal = album.secondaryGenre?.name ?? null;
+
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Release Info</Text>
       
       <View style={styles.rowsContainer}>
         <ReleaseInfoRow label="Date" value={releaseDateVal} />
+        <ReleaseInfoRow label="Genre" value={genreVal} />
+        {secondaryGenreVal ? (
+          <ReleaseInfoRow label="Sub-Genre" value={secondaryGenreVal} />
+        ) : null}
         {advancedModeEnabled && (
           <>
             <ReleaseInfoRow label="Label" value={labelVal} />
