@@ -510,6 +510,7 @@ export async function getTrackGeography(
 export interface PlayTimeseriesData {
   days: number;
   totalPlays: number;
+  uniqueListeners?: number;
   series: Array<{
     date: string;
     label: string;

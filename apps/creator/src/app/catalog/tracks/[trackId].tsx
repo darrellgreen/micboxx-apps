@@ -283,7 +283,7 @@ export default function TrackDetailScreen() {
             onBoostPress={() => setPromotionSheetVisible(true)}
           />
           
-          <PerformanceSnapshot trackId={track.id} />
+          <PerformanceSnapshot track={track} />
           
           <TrackTabs activeTab={activeTab} onChangeTab={setActiveTab} />
           

@@ -202,6 +202,14 @@ export interface DashboardTrack {
     createdAt: string;
     updatedAt: string;
   };
+  stats?: {
+    plays?: number;
+    likes?: number;
+    comments?: number;
+    favourites?: number;
+    purchases?: number;
+    downloads?: number;
+  } | null;
   commerce: {
     isPurchasable: boolean;
     price: string | null;
@@ -232,6 +240,7 @@ export interface DashboardTrackSummary {
   audioUrl?: string | null;
   demoAudioUrl?: string | null;
   timestamps: DashboardTrack["timestamps"];
+  stats?: DashboardTrack["stats"];
 }
 
 export interface DashboardTrackList {
