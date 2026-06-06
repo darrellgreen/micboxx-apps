@@ -82,12 +82,12 @@ export function AlbumHeroCard({ album, onShare }: AlbumHeroCardProps) {
 
       <View style={styles.actionsRow}>
         <AnimatedPressable
-          style={[styles.btnBase, styles.btnAnalytics]}
-          onPress={() => router.push("/dashboard/analytics")}
+          style={[styles.btnBase, styles.btnEdit]}
+          onPress={() => router.push(`/catalog/albums/${album.id}/edit` as never)}
           haptic="selection"
         >
-          <Ionicons name="stats-chart" size={14} color="#FFFFFF" />
-          <Text style={styles.btnLabel}>View Analytics</Text>
+          <Ionicons name="pencil-outline" size={14} color="#FFFFFF" />
+          <Text style={styles.btnLabel}>Edit Album</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  btnAnalytics: {
-    backgroundColor: "#00B3A6", // Teal analytics highlight
+  btnEdit: {
+    backgroundColor: "#00B3A6", // Keep the primary highlight color of the main button
   },
   btnShare: {
     backgroundColor: "rgba(255, 255, 255, 0.08)",

@@ -26,6 +26,7 @@ import {
   updateAlbumMetadata,
   replaceAlbumArtwork,
   deleteAlbum,
+  publishAlbum,
 } from "@/shared/api/creator-dashboard";
 
 function formatDuration(seconds: number): string {
@@ -90,8 +91,8 @@ export default function EditAlbumScreen() {
 
   const [artworkDirty, setArtworkDirty] = useState(false);
   const [monetizationSheetVisible, setMonetizationSheetVisible] = useState(false);
-  const [overflowSheetVisible, setOverflowSheetVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -183,8 +184,8 @@ export default function EditAlbumScreen() {
 
       setAlbum(nextAlbum);
       showToast({
-        title: "Album changes saved",
-        message: "Your album is up to date.",
+        title: releaseState === "draft" ? "Draft saved" : "Album changes saved",
+        message: releaseState === "draft" ? "Your album draft is up to date." : "Your album is up to date.",
         tone: "success",
       });
 
@@ -202,6 +203,52 @@ export default function EditAlbumScreen() {
       });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePublish() {
+    if (!albumId) return;
+    setPublishing(true);
+    try {
+      const payload: AlbumMetadataUpdate = {
+        title: title.trim(),
+        description: description.trim(),
+        trackIds,
+        isPurchasable,
+        purchasePrice: isPurchasable ? purchasePrice.trim() : null,
+        purchaseCurrency: isPurchasable ? purchaseCurrency.trim().toUpperCase() : null,
+      };
+
+      let nextAlbum = await updateAlbumMetadata(albumId, payload);
+
+      if (artworkPicker.asset && artworkDirty) {
+        nextAlbum = await replaceAlbumArtwork(albumId, buildArtworkFormData(artworkPicker.asset));
+        setArtworkDirty(false);
+      }
+
+      nextAlbum = await publishAlbum(albumId);
+
+      setAlbum(nextAlbum);
+      showToast({
+        title: "Album Published",
+        message: `${nextAlbum.title} is now live.`,
+        tone: "success",
+      });
+
+      await bootstrap.refetch();
+
+      router.replace({
+        pathname: `/catalog/albums/${albumId}`,
+        params: { refreshKey: String(Date.now()) },
+      } as any);
+    } catch (nextError) {
+      showToast({
+        tone: "error",
+        title: "Publish Failed",
+        message: nextError instanceof Error ? nextError.message : "Album could not be published.",
+      });
+    } finally {
+      setPublishing(false);
     }
   }
 
@@ -311,17 +358,24 @@ export default function EditAlbumScreen() {
         </View>
 
         <View style={styles.headerRight}>
-          <AnimatedPressable
-            style={styles.circularBtn}
-            onPress={() => router.push("/audience/notifications")}
-            haptic="selection"
-          >
-            <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
-          </AnimatedPressable>
-
-          <AnimatedPressable style={styles.circularBtn} onPress={() => setOverflowSheetVisible(true)} haptic="selection">
-            <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
-          </AnimatedPressable>
+          {releaseState === "draft" ? (
+            <AnimatedPressable
+              style={styles.headerSaveButton}
+              onPress={() => void handleSave()}
+              disabled={saving || publishing}
+              haptic="selection"
+            >
+              <Text style={styles.headerSaveButtonText}>{saving ? "Saving" : "Save Draft"}</Text>
+            </AnimatedPressable>
+          ) : (
+            <AnimatedPressable
+              style={styles.circularBtn}
+              onPress={() => router.push("/audience/notifications")}
+              haptic="selection"
+            >
+              <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
+            </AnimatedPressable>
+          )}
         </View>
       </View>
     );
@@ -342,15 +396,6 @@ export default function EditAlbumScreen() {
     },
   ];
 
-  const overflowSheetItems = [
-    {
-      key: "delete",
-      label: "Delete Album",
-      icon: "trash-outline" as const,
-      tone: "destructive" as const,
-      onPress: handleDelete,
-    },
-  ];
 
   const releaseState = album?.status.releaseState || "draft";
   const displayStatus = capitalize(releaseState);
@@ -555,16 +600,45 @@ export default function EditAlbumScreen() {
         </View>
       )}
 
-      <AnimatedPressable
-        style={[styles.saveChangesBtn, saving && styles.saveChangesBtnDisabled]}
-        onPress={() => void handleSave()}
-        disabled={saving}
-        haptic="selection"
-      >
-        <Text style={styles.saveChangesBtnText}>
-          {saving ? "Saving Changes..." : "Save Changes"}
-        </Text>
-      </AnimatedPressable>
+      <View style={styles.buttonContainer}>
+        <AnimatedPressable
+          style={[
+            styles.saveChangesBtn,
+            (saving || publishing || !album) && styles.saveChangesBtnDisabled,
+          ]}
+          onPress={() => {
+            if (releaseState === "draft") {
+              void handlePublish();
+            } else {
+              void handleSave();
+            }
+          }}
+          disabled={saving || publishing || !album}
+          haptic="selection"
+        >
+          <Text style={styles.saveChangesBtnText}>
+            {releaseState === "draft"
+              ? publishing
+                ? "Publishing Album..."
+                : "Publish Album"
+              : saving
+                ? "Saving Changes..."
+                : "Save Changes"}
+          </Text>
+        </AnimatedPressable>
+
+        <AnimatedPressable
+          style={[
+            styles.deleteBtn,
+            (saving || publishing || !album) && styles.deleteBtnDisabled,
+          ]}
+          onPress={handleDelete}
+          disabled={saving || publishing || !album}
+          haptic="selection"
+        >
+          <Text style={styles.deleteBtnText}>Delete Album</Text>
+        </AnimatedPressable>
+      </View>
 
       <BottomActionSheet
         visible={monetizationSheetVisible}
@@ -573,12 +647,7 @@ export default function EditAlbumScreen() {
         onClose={() => setMonetizationSheetVisible(false)}
       />
 
-      <BottomActionSheet
-        visible={overflowSheetVisible}
-        title="Album Options"
-        items={overflowSheetItems}
-        onClose={() => setOverflowSheetVisible(false)}
-      />
+
     </Screen>
   );
 }
@@ -626,6 +695,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     gap: 8,
+    alignItems: "center",
   },
   heroCard: {
     backgroundColor: "#131820",
@@ -877,13 +947,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
+  buttonContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
   saveChangesBtn: {
     height: 48,
     borderRadius: 10,
     backgroundColor: "#12D6C5",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 16,
     shadowColor: "#12D6C5",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -897,5 +970,33 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "700",
+  },
+  headerSaveButton: {
+    minHeight: 34,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSaveButtonText: {
+    color: tokens.colors.accent,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  deleteBtn: {
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteBtnDisabled: {
+    opacity: 0.5,
+  },
+  deleteBtnText: {
+    color: "#FF3B30",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
