@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -12,7 +12,12 @@ import {
 } from "react-native";
 import { tokens } from "@micboxx/theme";
 import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx/ui";
-import type { DashboardTrack, DashboardUploadOptions, TrackMetadataUpdate } from "@/contracts/creator";
+import type {
+  DashboardAlbumSummary,
+  DashboardTrack,
+  DashboardUploadOptions,
+  TrackMetadataUpdate,
+} from "@/contracts/creator";
 import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import {
   getTrackStatus,
@@ -22,26 +27,8 @@ import {
   unpublishTrack,
   requeueTrack,
   deleteTrack,
+  getMyAlbums,
 } from "@/shared/api/creator-dashboard";
-
-const TEAL_ACCENT = "#12D6C5";
-
-const MOCKUP_GENRES = [
-  { name: "Ambient" },
-  { name: "Blues" },
-  { name: "Country Music" },
-  { name: "Gospel" },
-  { name: "Hip Hop" },
-  { name: "House" },
-  { name: "Jazz" },
-  { name: "Other" },
-  { name: "Podcast" },
-  { name: "Pop" },
-  { name: "R&B" },
-  { name: "Reggae" },
-  { name: "Rock" },
-  { name: "Techno" },
-];
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -74,16 +61,29 @@ export default function EditTrackScreen() {
   const { showToast } = useToast();
   const [track, setTrack] = useState<DashboardTrack | null>(null);
   const [options, setOptions] = useState<DashboardUploadOptions | null>(null);
+  const [albumSummaries, setAlbumSummaries] = useState<DashboardAlbumSummary[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedGenreName, setSelectedGenreName] = useState("R&B");
+  const [selectedGenreId, setSelectedGenreId] = useState("");
   const [selectedAlbumId, setSelectedAlbumId] = useState("");
   const [selectedAlbumTitle, setSelectedAlbumTitle] = useState("MicBoxx Singles");
   
   const [albumSheetVisible, setAlbumSheetVisible] = useState(false);
+  const [genreSheetVisible, setGenreSheetVisible] = useState(false);
   const [publishSheetVisible, setPublishSheetVisible] = useState(false);
   const [overflowSheetVisible, setOverflowSheetVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const selectedGenre = useMemo(
+    () => options?.genres.find((genre) => String(genre.id) === selectedGenreId) ?? null,
+    [options?.genres, selectedGenreId],
+  );
+  const albumSummaryById = useMemo(
+    () => new Map(albumSummaries.map((album) => [String(album.id), album])),
+    [albumSummaries],
+  );
+  const selectedAlbumSummary = selectedAlbumId ? albumSummaryById.get(selectedAlbumId) ?? null : null;
+  const selectedAlbumArtworkUrl = selectedAlbumSummary?.artworkUrl ?? track?.assets?.artworkUrl ?? null;
+  const selectedGenreName = selectedGenre?.name ?? track?.genre?.name ?? "Select genre";
 
   useEffect(() => {
     let active = true;
@@ -103,21 +103,7 @@ export default function EditTrackScreen() {
         setDescription(nextTrack.description ?? "");
         setSelectedAlbumId(nextTrack.album?.id ? String(nextTrack.album.id) : "");
         setSelectedAlbumTitle(nextTrack.album?.title || "MicBoxx Singles");
-
-        if (nextTrack.genre?.name) {
-          const normTrackG = nextTrack.genre.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-          const match = MOCKUP_GENRES.find((g) => {
-            const normG = g.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return normG.includes(normTrackG) || normTrackG.includes(normG);
-          });
-          if (match) {
-            setSelectedGenreName(match.name);
-          } else {
-            setSelectedGenreName(nextTrack.genre.name);
-          }
-        } else {
-          setSelectedGenreName("R&B");
-        }
+        setSelectedGenreId(nextTrack.genre?.id ? String(nextTrack.genre.id) : "");
       } catch (nextError) {
         if (!active) return;
         showToast({
@@ -134,30 +120,36 @@ export default function EditTrackScreen() {
     };
   }, [trackId, showToast]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadAlbumSummaries() {
+      try {
+        const response = await getMyAlbums(1, 50);
+        if (active) {
+          setAlbumSummaries(response.albums);
+        }
+      } catch {
+        if (active) {
+          setAlbumSummaries([]);
+        }
+      }
+    }
+
+    void loadAlbumSummaries();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   async function handleSave() {
     if (!trackId) return;
     setSaving(true);
     try {
-      const backendGenres = options?.genres || [];
-      let resolvedGenreId = null;
-
-      if (selectedGenreName) {
-        const normSelected = selectedGenreName.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const match = backendGenres.find((bg) => {
-          const normBg = bg.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-          return normBg.includes(normSelected) || normSelected.includes(normBg);
-        });
-        if (match) {
-          resolvedGenreId = match.id;
-        } else if (backendGenres.length > 0) {
-          resolvedGenreId = backendGenres[0].id;
-        }
-      }
-
       const payload: TrackMetadataUpdate = {
         title: title.trim(),
         description: description.trim(),
-        genreId: resolvedGenreId,
+        genreId: selectedGenreId ? Number(selectedGenreId) : null,
         albumId: selectedAlbumId ? Number(selectedAlbumId) : null,
       };
 
@@ -280,6 +272,8 @@ export default function EditTrackScreen() {
     ? options.albums.map((album) => ({
         key: String(album.id),
         label: album.title,
+        imageUrl: albumSummaryById.get(String(album.id))?.artworkUrl ?? null,
+        icon: "albums-outline" as const,
         onPress: () => {
           setSelectedAlbumId(String(album.id));
           setSelectedAlbumTitle(album.title);
@@ -289,12 +283,19 @@ export default function EditTrackScreen() {
         {
           key: "default-singles",
           label: "MicBoxx Singles",
+          icon: "albums-outline" as const,
           onPress: () => {
             setSelectedAlbumId("");
             setSelectedAlbumTitle("MicBoxx Singles");
           },
         },
       ];
+  const genreSheetItems = (options?.genres ?? []).map((genre) => ({
+    key: String(genre.id),
+    label: genre.name,
+    icon: "musical-notes-outline" as const,
+    onPress: () => setSelectedGenreId(String(genre.id)),
+  }));
 
   const publishSheetItems = [
     {
@@ -404,23 +405,19 @@ export default function EditTrackScreen() {
 
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>Genre</Text>
-        <View style={styles.genreGrid}>
-          {MOCKUP_GENRES.map((g) => {
-            const isSelected = selectedGenreName === g.name;
-            return (
-              <AnimatedPressable
-                key={g.name}
-                style={[styles.genreChip, isSelected && styles.genreChipSelected]}
-                onPress={() => setSelectedGenreName(g.name)}
-                haptic="selection"
-              >
-                <Text style={[styles.genreChipText, isSelected && styles.genreChipTextSelected]}>
-                  {g.name}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </View>
+        <AnimatedPressable
+          style={styles.selectorCard}
+          onPress={() => setGenreSheetVisible(true)}
+          haptic="selection"
+        >
+          <View style={styles.selectorLeft}>
+            <View style={styles.greenDot} />
+            <Text style={styles.selectorValue} numberOfLines={1}>
+              {selectedGenreName}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
+        </AnimatedPressable>
       </View>
 
       <View style={styles.fieldContainer}>
@@ -431,18 +428,18 @@ export default function EditTrackScreen() {
           haptic="selection"
         >
           <View style={styles.selectorLeft}>
-            {track?.assets?.artworkUrl ? (
+            {selectedAlbumArtworkUrl ? (
               <Image
-                source={{ uri: track.assets.artworkUrl }}
+                source={{ uri: selectedAlbumArtworkUrl }}
                 style={styles.selectorThumb}
                 contentFit="cover"
               />
             ) : (
-              <View style={[styles.selectorThumb, styles.artworkPlaceholder]}>
-                <Ionicons name="disc-outline" size={14} color={tokens.colors.textSecondary} />
+              <View style={[styles.selectorThumb, styles.selectorThumbPlaceholder]}>
+                <Ionicons name="albums-outline" size={15} color={tokens.colors.textSecondary} />
               </View>
             )}
-            <Text style={styles.selectorValue}>
+            <Text style={styles.selectorValue} numberOfLines={1}>
               {selectedAlbumTitle || "MicBoxx Singles"}
             </Text>
           </View>
@@ -482,9 +479,16 @@ export default function EditTrackScreen() {
 
       <BottomActionSheet
         visible={albumSheetVisible}
-        title="Select Album"
+        title="Select Target Album"
         items={albumSheetItems}
         onClose={() => setAlbumSheetVisible(false)}
+      />
+
+      <BottomActionSheet
+        visible={genreSheetVisible}
+        title="Select Genre"
+        items={genreSheetItems}
+        onClose={() => setGenreSheetVisible(false)}
       />
 
       <BottomActionSheet
@@ -744,32 +748,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     alignSelf: "flex-end",
   },
-  genreGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  genreChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: "#131820",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  genreChipSelected: {
-    backgroundColor: "#12D6C5",
-    borderColor: "#12D6C5",
-  },
-  genreChipText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  genreChipTextSelected: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
   selectorCard: {
     height: 48,
     backgroundColor: "#131820",
@@ -785,17 +763,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    flex: 1,
+    minWidth: 0,
   },
   selectorThumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    backgroundColor: "#1C2431",
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: tokens.colors.bgElevated,
   },
   selectorValue: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "500",
+    flexShrink: 1,
+  },
+  selectorThumbPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   greenDot: {
     width: 8,

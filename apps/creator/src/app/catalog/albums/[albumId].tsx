@@ -7,7 +7,7 @@ import { tokens } from "@micboxx/theme";
 import type { DashboardAlbum } from "@/contracts/creator";
 import { getAlbumStatus } from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
-import { Screen, AnimatedPressable, useToast } from "@micboxx/ui";
+import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx/ui";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
 import { useAccountPreferences } from "@/features/account/provider";
@@ -20,7 +20,6 @@ import { AlbumAudienceSummaryCards } from "./[albumId]/_components/AlbumAudience
 import { AlbumReleaseHealthPanel } from "./[albumId]/_components/AlbumReleaseHealthPanel";
 import { AlbumReleaseInfoPanel } from "./[albumId]/_components/AlbumReleaseInfoPanel";
 import { AlbumTrackPreview } from "./[albumId]/_components/AlbumTrackPreview";
-import { AlbumQuickActions } from "./[albumId]/_components/AlbumQuickActions";
 import { AlbumFullTrackList } from "./[albumId]/_components/AlbumFullTrackList";
 
 function ComingSoonStub({ tab }: { tab: string }) {
@@ -47,8 +46,28 @@ export default function AlbumDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>(tab === "tracks" ? "tracks" : "overview");
+  const [menuVisible, setMenuVisible] = useState(false);
   const { showToast } = useToast();
   const unreadCount = useUnreadNotificationCount();
+
+  const menuItems = [
+    {
+      key: "edit",
+      label: "Edit Album",
+      icon: "create-outline" as const,
+      onPress: () => {
+        if (albumId) {
+          router.push(`/catalog/albums/${albumId}/edit` as never);
+        }
+      },
+    },
+    {
+      key: "share",
+      label: "Share Album",
+      icon: "share-outline" as const,
+      onPress: () => void handleShare(),
+    },
+  ];
 
   const load = useCallback(async () => {
     if (!albumId) return;
@@ -133,7 +152,7 @@ export default function AlbumDetailScreen() {
             </View>
           </AnimatedPressable>
 
-          <AnimatedPressable style={styles.circularBtn} onPress={() => {}} haptic="selection">
+          <AnimatedPressable style={styles.circularBtn} onPress={() => setMenuVisible(true)} haptic="selection">
             <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
           </AnimatedPressable>
         </View>
@@ -184,11 +203,6 @@ export default function AlbumDetailScreen() {
                 album={album}
                 onViewAll={() => setActiveTab("tracks")}
               />
-
-              {/* Action grid */}
-              <AlbumQuickActions
-                onEdit={() => router.push(`/catalog/albums/${album.id}/edit` as never)}
-              />
             </>
           ) : activeTab === "tracks" ? (
             <AlbumFullTrackList
@@ -199,6 +213,13 @@ export default function AlbumDetailScreen() {
           ) : (
             <ComingSoonStub tab={activeTab} />
           )}
+
+          <BottomActionSheet
+            visible={menuVisible}
+            title="Album Options"
+            items={menuItems}
+            onClose={() => setMenuVisible(false)}
+          />
         </>
       )}
     </Screen>

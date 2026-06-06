@@ -16,6 +16,10 @@ const IS_IOS = Platform.OS === "ios";
 const HAS_HOME_INDICATOR = IS_IOS && SCREEN_HEIGHT >= 812;
 const DEFAULT_BOTTOM_INSET = HAS_HOME_INDICATOR ? 34 : 20;
 
+function getBottomPadding(bottomInset: number) {
+  return Math.max((bottomInset || DEFAULT_BOTTOM_INSET) + 32, 48);
+}
+
 interface BottomSheetSurfaceProps {
   children: ReactNode;
   visible: boolean;
@@ -106,6 +110,7 @@ function BottomSheetSurfaceInner({
     ),
     [],
   );
+  const bottomPadding = getBottomPadding(insets?.bottom ?? 0);
 
   return (
     <BottomSheet
@@ -133,7 +138,7 @@ function BottomSheetSurfaceInner({
               contentStyle,
               {
                 paddingTop: 24,
-                paddingBottom: footer ? 24 : Math.max((insets?.bottom ?? 0) + 32, 48),
+                paddingBottom: footer ? 24 : bottomPadding,
               },
             ]}
           >
@@ -143,7 +148,7 @@ function BottomSheetSurfaceInner({
             <BottomSheetView
               style={[
                 styles.footer,
-                { paddingBottom: Math.max((insets?.bottom ?? 0) + 32, 48) },
+                { paddingBottom: bottomPadding },
               ]}
             >
               {footer}
@@ -169,14 +174,14 @@ function BottomSheetSurfaceInner({
               <View
                 style={[
                   styles.footer,
-                  { paddingBottom: Math.max((insets?.bottom ?? 0) + 32, 48) },
+                  { paddingBottom: bottomPadding },
                 ]}
               >
                 {footer}
               </View>
             </>
           ) : (
-            <View style={{ paddingBottom: Math.max((insets?.bottom ?? 0) + 32, 48) }}>
+            <View style={{ paddingBottom: bottomPadding }}>
               {children}
             </View>
           )}

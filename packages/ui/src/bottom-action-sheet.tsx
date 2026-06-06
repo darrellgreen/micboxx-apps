@@ -4,7 +4,7 @@ import { useCallback, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { tokens } from "@micboxx/theme";
-import { BottomSheetScrollView, BottomSheetSurface } from "./bottom-sheet-surface";
+import { BottomSheetSurface } from "./bottom-sheet-surface";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 const VISIBLE_ITEM_COUNT = 6;
@@ -41,6 +41,57 @@ export function BottomActionSheet({
   const isLongList = items.length > VISIBLE_ITEM_COUNT;
   const shouldUseFixedSnapPoint = Boolean(snapPoint) || isLongList;
   const fixedSnapPoint = snapPoint ?? LONG_LIST_SNAP_POINT;
+  const itemList = (
+    <View style={styles.itemList}>
+      {items.map((item) => {
+        const destructive = item.tone === "destructive";
+
+        return (
+          <Pressable
+            key={item.key}
+            onPress={() => handleItemPress(item.onPress)}
+            style={({ pressed }) => [
+              styles.itemButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <View style={styles.itemCopy}>
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.itemImage}
+                  contentFit="cover"
+                />
+              ) : item.icon ? (
+                <Ionicons
+                  name={item.icon}
+                  size={18}
+                  color={
+                    destructive
+                      ? tokens.colors.danger
+                      : tokens.colors.textPrimary
+                  }
+                />
+              ) : null}
+              <Text
+                style={[
+                  styles.itemLabel,
+                  destructive && styles.itemLabelDestructive,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={tokens.colors.textMuted}
+            />
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 
   function handleItemPress(onPress: () => void) {
     pendingActionRef.current = onPress;
@@ -65,60 +116,9 @@ export function BottomActionSheet({
       enableDynamicSizing={!shouldUseFixedSnapPoint}
       maxDynamicContentSize={shouldUseFixedSnapPoint ? undefined : SHEET_VISIBLE_HEIGHT}
       snapPoints={shouldUseFixedSnapPoint ? [fixedSnapPoint] : undefined}
+      scrollable={shouldUseFixedSnapPoint}
     >
-      <BottomSheetScrollView
-        style={styles.itemScroller}
-        contentContainerStyle={styles.itemList}
-        showsVerticalScrollIndicator={items.length > 5}
-      >
-        {items.map((item) => {
-          const destructive = item.tone === "destructive";
-
-          return (
-            <Pressable
-              key={item.key}
-              onPress={() => handleItemPress(item.onPress)}
-              style={({ pressed }) => [
-                styles.itemButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <View style={styles.itemCopy}>
-                {item.imageUrl ? (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={styles.itemImage}
-                    contentFit="cover"
-                  />
-                ) : item.icon ? (
-                  <Ionicons
-                    name={item.icon}
-                    size={18}
-                    color={
-                      destructive
-                        ? tokens.colors.danger
-                        : tokens.colors.textPrimary
-                    }
-                  />
-                ) : null}
-                <Text
-                  style={[
-                    styles.itemLabel,
-                    destructive && styles.itemLabelDestructive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={tokens.colors.textMuted}
-              />
-            </Pressable>
-          );
-        })}
-      </BottomSheetScrollView>
+      {itemList}
     </BottomSheetSurface>
   );
 }
@@ -137,9 +137,6 @@ const styles = StyleSheet.create({
   },
   itemList: {
     gap: 8,
-  },
-  itemScroller: {
-    maxHeight: LIST_VISIBLE_HEIGHT,
   },
   itemButton: {
     height: ITEM_HEIGHT,
