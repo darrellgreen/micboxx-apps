@@ -1,7 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
-import { AnimatedPressable } from "@micboxx/ui";
 import type { DashboardAlbum } from "@/contracts/creator";
 import { useAccountPreferences } from "@/features/account/provider";
 
@@ -15,16 +13,12 @@ interface ReleaseInfoRowProps {
 
 function ReleaseInfoRow({ label, value, isGreenValue }: ReleaseInfoRowProps) {
   const valueColor = isGreenValue ? "#7AC414" : tokens.colors.textPrimary; // Green highlight for Public visibility or success
-  const iconColor = isGreenValue ? "#7AC414" : tokens.colors.textSecondary;
 
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.valueWrap}>
         <Text style={[styles.value, { color: valueColor }]}>{value}</Text>
-        <AnimatedPressable onPress={() => {}} style={styles.editBtn}>
-          <Ionicons name="pencil" size={12} color={iconColor} />
-        </AnimatedPressable>
       </View>
     </View>
   );
@@ -77,7 +71,7 @@ export function AlbumReleaseInfoPanel({ album }: AlbumReleaseInfoPanelProps) {
       <Text style={styles.title}>Release Info</Text>
       
       <View style={styles.rowsContainer}>
-        <ReleaseInfoRow label="Release Date" value={releaseDateVal} />
+        <ReleaseInfoRow label="Date" value={releaseDateVal} />
         {advancedModeEnabled && (
           <>
             <ReleaseInfoRow label="Label" value={labelVal} />
@@ -112,7 +106,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
   label: {
     color: tokens.colors.textSecondary,
@@ -127,8 +121,5 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 12,
     fontWeight: "600",
-  },
-  editBtn: {
-    padding: 2,
   },
 });

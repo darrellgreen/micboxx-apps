@@ -1,15 +1,17 @@
-import { useMediaPicker, useTrackUpload } from "@micboxx/media";
+import { useMediaPicker } from "@micboxx/media";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 
+import type { DashboardAlbum, DashboardAlbumSummary, DashboardUploadOptions } from "@/contracts/creator";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import { ExpoTrackUploadAdapter } from "@/features/media/ExpoTrackUploadAdapter";
+import { getAlbumStatus, getMyAlbums, getUploadOptions } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField } from "@/shared/ui/form";
-import { AnimatedPressable, AppHeader, Button, Screen, Surface } from "@micboxx/ui";
+import { AnimatedPressable, AppHeader, BottomActionSheet, Button, Screen, Surface, useToast } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function UploadTrackScreen() {
@@ -18,24 +20,139 @@ export default function UploadTrackScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [albumId, setAlbumId] = useState(params.albumId ?? bootstrap.uploadOptions?.albums[0]?.id?.toString() ?? "");
-  const [genreId, setGenreId] = useState(bootstrap.uploadOptions?.genres[0]?.id?.toString() ?? "");
+  const [genreId, setGenreId] = useState("");
+  const [localUploadOptions, setLocalUploadOptions] = useState<DashboardUploadOptions | null>(null);
+  const [resolvedAlbum, setResolvedAlbum] = useState<DashboardAlbum | null>(null);
+  const [albumSummaries, setAlbumSummaries] = useState<DashboardAlbumSummary[]>([]);
+  const [albumSheetVisible, setAlbumSheetVisible] = useState(false);
+  const [genreSheetVisible, setGenreSheetVisible] = useState(false);
   
   const audioPicker = useMediaPicker(ExpoMediaPickerAdapter);
   const artworkPicker = useMediaPicker(ExpoMediaPickerAdapter);
-  const uploader = useTrackUpload(ExpoTrackUploadAdapter);
+  const { showToast } = useToast();
 
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [uploadSubmitting, setUploadSubmitting] = useState(false);
+  const uploadOptions = bootstrap.uploadOptions ?? localUploadOptions;
+  const selectedAlbum = useMemo(
+    () => uploadOptions?.albums.find((album) => String(album.id) === albumId) ?? null,
+    [albumId, uploadOptions?.albums],
+  );
+  const targetReleaseTitle = resolvedAlbum?.title ?? selectedAlbum?.title ?? null;
+  const selectedAlbumSummary = useMemo(
+    () => albumSummaries.find((album) => String(album.id) === albumId) ?? null,
+    [albumId, albumSummaries],
+  );
+  const albumSummaryById = useMemo(
+    () => new Map(albumSummaries.map((album) => [String(album.id), album])),
+    [albumSummaries],
+  );
+  const targetReleaseArtworkUrl = resolvedAlbum?.artworkUrl ?? selectedAlbumSummary?.artworkUrl ?? null;
+  const selectedGenre = useMemo(
+    () => uploadOptions?.genres.find((genre) => String(genre.id) === genreId) ?? null,
+    [genreId, uploadOptions?.genres],
+  );
+  const headerSubtitle = targetReleaseTitle
+    ? `Adding to ${targetReleaseTitle}`
+    : "Loading release title...";
+  const albumSheetItems = (uploadOptions?.albums ?? []).map((album) => ({
+    key: String(album.id),
+    label: album.title,
+    imageUrl: albumSummaryById.get(String(album.id))?.artworkUrl ?? null,
+    icon: "albums-outline" as const,
+    onPress: () => setAlbumId(String(album.id)),
+  }));
+  const genreSheetItems = (uploadOptions?.genres ?? []).map((genre) => ({
+    key: String(genre.id),
+    label: genre.name,
+    icon: "musical-notes-outline" as const,
+    onPress: () => setGenreId(String(genre.id)),
+  }));
 
   useEffect(() => {
-    if (!albumId && bootstrap.uploadOptions?.albums[0]?.id) {
-      setAlbumId(String(bootstrap.uploadOptions.albums[0].id));
+    if (bootstrap.uploadOptions?.genres.length && bootstrap.uploadOptions?.albums.length) {
+      return;
     }
-    if (!genreId && bootstrap.uploadOptions?.genres[0]?.id) {
-      setGenreId(String(bootstrap.uploadOptions.genres[0].id));
-    }
-  }, [albumId, bootstrap.uploadOptions, genreId]);
 
-  async function handleUpload() {
+    let active = true;
+    async function loadUploadOptions() {
+      try {
+        const options = await getUploadOptions();
+        if (active) {
+          setLocalUploadOptions(options);
+        }
+      } catch {
+        if (active) {
+          setLocalUploadOptions(null);
+        }
+      }
+    }
+
+    void loadUploadOptions();
+    return () => {
+      active = false;
+    };
+  }, [bootstrap.uploadOptions?.albums.length, bootstrap.uploadOptions?.genres.length]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAlbumSummaries() {
+      try {
+        const response = await getMyAlbums(1, 50);
+        if (active) {
+          setAlbumSummaries(response.albums);
+        }
+      } catch {
+        if (active) {
+          setAlbumSummaries([]);
+        }
+      }
+    }
+
+    void loadAlbumSummaries();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (params.albumId && albumId !== params.albumId) {
+      setAlbumId(params.albumId);
+      return;
+    }
+    if (!albumId && uploadOptions?.albums[0]?.id) {
+      setAlbumId(String(uploadOptions.albums[0].id));
+    }
+  }, [albumId, params.albumId, uploadOptions]);
+
+  useEffect(() => {
+    if (!albumId) {
+      setResolvedAlbum(null);
+      return;
+    }
+
+    let active = true;
+    async function resolveAlbum() {
+      try {
+        const album = await getAlbumStatus(albumId);
+        if (active) {
+          setResolvedAlbum(album);
+        }
+      } catch {
+        if (active) {
+          setResolvedAlbum(null);
+        }
+      }
+    }
+
+    void resolveAlbum();
+    return () => {
+      active = false;
+    };
+  }, [albumId]);
+
+  function handleUpload() {
     setValidationError(null);
 
     if (!audioPicker.asset) return setValidationError("Audio file is required.");
@@ -44,23 +161,66 @@ export default function UploadTrackScreen() {
     if (!albumId) return setValidationError("Choose an album before uploading.");
     if (!genreId) return setValidationError("Choose a genre before uploading.");
 
-    try {
-      const trackId = await uploader.uploadTrack(audioPicker.asset, artworkPicker.asset, {
-        title: title.trim(),
-        description: description.trim(),
-        genreId,
-        albumId,
-      });
+    const uploadTitle = title.trim();
+    const uploadDescription = description.trim();
+    const targetAlbumId = albumId;
+    const targetGenreId = genreId;
+    const uploadStartedAt = Date.now();
 
-      await bootstrap.refetch();
-      router.replace(`/create/progress/${trackId}` as never);
-    } catch {
-      // Errors handled by uploader.state.error
-    }
+    setUploadSubmitting(true);
+    showToast({
+      tone: "info",
+      title: "Upload started",
+      message: `Adding "${uploadTitle}" to this release.`,
+    });
+    router.replace(
+      `/catalog/albums/${targetAlbumId}?tab=tracks&uploadingTrackTitle=${encodeURIComponent(uploadTitle)}&refreshKey=${uploadStartedAt}` as never,
+    );
+
+    void ExpoTrackUploadAdapter.uploadTrack(audioPicker.asset, artworkPicker.asset, {
+      title: uploadTitle,
+      description: uploadDescription,
+      genreId: targetGenreId,
+      albumId: targetAlbumId,
+    })
+      .then(async ({ id }) => {
+        await bootstrap.refetch();
+        router.replace(
+          `/catalog/albums/${targetAlbumId}?tab=tracks&highlightTrackId=${id}&refreshKey=${Date.now()}` as never,
+        );
+        showToast({
+          tone: "success",
+          title: "Track uploaded",
+          message: `"${uploadTitle}" is processing now.`,
+        });
+      })
+      .catch((nextError) => {
+        showToast({
+          tone: "error",
+          title: "Upload failed",
+          message:
+            nextError instanceof Error
+              ? nextError.message
+              : "Unable to upload this track.",
+        });
+        router.replace(
+          `/create/upload-push?albumId=${targetAlbumId}` as never,
+        );
+      });
   }
 
   return (
-    <Screen contentContainerStyle={styles.screen} header={<AppHeader variant="detail" title="Upload Track" fallbackRoute="/(tabs)/create" />}>
+    <Screen
+      contentContainerStyle={styles.screen}
+      header={
+        <AppHeader
+          variant="detail"
+          title="Upload Track"
+          subtitle={headerSubtitle}
+          fallbackRoute="/(tabs)/create"
+        />
+      }
+    >
 
       <View style={styles.formContainer}>
         {/* 1. Audio File */}
@@ -114,41 +274,45 @@ export default function UploadTrackScreen() {
         <Surface tone="section" borderRadius="section" padding="lg" style={styles.section}>
           <Text style={styles.sectionTitle}>4. Release Settings</Text>
           <Field label="Target Album">
-            <View style={styles.chipRow}>
-              {bootstrap.uploadOptions?.albums.map((album) => {
-                const active = albumId === String(album.id);
-                return (
-                  <AnimatedPressable
-                    key={album.id}
-                    style={[styles.chip, active && styles.chipActive]}
-                    onPress={() => setAlbumId(String(album.id))}
-                  >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                      {album.title}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
-            </View>
+            <AnimatedPressable
+              style={styles.selectorCard}
+              onPress={() => setAlbumSheetVisible(true)}
+              haptic="selection"
+            >
+              <View style={styles.selectorLeft}>
+                {targetReleaseArtworkUrl ? (
+                  <Image
+                    source={{ uri: targetReleaseArtworkUrl }}
+                    style={styles.selectorThumb}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={[styles.selectorThumb, styles.selectorThumbPlaceholder]}>
+                    <Ionicons name="albums-outline" size={15} color={tokens.colors.textSecondary} />
+                  </View>
+                )}
+                <Text style={styles.selectorValue} numberOfLines={1}>
+                  {targetReleaseTitle ?? "Loading release title..."}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
+            </AnimatedPressable>
           </Field>
           
           <Field label="Primary Genre">
-            <View style={styles.chipRow}>
-              {bootstrap.uploadOptions?.genres.map((genre) => {
-                const active = genreId === String(genre.id);
-                return (
-                  <AnimatedPressable
-                    key={genre.id}
-                    style={[styles.chip, active && styles.chipActive]}
-                    onPress={() => setGenreId(String(genre.id))}
-                  >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                      {genre.name}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
-            </View>
+            <AnimatedPressable
+              style={styles.selectorCard}
+              onPress={() => setGenreSheetVisible(true)}
+              haptic="selection"
+            >
+              <View style={styles.selectorLeft}>
+                <View style={styles.greenDot} />
+                <Text style={styles.selectorValue}>
+                  {selectedGenre?.name ?? "Select genre"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
+            </AnimatedPressable>
           </Field>
         </Surface>
 
@@ -159,22 +323,36 @@ export default function UploadTrackScreen() {
             Your track will be processed and prepared for streaming. You can change visibility settings after processing is complete.
           </Text>
           
-          {(validationError || uploader.state.error) ? (
+          {validationError ? (
             <Surface tone="section" borderRadius="section" padding="md" style={styles.errorBox}>
               <Ionicons name="alert-circle" size={16} color="#ffb3b3" />
-              <ErrorText>{validationError || uploader.state.error}</ErrorText>
+              <ErrorText>{validationError}</ErrorText>
             </Surface>
           ) : null}
 
           <Button
-            label={uploader.state.status === "uploading" ? "Uploading..." : "Start Upload"}
+            label={uploadSubmitting ? "Starting upload..." : "Start Upload"}
             tone="primary"
             size="lg"
-            onPress={() => void handleUpload()}
-            disabled={uploader.state.status === "uploading"}
+            onPress={handleUpload}
+            disabled={uploadSubmitting}
           />
         </Surface>
       </View>
+
+      <BottomActionSheet
+        visible={albumSheetVisible}
+        title="Select Target Album"
+        items={albumSheetItems}
+        onClose={() => setAlbumSheetVisible(false)}
+      />
+
+      <BottomActionSheet
+        visible={genreSheetVisible}
+        title="Select Genre"
+        items={genreSheetItems}
+        onClose={() => setGenreSheetVisible(false)}
+      />
       
       <View style={{ height: 100 }} />
     </Screen>
@@ -303,31 +481,45 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: tokens.colors.textPrimary,
   },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.bgElevated,
+  selectorCard: {
+    height: 48,
+    backgroundColor: "#131820",
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
   },
-  chipActive: {
-    backgroundColor: tokens.colors.accent,
-    borderColor: tokens.colors.accent,
+  selectorLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
   },
-  chipText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: tokens.colors.textSecondary,
+  selectorValue: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+    flexShrink: 1,
   },
-  chipTextActive: {
-    color: tokens.colors.bgApp,
-    fontWeight: "700",
+  selectorThumb: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: tokens.colors.bgElevated,
+  },
+  selectorThumbPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  greenDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: tokens.colors.success,
   },
   publishHelpText: {
     fontSize: 14,

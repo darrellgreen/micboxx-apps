@@ -79,10 +79,6 @@ export function resolveCreateEntryHref(input: {
   tracksSummary: DashboardTrackList | null;
   uploadOptions: DashboardUploadOptions | null;
 }): Href {
-  if (input.createEntryTarget === "create_album") {
-    return "/create/album-push";
-  }
-
   if (input.createEntryTarget === "recover_failed_item") {
     const failedTrack = pickNewestTrack(
       input.tracksSummary?.tracks ?? [],
@@ -103,12 +99,7 @@ export function resolveCreateEntryHref(input: {
     }
   }
 
-  const firstAlbumId = input.uploadOptions?.albums[0]?.id;
-  if (firstAlbumId) {
-    return `/create/upload-push?albumId=${firstAlbumId}` as Href;
-  }
-
-  return "/create/select-album-push";
+  return "/create/release";
 }
 
 export function resolveReadinessActionHref(input: {

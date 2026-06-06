@@ -218,6 +218,16 @@ export default function RootLayout() {
                         }}
                       />
                       <Stack.Screen
+                        name="create/release"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: "transparent",
+                          },
+                        }}
+                      />
+                      <Stack.Screen
                         name="create/album-push"
                         options={{
                           headerShown: false,

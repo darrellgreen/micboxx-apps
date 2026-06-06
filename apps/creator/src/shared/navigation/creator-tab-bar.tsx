@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { router } from "expo-router";
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -17,6 +18,8 @@ import { LibraryTabIcon } from "@/components/icons/LibraryTabIcon";
 import { PieChartTabIcon } from "@/components/icons/PieChartTabIcon";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { AnimatedPressable } from "@micboxx/ui";
+import { useCreatorBootstrap } from "@/features/bootstrap/provider";
+import { resolveCreateEntryHref } from "@/features/bootstrap/routes";
 import {
     CREATOR_TAB_META,
     CREATOR_TAB_ORDER,
@@ -67,6 +70,7 @@ function resolveCreatorTabKey(routeName: string): CreatorTabKey | null {
 
 export function CreatorTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const bootstrap = useCreatorBootstrap();
   const keyedRoutes = new Map<CreatorTabKey, (typeof state.routes)[number]>();
   for (const route of state.routes) {
     const key = resolveCreatorTabKey(route.name);
@@ -96,6 +100,17 @@ export function CreatorTabBar({ state, navigation }: BottomTabBarProps) {
         target: route.key,
         canPreventDefault: true,
       });
+
+      if (routeKey === "create" && !event.defaultPrevented) {
+        router.push(
+          resolveCreateEntryHref({
+            createEntryTarget: bootstrap.createEntryTarget,
+            tracksSummary: bootstrap.tracksSummary,
+            uploadOptions: bootstrap.uploadOptions,
+          }) as never,
+        );
+        return;
+      }
 
       if (!isFocused && !event.defaultPrevented) {
         navigation.navigate(route.name, route.params);

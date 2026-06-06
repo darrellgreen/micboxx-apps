@@ -1,16 +1,25 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useCallback, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { tokens } from "@micboxx/theme";
-import { BottomSheetSurface } from "./bottom-sheet-surface";
+import { BottomSheetScrollView, BottomSheetSurface } from "./bottom-sheet-surface";
 
 type IconName = keyof typeof Ionicons.glyphMap;
+const VISIBLE_ITEM_COUNT = 6;
+const ITEM_HEIGHT = 56;
+const ITEM_GAP = 8;
+const LIST_VISIBLE_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEM_COUNT + ITEM_GAP * (VISIBLE_ITEM_COUNT - 1);
+const SHEET_VERTICAL_CHROME = 24 + 96;
+const SHEET_VISIBLE_HEIGHT = LIST_VISIBLE_HEIGHT + SHEET_VERTICAL_CHROME;
+const LONG_LIST_SNAP_POINT = "58%";
 
 export interface BottomActionSheetItem {
   key: string;
   label: string;
   icon?: IconName;
+  imageUrl?: string | null;
   tone?: "default" | "destructive";
   onPress: () => void;
 }
@@ -19,14 +28,19 @@ export function BottomActionSheet({
   visible,
   title,
   items,
+  snapPoint,
   onClose,
 }: {
   visible: boolean;
   title?: string;
   items: BottomActionSheetItem[];
+  snapPoint?: number | string;
   onClose: () => void;
 }) {
   const pendingActionRef = useRef<(() => void) | null>(null);
+  const isLongList = items.length > VISIBLE_ITEM_COUNT;
+  const shouldUseFixedSnapPoint = Boolean(snapPoint) || isLongList;
+  const fixedSnapPoint = snapPoint ?? LONG_LIST_SNAP_POINT;
 
   function handleItemPress(onPress: () => void) {
     pendingActionRef.current = onPress;
@@ -47,8 +61,16 @@ export function BottomActionSheet({
       visible={visible}
       onDismiss={handleDismiss}
       contentStyle={styles.content}
+      enableContentPanningGesture={false}
+      enableDynamicSizing={!shouldUseFixedSnapPoint}
+      maxDynamicContentSize={shouldUseFixedSnapPoint ? undefined : SHEET_VISIBLE_HEIGHT}
+      snapPoints={shouldUseFixedSnapPoint ? [fixedSnapPoint] : undefined}
     >
-      <View style={styles.itemList}>
+      <BottomSheetScrollView
+        style={styles.itemScroller}
+        contentContainerStyle={styles.itemList}
+        showsVerticalScrollIndicator={items.length > 5}
+      >
         {items.map((item) => {
           const destructive = item.tone === "destructive";
 
@@ -62,7 +84,13 @@ export function BottomActionSheet({
               ]}
             >
               <View style={styles.itemCopy}>
-                {item.icon ? (
+                {item.imageUrl ? (
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={styles.itemImage}
+                    contentFit="cover"
+                  />
+                ) : item.icon ? (
                   <Ionicons
                     name={item.icon}
                     size={18}
@@ -90,7 +118,7 @@ export function BottomActionSheet({
             </Pressable>
           );
         })}
-      </View>
+      </BottomSheetScrollView>
     </BottomSheetSurface>
   );
 }
@@ -110,8 +138,11 @@ const styles = StyleSheet.create({
   itemList: {
     gap: 8,
   },
+  itemScroller: {
+    maxHeight: LIST_VISIBLE_HEIGHT,
+  },
   itemButton: {
-    minHeight: 56,
+    height: ITEM_HEIGHT,
     borderRadius: tokens.radii.xl,
     backgroundColor: "rgba(255,255,255,0.04)",
     paddingHorizontal: 16,
@@ -125,6 +156,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     flexShrink: 1,
+  },
+  itemImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: tokens.colors.bgElevated,
   },
   itemLabel: {
     color: tokens.colors.textPrimary,

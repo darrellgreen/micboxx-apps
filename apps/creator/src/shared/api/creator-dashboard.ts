@@ -425,6 +425,21 @@ export async function updateAlbumMetadata(
   return response.album;
 }
 
+export async function replaceAlbumArtwork(
+  albumId: string | number,
+  formData: FormData,
+): Promise<DashboardAlbum> {
+  const response = await creatorFetch<{ album: DashboardAlbum }>(
+    `/v1/dashboard/albums/${albumId}/artwork`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+
+  return response.album;
+}
+
 export async function publishAlbum(
   albumId: string | number,
 ): Promise<DashboardAlbum> {
@@ -509,4 +524,3 @@ export async function getAlbumPlays(
     `/v1/dashboard/albums/${albumId}/analytics/plays?days=${days}`,
   );
 }
-

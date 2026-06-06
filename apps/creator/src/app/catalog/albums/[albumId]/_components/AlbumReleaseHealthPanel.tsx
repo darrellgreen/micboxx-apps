@@ -1,36 +1,113 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
+import type { DashboardAlbum } from "@/contracts/creator";
 
 const CARD_BG = "#131820";
 
+type HealthStatus = "complete" | "partial" | "missing";
+
 interface HealthRowProps {
   label: string;
+  status: HealthStatus;
+  value?: string;
 }
 
-function HealthRow({ label }: HealthRowProps) {
+function HealthRow({ label, status, value }: HealthRowProps) {
+  const complete = status === "complete";
+  const partial = status === "partial";
+  const iconName = complete
+    ? "checkmark-circle"
+    : partial
+      ? "ellipse"
+      : "ellipse-outline";
+  const statusLabel = value ?? (complete ? "Complete" : partial ? "Partial" : "Missing");
+  const statusColor = complete
+    ? tokens.colors.success
+    : partial
+      ? tokens.colors.warning
+      : tokens.colors.textSecondary;
+
   return (
     <View style={styles.row}>
       <View style={styles.left}>
-        <Ionicons name="checkmark-circle" size={16} color={tokens.colors.success} />
+        <Ionicons
+          name={iconName}
+          size={16}
+          color={statusColor}
+        />
         <Text style={styles.label}>{label}</Text>
       </View>
-      <Text style={styles.statusText}>Complete</Text>
+      <Text style={[styles.statusText, { color: statusColor }]}>
+        {statusLabel}
+      </Text>
     </View>
   );
 }
 
-export function AlbumReleaseHealthPanel() {
+function hasValue(value: string | null | undefined) {
+  return Boolean(value?.trim());
+}
+
+function resolveMetadataStatus(album: DashboardAlbum): HealthStatus {
+  const hasTitle = hasValue(album.title);
+  const hasDescription = hasValue(album.description);
+  const hasReleaseTiming = Boolean(album.status.publishAt || album.status.published);
+  const hasTracks = album.counts.tracks > 0;
+
+  if (hasTitle && hasDescription && hasReleaseTiming && hasTracks) {
+    return "complete";
+  }
+
+  if (hasTitle || hasDescription || hasReleaseTiming) {
+    return "partial";
+  }
+
+  return "missing";
+}
+
+function booleanStatus(value: boolean): HealthStatus {
+  return value ? "complete" : "missing";
+}
+
+function resolveCommerceRow(album: DashboardAlbum): HealthRowProps {
+  if (hasValue(album.commerce.price)) {
+    return { label: "Commerce", status: "complete", value: "Yes" };
+  }
+
+  return { label: "Commerce", status: "missing", value: "No" };
+}
+
+function resolveReleaseStateRow(album: DashboardAlbum): HealthRowProps {
+  if (album.status.releaseState === "published") {
+    return { label: "Release State", status: "complete", value: "Published" };
+  }
+
+  if (album.status.releaseState === "scheduled") {
+    return { label: "Release State", status: "partial", value: "Scheduled" };
+  }
+
+  return { label: "Release State", status: "missing", value: "Draft" };
+}
+
+export function AlbumReleaseHealthPanel({ album }: { album: DashboardAlbum }) {
+  const rows = [
+    { label: "Artwork", status: booleanStatus(Boolean(album.artworkUrl)) },
+    { label: "Tracks", status: booleanStatus(album.counts.tracks > 0) },
+    { label: "Metadata", status: resolveMetadataStatus(album) },
+    resolveCommerceRow(album),
+    resolveReleaseStateRow(album),
+    { label: "Rights", status: booleanStatus(album.status.canPublish || album.status.published) },
+  ];
+
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Release Health</Text>
       
       <View style={styles.rowsContainer}>
-        <HealthRow label="Artwork" />
-        <HealthRow label="Tracks" />
-        <HealthRow label="Metadata" />
-        <HealthRow label="Publishing Rights" />
-        <HealthRow label="Release Info" />
+        {rows.map((row) => (
+          <HealthRow key={row.label} label={row.label} status={row.status} value={row.value} />
+        ))}
       </View>
     </View>
   );
@@ -69,7 +146,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   statusText: {
-    color: tokens.colors.success,
     fontSize: 12,
     fontWeight: "700",
   },

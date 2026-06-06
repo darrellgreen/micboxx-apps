@@ -23,17 +23,17 @@ function matchesFilter(album: DashboardAlbumSummary, filter: AlbumFilter) {
 }
 
 function formatDate(isoString: string | null): string {
-  if (!isoString) return "May 22, 2025";
+  if (!isoString) return "Date unavailable";
   try {
     const date = new Date(isoString);
-    if (isNaN(date.getTime())) return "May 22, 2025";
+    if (isNaN(date.getTime())) return "Date unavailable";
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
   } catch {
-    return "May 22, 2025";
+    return "Date unavailable";
   }
 }
 

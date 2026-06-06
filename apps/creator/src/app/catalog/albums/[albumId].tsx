@@ -34,13 +34,19 @@ function ComingSoonStub({ tab }: { tab: string }) {
 }
 
 export default function AlbumDetailScreen() {
-  const { albumId } = useLocalSearchParams<{ albumId?: string }>();
+  const { albumId, tab, highlightTrackId, refreshKey, uploadingTrackTitle } = useLocalSearchParams<{
+    albumId?: string;
+    tab?: string;
+    highlightTrackId?: string;
+    refreshKey?: string;
+    uploadingTrackTitle?: string;
+  }>();
   const { preferences } = useAccountPreferences();
   const advancedModeEnabled = preferences?.advancedModeEnabled ?? false;
   const [album, setAlbum] = useState<DashboardAlbum | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [activeTab, setActiveTab] = useState<string>(tab === "tracks" ? "tracks" : "overview");
   const { showToast } = useToast();
   const unreadCount = useUnreadNotificationCount();
 
@@ -60,6 +66,18 @@ export default function AlbumDetailScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (refreshKey) {
+      void load();
+    }
+  }, [load, refreshKey]);
+
+  useEffect(() => {
+    if (tab === "tracks") {
+      setActiveTab("tracks");
+    }
+  }, [tab]);
 
   const handleShare = async () => {
     if (!album) return;
@@ -157,7 +175,7 @@ export default function AlbumDetailScreen() {
               
               {/* Side by side validation panels */}
               <View style={styles.sideBySide}>
-                {advancedModeEnabled && <AlbumReleaseHealthPanel />}
+                {advancedModeEnabled && <AlbumReleaseHealthPanel album={album} />}
                 <AlbumReleaseInfoPanel album={album} />
               </View>
 
@@ -173,7 +191,11 @@ export default function AlbumDetailScreen() {
               />
             </>
           ) : activeTab === "tracks" ? (
-            <AlbumFullTrackList album={album} />
+            <AlbumFullTrackList
+              album={album}
+              highlightTrackId={highlightTrackId}
+              pendingTrackTitle={uploadingTrackTitle}
+            />
           ) : (
             <ComingSoonStub tab={activeTab} />
           )}

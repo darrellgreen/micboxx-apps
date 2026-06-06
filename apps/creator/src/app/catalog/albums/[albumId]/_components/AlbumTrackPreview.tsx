@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 import { AnimatedPressable } from "@micboxx/ui";
@@ -29,15 +30,8 @@ interface AlbumTrackPreviewProps {
 }
 
 export function AlbumTrackPreview({ album, onViewAll }: AlbumTrackPreviewProps) {
-  const displayCount = album.counts?.tracks || 13;
-
-  // Mockup list of first 4 tracks
-  const mockTracks = [
-    { id: 1, title: "Intro" },
-    { id: 2, title: "Push It" },
-    { id: 3, title: "Hustler's Dream" },
-    { id: 4, title: "Maybach Music" },
-  ];
+  const displayCount = album.counts.tracks;
+  const previewTracks = album.tracks.slice(0, 4);
 
   return (
     <View style={styles.card}>
@@ -45,16 +39,36 @@ export function AlbumTrackPreview({ album, onViewAll }: AlbumTrackPreviewProps) 
         <Text style={styles.title}>Tracks ({displayCount})</Text>
       </View>
 
-      <View style={styles.list}>
-        {mockTracks.map((t, idx) => (
-          <TrackRow key={t.id} index={idx + 1} title={t.title} />
-        ))}
-      </View>
+      {previewTracks.length > 0 ? (
+        <>
+          <View style={styles.list}>
+            {previewTracks.map((track, idx) => (
+              <TrackRow key={track.trackId} index={idx + 1} title={track.title} />
+            ))}
+          </View>
 
-      <AnimatedPressable style={styles.viewAllCta} onPress={onViewAll} haptic="selection">
-        <Text style={styles.ctaText}>View All Tracks</Text>
-        <Ionicons name="arrow-forward" size={14} color="#00B3A6" />
-      </AnimatedPressable>
+          <AnimatedPressable style={styles.viewAllCta} onPress={onViewAll} haptic="selection">
+            <Text style={styles.ctaText}>View All Tracks</Text>
+            <Ionicons name="arrow-forward" size={14} color="#00B3A6" />
+          </AnimatedPressable>
+        </>
+      ) : (
+        <View style={styles.emptyState}>
+          <Ionicons name="musical-notes-outline" size={22} color={tokens.colors.textSecondary} />
+          <Text style={styles.emptyTitle}>No tracks added yet</Text>
+          <Text style={styles.emptyCopy}>
+            Add the first track to this release, then return here to review the track list.
+          </Text>
+          <AnimatedPressable
+            style={styles.emptyCta}
+            onPress={() => router.push(`/create/upload-push?albumId=${album.id}` as never)}
+            haptic="selection"
+          >
+            <Ionicons name="add" size={16} color={tokens.colors.accent} />
+            <Text style={styles.emptyCtaText}>Add Track</Text>
+          </AnimatedPressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -112,6 +126,40 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     color: "#00B3A6",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  emptyState: {
+    minHeight: 96,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+  },
+  emptyTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  emptyCopy: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 17,
+  },
+  emptyCta: {
+    minHeight: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderAccent,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  emptyCtaText: {
+    color: tokens.colors.accent,
     fontSize: 13,
     fontWeight: "700",
   },

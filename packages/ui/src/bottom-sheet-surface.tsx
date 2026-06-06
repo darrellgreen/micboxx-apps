@@ -20,9 +20,13 @@ interface BottomSheetSurfaceProps {
   children: ReactNode;
   visible: boolean;
   contentStyle?: StyleProp<ViewStyle>;
+  enableContentPanningGesture?: boolean;
+  enableDynamicSizing?: boolean;
   footer?: ReactNode;
+  maxDynamicContentSize?: number;
   onDismiss: () => void;
   scrollable?: boolean;
+  snapPoints?: Array<number | string>;
 }
 
 interface BottomSheetSurfaceInnerProps extends BottomSheetSurfaceProps {
@@ -36,9 +40,13 @@ function BottomSheetSurfaceInner({
   children,
   visible,
   contentStyle,
+  enableContentPanningGesture = true,
+  enableDynamicSizing = true,
   footer,
+  maxDynamicContentSize,
   onDismiss,
   scrollable = false,
+  snapPoints,
   mounted,
   setMounted,
   onRequestCloseRef,
@@ -104,9 +112,11 @@ function BottomSheetSurfaceInner({
       ref={sheetRef}
       index={0}
       animateOnMount
-      enableDynamicSizing
+      enableDynamicSizing={enableDynamicSizing}
+      maxDynamicContentSize={maxDynamicContentSize}
+      snapPoints={snapPoints}
       enablePanDownToClose
-      enableContentPanningGesture
+      enableContentPanningGesture={enableContentPanningGesture}
       enableHandlePanningGesture
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.background}

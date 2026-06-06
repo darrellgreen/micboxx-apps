@@ -18,9 +18,11 @@ interface HubHeaderProps {
 interface DetailHeaderProps {
   variant: "detail";
   title: string;
+  subtitle?: string;
   onBack?: () => void;
   fallbackRoute?: string;
   rightContent?: ReactNode;
+  detailSideWidth?: number;
 }
 
 interface FlowHeaderProps {
@@ -29,6 +31,8 @@ interface FlowHeaderProps {
   step?: string;
   onClose?: () => void;
   fallbackRoute?: string;
+  rightContent?: ReactNode;
+  flowSideWidth?: number;
 }
 
 export type AppHeaderProps = HubHeaderProps | DetailHeaderProps | FlowHeaderProps;
@@ -54,7 +58,14 @@ function HubHeader({ leftContent, centerContent, rightContent }: HubHeaderProps)
   );
 }
 
-function DetailHeader({ title, onBack, fallbackRoute = "/(tabs)/home", rightContent }: DetailHeaderProps) {
+function DetailHeader({
+  title,
+  subtitle,
+  onBack,
+  fallbackRoute = "/(tabs)/home",
+  rightContent,
+  detailSideWidth = 40,
+}: DetailHeaderProps) {
   const router = useRouter();
 
   const handleBack = onBack ?? (() => {
@@ -67,26 +78,38 @@ function DetailHeader({ title, onBack, fallbackRoute = "/(tabs)/home", rightCont
 
   return (
     <View style={s.container}>
-      <AnimatedPressable
-        onPress={handleBack}
-        haptic="selection"
-        style={s.circularBtn}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <Ionicons name="chevron-back" size={24} color={tokens.colors.textPrimary} />
-      </AnimatedPressable>
+      <View style={[s.detailSide, { width: detailSideWidth }]}>
+        <AnimatedPressable
+          onPress={handleBack}
+          haptic="selection"
+          style={s.circularBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={24} color={tokens.colors.textPrimary} />
+        </AnimatedPressable>
+      </View>
 
-      <Text numberOfLines={1} style={s.detailTitle}>{title}</Text>
+      <View style={s.detailCenter}>
+        <Text numberOfLines={1} style={s.detailTitle}>{title}</Text>
+        {subtitle ? <Text numberOfLines={1} style={s.detailSubtitle}>{subtitle}</Text> : null}
+      </View>
 
-      <View style={s.detailRight}>
+      <View style={[s.detailRight, { width: detailSideWidth }]}>
         {rightContent ?? <View />}
       </View>
     </View>
   );
 }
 
-function FlowHeader({ title, step, onClose, fallbackRoute = "/(tabs)/home" }: FlowHeaderProps) {
+function FlowHeader({
+  title,
+  step,
+  onClose,
+  fallbackRoute = "/(tabs)/home",
+  rightContent,
+  flowSideWidth = 80,
+}: FlowHeaderProps) {
   const router = useRouter();
 
   const handleClose = onClose ?? (() => {
@@ -99,23 +122,27 @@ function FlowHeader({ title, step, onClose, fallbackRoute = "/(tabs)/home" }: Fl
 
   return (
     <View style={s.container}>
-      <AnimatedPressable
-        onPress={handleClose}
-        haptic="selection"
-        style={s.closeBtn}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-      >
-        <Ionicons name="close" size={24} color={tokens.colors.textPrimary} />
-        <Text style={s.closeLabel}>Close</Text>
-      </AnimatedPressable>
+      <View style={[s.flowSide, { width: flowSideWidth }]}>
+        <AnimatedPressable
+          onPress={handleClose}
+          haptic="selection"
+          style={s.closeBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        >
+          <Ionicons name="close" size={24} color={tokens.colors.textPrimary} />
+          <Text style={s.closeLabel}>Close</Text>
+        </AnimatedPressable>
+      </View>
 
       <View style={s.flowCenter}>
         <Text numberOfLines={1} style={s.flowTitle}>{title}</Text>
         {step ? <Text numberOfLines={1} style={s.flowStep}>{step}</Text> : null}
       </View>
 
-      <View style={s.flowSpacer} />
+      <View style={[s.flowRight, { width: flowSideWidth }]}>
+        {rightContent ?? <View />}
+      </View>
     </View>
   );
 }
@@ -143,15 +170,29 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   detailTitle: {
-    flex: 1,
     color: tokens.colors.textPrimary,
     fontSize: 17,
     fontWeight: "700",
     letterSpacing: -0.2,
     textAlign: "center",
   },
+  detailCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailSubtitle: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "500",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  detailSide: {
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
   detailRight: {
-    width: 40,
     alignItems: "flex-end",
     justifyContent: "center",
   },
@@ -172,6 +213,14 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  flowSide: {
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  flowRight: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
   flowTitle: {
     color: tokens.colors.textPrimary,
     fontSize: 16,
@@ -185,8 +234,5 @@ const s = StyleSheet.create({
     fontWeight: "600",
     marginTop: 2,
     textAlign: "center",
-  },
-  flowSpacer: {
-    width: 60,
   },
 });

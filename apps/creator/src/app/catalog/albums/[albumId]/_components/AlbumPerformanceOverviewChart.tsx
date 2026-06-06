@@ -61,7 +61,7 @@ const CARD_BG = "#131820";
 
 export function AlbumPerformanceOverviewChart() {
   const { albumId } = useLocalSearchParams<{ albumId: string }>();
-  const id = albumId ? parseInt(albumId, 10) : 88;
+  const id = albumId ? parseInt(albumId, 10) : Number.NaN;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +86,13 @@ export function AlbumPerformanceOverviewChart() {
     let active = true;
     
     async function fetchData() {
+      if (!Number.isFinite(id)) {
+        setData(null);
+        setError("Album analytics are not available for this release yet.");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       chartProgress.value = 0;

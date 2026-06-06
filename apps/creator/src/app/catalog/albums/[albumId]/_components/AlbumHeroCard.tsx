@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
-import { VerifiedBadge, AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable, VerifiedBadge } from "@micboxx/ui";
 import type { DashboardAlbum } from "@/contracts/creator";
 
 interface AlbumHeroCardProps {
@@ -14,12 +14,17 @@ interface AlbumHeroCardProps {
 export function AlbumHeroCard({ album, onShare }: AlbumHeroCardProps) {
   const releaseYear = album.timestamps.createdAt
     ? new Date(album.timestamps.createdAt).getFullYear()
-    : 2026;
+    : null;
 
-  const displayTitle = album.title || "Port of Miami 2";
-  const displayArtist = album.owner?.displayName || "Rick Ross";
-  const displayTracksCount = album.counts?.tracks || 13;
+  const displayTitle = album.title?.trim() || "Untitled release";
+  const displayArtist = album.owner?.displayName?.trim() || "Artist not set";
+  const displayTracksCount = album.counts.tracks;
   const upcValue = album.upc && album.upc.trim() !== "" ? album.upc : "Not assigned";
+  const metaParts = [
+    "Release",
+    releaseYear ? String(releaseYear) : null,
+    `${displayTracksCount} ${displayTracksCount === 1 ? "Track" : "Tracks"}`,
+  ].filter((part): part is string => Boolean(part));
 
   const renderStatusBadge = () => {
     const state = album.status.releaseState || "published";
@@ -45,17 +50,10 @@ export function AlbumHeroCard({ album, onShare }: AlbumHeroCardProps) {
               contentFit="cover"
             />
           ) : (
-            // Premium fallback image or placeholder seed that looks like the mockup
-            <Image
-              source={{ uri: "https://picsum.photos/seed/portofmiami/300/300" }}
-              style={styles.artwork}
-              contentFit="cover"
-            />
+            <View style={[styles.artwork, styles.artworkPlaceholder]}>
+              <Ionicons name="disc-outline" size={34} color={tokens.colors.textSecondary} />
+            </View>
           )}
-          {/* Pencil Edit Icon Overlay */}
-          <AnimatedPressable style={styles.editIconOverlay} onPress={() => {}}>
-            <Ionicons name="pencil" size={14} color="#FFFFFF" />
-          </AnimatedPressable>
         </View>
 
         <View style={styles.infoCol}>
@@ -69,11 +67,11 @@ export function AlbumHeroCard({ album, onShare }: AlbumHeroCardProps) {
             <Text style={styles.artist} numberOfLines={1}>
               {displayArtist}
             </Text>
-            <VerifiedBadge size={14} />
+            {album.owner?.verifiedBadge ? <VerifiedBadge size={14} /> : null}
           </View>
 
           <Text style={styles.meta} numberOfLines={1}>
-            Hip-Hop • {releaseYear} • {displayTracksCount} {displayTracksCount === 1 ? "Track" : "Tracks"}
+            {metaParts.join(" • ")}
           </Text>
 
           <Text style={styles.upcText}>
@@ -125,18 +123,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: tokens.colors.bgElevated,
   },
-  editIconOverlay: {
-    position: "absolute",
-    bottom: 6,
-    right: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(0, 0, 0, 0.65)",
+  artworkPlaceholder: {
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
   },
   infoCol: {
     flex: 1,
