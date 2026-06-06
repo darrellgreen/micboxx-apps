@@ -488,6 +488,16 @@ export async function unscheduleAlbum(
   return response.album;
 }
 
+export async function deleteAlbum(
+  albumId: string | number,
+): Promise<void> {
+  await creatorFetch<void>(
+    `/v1/dashboard/albums/${albumId}`,
+    { method: "DELETE" },
+  );
+}
+
+
 export async function getTrackGeography(
   trackId: string | number,
   days = 30,
