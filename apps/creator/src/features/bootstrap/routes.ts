@@ -85,7 +85,10 @@ export function resolveCreateEntryHref(input: {
       (track) => track.status.processing === "failed",
     );
     if (failedTrack) {
-      return `/create/progress/${failedTrack.id}` as Href;
+      if (failedTrack.album?.id) {
+        return `/catalog/albums/${failedTrack.album.id}?tab=tracks&highlightTrackId=${failedTrack.id}` as Href;
+      }
+      return `/catalog/tracks/${failedTrack.id}` as Href;
     }
   }
 
