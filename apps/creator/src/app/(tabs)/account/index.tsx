@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Screen, AnimatedPressable, Avatar } from "@micboxx/ui";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
@@ -71,14 +71,16 @@ export default function AccountHomeScreen() {
   ];
 
   return (
-    <Screen contentContainerStyle={styles.scroll}>
-      <View style={styles.headerWrap}>
+    <Screen
+      header={
         <ScreenHeader
           title="Account"
           subtitle="Profile, settings, and creator access"
           showBackButton={pathname === "/account-push"}
         />
-      </View>
+      }
+      contentContainerStyle={styles.scroll}
+    >
         <AnimatedPressable
           onPress={() => router.push("/account/profile")}
           haptic="selection"
@@ -154,10 +156,6 @@ export default function AccountHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerWrap: {
-    paddingHorizontal: 16,
-    paddingBottom: 4,
-  },
   scroll: {
     paddingHorizontal: 16,
     paddingTop: 4,

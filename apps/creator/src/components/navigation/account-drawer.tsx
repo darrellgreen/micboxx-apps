@@ -52,10 +52,6 @@ interface DrawerItem {
 }
 
 type CreatorDrawerRoute =
-  | "dashboard"
-  | "catalog"
-  | "create"
-  | "audience"
   | "notifications"
   | "profile"
   | "verification"
@@ -114,10 +110,6 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
       }
 
       const destinationMap: Record<CreatorDrawerRoute, string> = {
-        dashboard: "/dashboard",
-        catalog: "/catalog",
-        create: "/create",
-        audience: "/audience",
         notifications: "/audience/notifications",
         profile: "/account/profile",
         verification: "/account/verification",
@@ -148,40 +140,6 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
       router.push("/sign-in");
     }
   }, [closeDrawer, pathname, session, signOut]);
-
-  const mainItems = useMemo<DrawerItem[]>(
-    () => [
-      {
-        key: "dashboard",
-        label: "Dashboard",
-        subtitle: "Performance, tasks, and activity",
-        icon: "speedometer-outline",
-        onPress: () => openAccountDestination("dashboard"),
-      },
-      {
-        key: "catalog",
-        label: "Catalog",
-        subtitle: "Tracks and albums",
-        icon: "albums-outline",
-        onPress: () => openAccountDestination("catalog"),
-      },
-      {
-        key: "create",
-        label: "Create",
-        subtitle: "Album-first upload launcher",
-        icon: "add-circle-outline",
-        onPress: () => openAccountDestination("create"),
-      },
-      {
-        key: "audience",
-        label: "Audience",
-        subtitle: "Inbox and notifications",
-        icon: "chatbubbles-outline",
-        onPress: () => openAccountDestination("audience"),
-      },
-    ],
-    [openAccountDestination],
-  );
 
   const accountItems = useMemo<DrawerItem[]>(() => {
     const items: DrawerItem[] = [];
@@ -377,17 +335,6 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
                   contentContainerStyle={styles.scrollContent}
                   showsVerticalScrollIndicator={false}
                 >
-                  <DrawerSection title="Workspace" variant="prominent">
-                    {mainItems.map((item) => (
-                      <DrawerItemRow
-                        key={item.key}
-                        item={item}
-                        locked={Boolean(!session && item.requiresAuth)}
-                        variant="prominent"
-                      />
-                    ))}
-                  </DrawerSection>
-
                   <DrawerSection title="Account" variant="plain">
                     {accountItems.map((item) => (
                       <DrawerItemRow

@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { tokens } from "@micboxx/theme";
+import {
+  FORM_SELECTOR_BACKGROUND,
+  FORM_SELECTOR_BORDER_COLOR,
+} from "@/shared/ui/selector-row";
 
 export function Field({
   label,
@@ -77,8 +81,8 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: tokens.radii.lg,
     borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-    backgroundColor: tokens.colors.bgElevated,
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     color: tokens.colors.textPrimary,
     paddingHorizontal: 14,
     paddingVertical: 12,

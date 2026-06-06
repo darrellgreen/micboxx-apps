@@ -19,7 +19,10 @@ import type {
   TrackMetadataUpdate,
 } from "@/contracts/creator";
 import { resolveTrackReleaseState } from "@/features/catalog/release-state";
-import { FormSelectorRow } from "@/shared/ui/selector-row";
+import {
+  FORM_SELECTOR_BACKGROUND,
+  FORM_SELECTOR_BORDER_COLOR,
+} from "@/shared/ui/selector-row";
 import {
   getTrackStatus,
   getUploadOptions,
@@ -404,13 +407,26 @@ export default function EditTrackScreen() {
         </View>
       </View>
 
-      <FormSelectorRow
-        icon="musical-notes-outline"
-        label="Genre"
-        value={selectedGenreName}
-        onPress={() => setGenreSheetVisible(true)}
-        placeholder={!selectedGenre}
-      />
+      <View style={styles.fieldContainer}>
+        <Text style={styles.fieldLabel}>Genre</Text>
+        <AnimatedPressable
+          style={styles.selectorCard}
+          onPress={() => setGenreSheetVisible(true)}
+          haptic="selection"
+        >
+          <View style={styles.selectorLeft}>
+            <Ionicons
+              name="musical-notes-outline"
+              size={21}
+              color={selectedGenre ? tokens.colors.textPrimary : tokens.colors.textSecondary}
+            />
+            <Text style={[styles.selectorValue, !selectedGenre && styles.selectorPlaceholder]} numberOfLines={1}>
+              {selectedGenreName}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />
+        </AnimatedPressable>
+      </View>
 
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>Album</Text>
@@ -693,19 +709,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   fieldLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#FFFFFF",
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
   },
   inputContainer: {
-    height: 48,
-    backgroundColor: "#131820",
+    minHeight: 50,
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   textInput: {
     flex: 1,
@@ -741,15 +757,15 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
   },
   selectorCard: {
-    height: 48,
-    backgroundColor: "#131820",
+    minHeight: 50,
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   selectorLeft: {
     flexDirection: "row",
@@ -769,6 +785,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     flexShrink: 1,
+  },
+  selectorPlaceholder: {
+    color: tokens.colors.textSecondary,
   },
   selectorThumbPlaceholder: {
     alignItems: "center",

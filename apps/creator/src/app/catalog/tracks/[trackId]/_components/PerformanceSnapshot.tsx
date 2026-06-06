@@ -39,8 +39,8 @@ function SnapshotCard({ label, value, trendText, trend, iconName, iconType }: Sn
       : trend === "down"
         ? tokens.colors.danger
         : tokens.colors.textSecondary;
-  const trendPrefix = trend === "up" ? "↑" : trend === "down" ? "↓" : "";
-  const hasTrend = trend !== "flat" && trendText.trim().length > 0;
+  const trendPrefix = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
+  const hasTrend = trendText.trim().length > 0;
 
   return (
     <View style={styles.card}>
@@ -58,9 +58,7 @@ function SnapshotCard({ label, value, trendText, trend, iconName, iconType }: Sn
           </Text>
         </View>
       ) : (
-        <View style={styles.trendRow}>
-          <Text style={[styles.trendText, { color: trendColor }]}>—</Text>
-        </View>
+        <View style={styles.trendRow} />
       )}
     </View>
   );
@@ -78,18 +76,20 @@ function firstMetric(...values: Array<number | null | undefined>) {
   return values.find((value) => value != null && Number.isFinite(value)) ?? null;
 }
 
-function getPlayTrend(data: PlayTimeseriesData | null): Pick<SnapshotCardProps, "trend" | "trendText"> {
+function getRecentTrend(
+  data: PlayTimeseriesData | null,
+  metric: "plays" | "listeners",
+): Pick<SnapshotCardProps, "trend" | "trendText"> {
   const series = data?.series ?? [];
-  if (series.length < 2) {
+  if (series.length < 14) {
     return { trend: "flat", trendText: "" };
   }
 
-  const splitIndex = Math.floor(series.length / 2);
-  const previous = series.slice(0, splitIndex).reduce((sum, point) => sum + point.plays, 0);
-  const current = series.slice(splitIndex).reduce((sum, point) => sum + point.plays, 0);
+  const previous = series.slice(-14, -7).reduce((sum, point) => sum + (point[metric] ?? 0), 0);
+  const current = series.slice(-7).reduce((sum, point) => sum + (point[metric] ?? 0), 0);
 
   if (previous === 0 && current > 0) {
-    return { trend: "up", trendText: "New" };
+    return { trend: "up", trendText: "New this week" };
   }
 
   if (previous === 0) {
@@ -99,14 +99,14 @@ function getPlayTrend(data: PlayTimeseriesData | null): Pick<SnapshotCardProps, 
   const changePercent = Math.round(((current - previous) / previous) * 100);
 
   if (changePercent > 0) {
-    return { trend: "up", trendText: `${changePercent}%` };
+    return { trend: "up", trendText: `${changePercent}% vs 7d` };
   }
 
   if (changePercent < 0) {
-    return { trend: "down", trendText: `${Math.abs(changePercent)}%` };
+    return { trend: "down", trendText: `${Math.abs(changePercent)}% vs 7d` };
   }
 
-  return { trend: "flat", trendText: "" };
+  return { trend: "flat", trendText: "0% vs 7d" };
 }
 
 export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
@@ -143,7 +143,7 @@ export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
       setPlaysLoading(true);
 
       try {
-        const payload = await getTrackPlays(track.id, 30);
+        const payload = await getTrackPlays(track.id, 14);
         if (active) {
           setPlaysData(payload);
         }
@@ -193,7 +193,8 @@ export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
     };
   }, [track.slug, track.stats]);
 
-  const playTrend = getPlayTrend(playsData);
+  const playTrend = getRecentTrend(playsData, "plays");
+  const listenerTrend = getRecentTrend(playsData, "listeners");
   const playsMetric = firstMetric(
     publicStats?.plays,
     track.stats?.plays,
@@ -238,8 +239,8 @@ export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
         <SnapshotCard
           label="Listeners"
           value={listenersVal}
-          trend="flat"
-          trendText=""
+          trend={listenerTrend.trend}
+          trendText={listenerTrend.trendText}
           iconName="people"
           iconType="teal"
         />

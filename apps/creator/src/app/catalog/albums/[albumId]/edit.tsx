@@ -28,6 +28,10 @@ import {
   deleteAlbum,
   publishAlbum,
 } from "@/shared/api/creator-dashboard";
+import {
+  FORM_SELECTOR_BACKGROUND,
+  FORM_SELECTOR_BORDER_COLOR,
+} from "@/shared/ui/selector-row";
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -915,19 +919,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   fieldLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#FFFFFF",
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
   },
   inputContainer: {
-    height: 48,
-    backgroundColor: "#131820",
+    minHeight: 50,
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   textInput: {
     flex: 1,
@@ -1019,15 +1023,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   selectorCard: {
-    height: 48,
-    backgroundColor: "#131820",
+    minHeight: 50,
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   selectorLeft: {
     flexDirection: "row",

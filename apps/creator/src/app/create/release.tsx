@@ -30,7 +30,11 @@ import {
   scheduleAlbum,
   updateAlbumMetadata,
 } from "@/shared/api/creator-dashboard";
-import { FormSelectorRow } from "@/shared/ui/selector-row";
+import {
+  FORM_SELECTOR_BACKGROUND,
+  FORM_SELECTOR_BORDER_COLOR,
+  FormSelectorRow,
+} from "@/shared/ui/selector-row";
 import { AnimatedPressable, AppHeader, BottomActionSheet, BottomSheetSurface, Screen, useToast } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
@@ -1188,8 +1192,8 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
@@ -1242,8 +1246,8 @@ const styles = StyleSheet.create({
     marginTop: 14,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     color: tokens.colors.textPrimary,
     paddingHorizontal: 12,
     paddingVertical: 12,

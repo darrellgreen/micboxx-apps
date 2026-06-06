@@ -7,7 +7,6 @@ import Svg, { Defs, LinearGradient, Polygon, Polyline, Stop, Circle, Rect, Path,
 
 import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { resolveCreateEntryHref } from "@/features/bootstrap/routes";
 import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { tokens } from "@micboxx/theme";
@@ -145,25 +144,6 @@ function MetricCard({
   );
 }
 
-function ActionBtn({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <AnimatedPressable style={s.actionBtn} onPress={onPress} haptic="selection">
-      <View style={s.actionIconCircle}>
-        <Ionicons name={icon} size={20} color={tokens.colors.accent} />
-      </View>
-      <Text style={s.actionLabel}>{label}</Text>
-    </AnimatedPressable>
-  );
-}
-
 function ActivityRow({
   icon,
   iconColor,
@@ -219,17 +199,6 @@ export default function DashboardScreen() {
 
   const topTrack  = analytics?.catalogPerformance.topTracks[0] ?? null;
   const topCountry = analytics?.basic.topCountry;
-
-  const uploadHref = resolveCreateEntryHref({
-    createEntryTarget: bootstrap.createEntryTarget,
-    tracksSummary: bootstrap.tracksSummary,
-    uploadOptions: bootstrap.uploadOptions,
-  });
-
-  const canCreateAlbums = Boolean(
-    bootstrap.uploadOptions?.currentUser.permissions?.canCreateAlbums ||
-      bootstrap.uploadOptions?.currentUser.permissions?.canAdministerAlbums,
-  );
 
   const recentActivity = useMemo(() => {
     const tracks = bootstrap.tracksSummary?.tracks ?? [];
@@ -403,33 +372,6 @@ export default function DashboardScreen() {
           ) : (
             <Text style={s.emptyText}>No data yet</Text>
           )}
-        </View>
-      </View>
-
-      {/* ── Action Center ──────────────────────────────────────────── */}
-      <View style={s.actionCard}>
-        <Text style={s.sectionTitle}>Action Center</Text>
-        <View style={s.actionRow}>
-          <ActionBtn
-            icon="cloud-upload-outline"
-            label="Upload"
-            onPress={() => router.push(uploadHref as never)}
-          />
-          <ActionBtn
-            icon="disc-outline"
-            label="Album"
-            onPress={() => router.push("/create/album-push" as never)}
-          />
-          <ActionBtn
-            icon="radio-outline"
-            label="Go Live"
-            onPress={() => router.push("/rooms" as never)}
-          />
-          <ActionBtn
-            icon="person-outline"
-            label="Profile"
-            onPress={() => router.push("/account-push" as never)}
-          />
         </View>
       </View>
 
@@ -667,43 +609,6 @@ const s = StyleSheet.create({
     color: tokens.colors.textSecondary,
     fontSize: 12,
     fontWeight: "400",
-  },
-
-  /* action center */
-  actionCard: {
-    backgroundColor: CARD_BG,
-    borderRadius: 18,
-    padding: 16,
-    gap: 14,
-  },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  actionBtn: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 14,
-    marginHorizontal: 4,
-  },
-  actionIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-  },
-  actionLabel: {
-    color: tokens.colors.textPrimary,
-    fontSize: 10,
-    fontWeight: "600",
-    textAlign: "center",
-    lineHeight: 14,
   },
 
   /* bottom row */

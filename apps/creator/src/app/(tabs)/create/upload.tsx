@@ -11,6 +11,10 @@ import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter"
 import { ExpoTrackUploadAdapter } from "@/features/media/ExpoTrackUploadAdapter";
 import { getAlbumStatus, getMyAlbums, getUploadOptions } from "@/shared/api/creator-dashboard";
 import { ErrorText, Field, TextField } from "@/shared/ui/form";
+import {
+  FORM_SELECTOR_BACKGROUND,
+  FORM_SELECTOR_BORDER_COLOR,
+} from "@/shared/ui/selector-row";
 import { AnimatedPressable, AppHeader, BottomActionSheet, Button, Screen, Surface, useToast } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
@@ -483,10 +487,10 @@ const styles = StyleSheet.create({
   },
   selectorCard: {
     height: 48,
-    backgroundColor: "#131820",
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

@@ -515,6 +515,7 @@ export interface PlayTimeseriesData {
     date: string;
     label: string;
     plays: number;
+    listeners?: number;
   }>;
 }
 

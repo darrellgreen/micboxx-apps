@@ -6,6 +6,9 @@ import { AnimatedPressable } from "@micboxx/ui";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
+export const FORM_SELECTOR_BACKGROUND = "rgba(255,255,255,0.03)";
+export const FORM_SELECTOR_BORDER_COLOR = tokens.colors.borderStrong;
+
 export function FormSelectorRow({
   icon,
   label,
@@ -61,8 +64,8 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    borderColor: FORM_SELECTOR_BORDER_COLOR,
+    backgroundColor: FORM_SELECTOR_BACKGROUND,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
