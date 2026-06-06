@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Text, StyleSheet, View } from "react-native";
 
 import type { DashboardTrack } from "@/contracts/creator";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { getTrackStatus, requeueTrack } from "@/shared/api/creator-dashboard";
 import { ErrorState, KeyValueRow, Panel, PillButton } from "@/shared/ui/layout";
 import { AppHeader, Screen } from "@micboxx/ui";
@@ -52,7 +53,7 @@ export default function UploadProgressScreen() {
         <>
           <Panel title={track.title}>
             <KeyValueRow label="Processing" value={track.status.processing} />
-            <KeyValueRow label="Release state" value={track.status.releaseState} />
+            <KeyValueRow label="Release state" value={resolveTrackReleaseState(track.status)} />
             <KeyValueRow label="Attempts" value={String(track.status.attempts)} />
             <KeyValueRow label="Ready" value={track.status.ready ? "Yes" : "No"} />
           </Panel>

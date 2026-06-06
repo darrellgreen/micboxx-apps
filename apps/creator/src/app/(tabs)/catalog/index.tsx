@@ -7,6 +7,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreateEntryHref } from "@/features/bootstrap/routes";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { tokens } from "@micboxx/theme";
 
@@ -78,11 +79,11 @@ export default function CatalogHomeScreen() {
   const totalReleases = totalTracks + totalAlbums;
 
   const publishedCount =
-    tracks.filter((t) => t.status.releaseState === "published").length +
+    tracks.filter((t) => resolveTrackReleaseState(t.status) === "published").length +
     albums.filter((a) => a.status.releaseState === "published").length;
-  const draftCount     = tracks.filter((t) => t.status.releaseState === "draft").length;
+  const draftCount     = tracks.filter((t) => resolveTrackReleaseState(t.status) === "draft").length;
   const scheduledCount =
-    tracks.filter((t) => t.status.releaseState === "scheduled").length +
+    tracks.filter((t) => resolveTrackReleaseState(t.status) === "scheduled").length +
     albums.filter((a) => a.status.releaseState === "scheduled").length;
   const failedCount    = bootstrap.tracksSummary?.meta.summary.failed ?? 0;
 
@@ -90,7 +91,7 @@ export default function CatalogHomeScreen() {
 
   const lastPublishedDate = useMemo(() => {
     const sorted = tracks
-      .filter((t) => t.status.releaseState === "published")
+      .filter((t) => resolveTrackReleaseState(t.status) === "published")
       .sort(
         (a, b) =>
           new Date(b.timestamps.updatedAt).getTime() -
@@ -100,9 +101,9 @@ export default function CatalogHomeScreen() {
   }, [tracks]);
 
   /* per-entity breakdown */
-  const trackPublished = tracks.filter((t) => t.status.releaseState === "published").length;
-  const trackDraft     = tracks.filter((t) => t.status.releaseState === "draft").length;
-  const trackScheduled = tracks.filter((t) => t.status.releaseState === "scheduled").length;
+  const trackPublished = tracks.filter((t) => resolveTrackReleaseState(t.status) === "published").length;
+  const trackDraft     = tracks.filter((t) => resolveTrackReleaseState(t.status) === "draft").length;
+  const trackScheduled = tracks.filter((t) => resolveTrackReleaseState(t.status) === "scheduled").length;
 
   const albumPublished = albums.filter((a) => a.status.releaseState === "published").length;
   const albumDraft     = albums.filter((a) => a.status.releaseState === "draft").length;
@@ -114,13 +115,17 @@ export default function CatalogHomeScreen() {
   const recentActivity = useMemo(() => {
     return [
       ...tracks
-        .filter((t) => t.status.releaseState !== "draft")
         .map((t) => ({
-          id: `track-${t.id}`,
-          title: t.title,
-          releaseState: t.status.releaseState,
-          artworkUrl: t.artworkUrl,
-          timestamp: t.timestamps.updatedAt,
+          track: t,
+          releaseState: resolveTrackReleaseState(t.status),
+        }))
+        .filter(({ releaseState }) => releaseState !== "draft")
+        .map(({ track, releaseState }) => ({
+          id: `track-${track.id}`,
+          title: track.title,
+          releaseState,
+          artworkUrl: track.artworkUrl,
+          timestamp: track.timestamps.updatedAt,
         })),
       ...albums
         .filter((a) => a.status.releaseState !== "draft")

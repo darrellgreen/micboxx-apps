@@ -13,6 +13,7 @@ import {
 import { tokens } from "@micboxx/theme";
 import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx/ui";
 import type { DashboardTrack, DashboardUploadOptions, TrackMetadataUpdate } from "@/contracts/creator";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import {
   getTrackStatus,
   getUploadOptions,
@@ -461,7 +462,7 @@ export default function EditTrackScreen() {
           <View style={styles.selectorLeft}>
             <View style={styles.greenDot} />
             <Text style={styles.selectorValue}>
-              {track ? (track.status.published || track.status.releaseState === "published" ? "Published" : capitalize(track.status.releaseState)) : "Published"}
+              {track ? capitalize(resolveTrackReleaseState(track.status)) : "Published"}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={tokens.colors.textSecondary} />

@@ -4,6 +4,7 @@ import { Text, View } from "react-native";
 
 import type { DashboardTrackSummary } from "@/contracts/creator";
 import { formatDuration, formatRelativeTime } from "@micboxx/api";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { getMyTracks } from "@/shared/api/creator-dashboard";
 import {
   ChipTabs,
@@ -18,28 +19,31 @@ import { AppHeader, Screen } from "@micboxx/ui";
 type TrackFilter = "all" | "ready" | "published" | "failed";
 
 function matchesFilter(track: DashboardTrackSummary, filter: TrackFilter) {
-  if (filter === "published") return track.status.releaseState === "published";
+  const releaseState = resolveTrackReleaseState(track.status);
+  if (filter === "published") return releaseState === "published";
   if (filter === "failed") return track.status.processing === "failed";
   if (filter === "ready") {
     return (
       track.status.ready &&
       track.status.processing !== "failed" &&
-      track.status.releaseState !== "published"
+      releaseState !== "published"
     );
   }
   return true;
 }
 
 function releaseTone(track: DashboardTrackSummary) {
+  const releaseState = resolveTrackReleaseState(track.status);
   if (track.status.processing === "failed") return "danger" as const;
-  if (track.status.releaseState === "published") return "success" as const;
+  if (releaseState === "published") return "success" as const;
   if (track.status.ready) return "warning" as const;
   return "muted" as const;
 }
 
 function statusLabel(track: DashboardTrackSummary) {
+  const releaseState = resolveTrackReleaseState(track.status);
   if (track.status.processing === "failed") return "failed";
-  if (track.status.releaseState === "published") return "published";
+  if (releaseState === "published") return "published";
   if (track.status.ready) return "ready";
   return track.status.processing;
 }

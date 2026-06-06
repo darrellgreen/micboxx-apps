@@ -40,6 +40,7 @@ import {
   resolveReadinessActionHref,
   resolveVerificationTaskHref,
 } from "@/features/bootstrap/routes";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { useInbox } from "@/features/social/hooks/useInbox";
 import { useNotifications } from "@/features/social/hooks/useNotifications";
 import type { NotificationItem } from "@micboxx/notifications";
@@ -639,16 +640,16 @@ export function CreatorBootstrapProvider({ children }: PropsWithChildren) {
       hasAlbums: albums.length > 0,
       hasTracks: tracks.length > 0,
       hasBackendDraftTracks: tracks.some(
-        (track) => track.status.releaseState === "draft",
+        (track) => resolveTrackReleaseState(track.status) === "draft",
       ),
       hasScheduledReleases:
-        tracks.some((track) => track.status.releaseState === "scheduled") ||
+        tracks.some((track) => resolveTrackReleaseState(track.status) === "scheduled") ||
         albums.some((album) => album.status.releaseState === "scheduled"),
       hasFailedProcessing: tracks.some(
         (track) => track.status.processing === "failed",
       ),
       hasPublishedReleases:
-        tracks.some((track) => track.status.releaseState === "published") ||
+        tracks.some((track) => resolveTrackReleaseState(track.status) === "published") ||
         albums.some((album) => album.status.releaseState === "published"),
     };
   }, [albumsSummary, tracksSummary]);

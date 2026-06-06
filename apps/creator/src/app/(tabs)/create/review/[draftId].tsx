@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 
 import type { DashboardTrack } from "@/contracts/creator";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { getTrackStatus, publishTrack } from "@/shared/api/creator-dashboard";
 import { ErrorState, KeyValueRow, Panel, PillButton } from "@/shared/ui/layout";
 import { AppHeader, Screen } from "@micboxx/ui";
@@ -59,7 +60,7 @@ export default function ReviewTrackScreen() {
             <KeyValueRow label="Album" value={track.album?.title ?? "No album"} />
             <KeyValueRow label="Genre" value={track.genre?.name ?? "No genre"} />
             <KeyValueRow label="Processing" value={track.status.processing} />
-            <KeyValueRow label="Release state" value={track.status.releaseState} />
+            <KeyValueRow label="Release state" value={resolveTrackReleaseState(track.status)} />
           </Panel>
           <View style={styles.actionsRow}>
             <PillButton

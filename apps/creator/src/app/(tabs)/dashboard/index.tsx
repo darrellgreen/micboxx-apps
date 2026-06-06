@@ -8,6 +8,7 @@ import Svg, { Defs, LinearGradient, Polygon, Polyline, Stop, Circle, Rect, Path,
 import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreateEntryHref } from "@/features/bootstrap/routes";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { tokens } from "@micboxx/theme";
 
@@ -233,16 +234,20 @@ export default function DashboardScreen() {
   const recentActivity = useMemo(() => {
     const tracks = bootstrap.tracksSummary?.tracks ?? [];
     return tracks
-      .filter((t) => t.status.releaseState !== "draft")
+      .map((track) => ({
+        track,
+        releaseState: resolveTrackReleaseState(track.status),
+      }))
+      .filter(({ releaseState }) => releaseState !== "draft")
       .sort(
         (a, b) =>
-          new Date(b.timestamps.updatedAt).getTime() -
-          new Date(a.timestamps.updatedAt).getTime(),
+          new Date(b.track.timestamps.updatedAt).getTime() -
+          new Date(a.track.timestamps.updatedAt).getTime(),
       )
       .slice(0, 3)
-      .map((t) => {
-        const isPub = t.status.releaseState === "published";
-        const isSched = t.status.releaseState === "scheduled";
+      .map(({ track, releaseState }) => {
+        const isPub = releaseState === "published";
+        const isSched = releaseState === "scheduled";
         
         let icon: keyof typeof Ionicons.glyphMap = "time-outline";
         let iconColor = "#a78bfa";
@@ -259,14 +264,14 @@ export default function DashboardScreen() {
         }
 
         return {
-          key: `track-${t.id}`,
-          title: t.title,
-          actionText: ` was ${t.status.releaseState}`,
-          timestamp: activityDate(t.timestamps.updatedAt),
+          key: `track-${track.id}`,
+          title: track.title,
+          actionText: ` was ${releaseState}`,
+          timestamp: activityDate(track.timestamps.updatedAt),
           icon,
           iconColor,
           iconBg,
-          href: `/catalog/tracks/${t.id}`,
+          href: `/catalog/tracks/${track.id}`,
         };
       });
   }, [bootstrap.tracksSummary]);

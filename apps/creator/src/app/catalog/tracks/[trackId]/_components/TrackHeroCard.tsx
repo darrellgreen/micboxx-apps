@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
 import { VerifiedBadge, AnimatedPressable } from "@micboxx/ui";
 import type { DashboardTrack } from "@/contracts/creator";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 
 interface TrackHeroCardProps {
   track: DashboardTrack;
@@ -24,7 +25,7 @@ export function TrackHeroCard({
     : 2026; // Match mockup default if empty
 
   const renderStatusBadge = () => {
-    const state = (track.status.published || track.status.releaseState === "published") ? "published" : track.status.releaseState;
+    const state = resolveTrackReleaseState(track.status);
     const displayState = state.toUpperCase();
     
     return (

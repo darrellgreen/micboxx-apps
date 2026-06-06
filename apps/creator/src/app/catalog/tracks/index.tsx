@@ -6,6 +6,7 @@ import { StyleSheet, Text, View, ScrollView } from "react-native";
 import Svg, { Circle, Path, Line } from "react-native-svg";
 
 import type { DashboardTrackSummary } from "@/contracts/creator";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { getMyTracks } from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
 import { Screen, AnimatedPressable } from "@micboxx/ui";
@@ -16,7 +17,7 @@ import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNot
 type TrackFilter = "all" | "draft" | "scheduled" | "published" | "failed";
 
 function matchesFilter(track: DashboardTrackSummary, filter: TrackFilter) {
-  const state = track.status.published ? "published" : track.status.releaseState;
+  const state = resolveTrackReleaseState(track.status);
   if (filter === "draft") return state === "draft";
   if (filter === "scheduled") return state === "scheduled";
   if (filter === "published") return state === "published";
@@ -89,15 +90,15 @@ export default function TracksListScreen() {
 
   const filterCounts = useMemo(() => {
     const draft = items.filter((item) => {
-      const state = item.status.published ? "published" : item.status.releaseState;
+      const state = resolveTrackReleaseState(item.status);
       return state === "draft";
     }).length;
     const scheduled = items.filter((item) => {
-      const state = item.status.published ? "published" : item.status.releaseState;
+      const state = resolveTrackReleaseState(item.status);
       return state === "scheduled";
     }).length;
     const published = items.filter((item) => {
-      const state = item.status.published ? "published" : item.status.releaseState;
+      const state = resolveTrackReleaseState(item.status);
       return state === "published";
     }).length;
     const failed = items.filter((item) => item.status.processing === "failed").length;
@@ -223,8 +224,8 @@ export default function TracksListScreen() {
           {filteredItems.map((track, index) => {
             const durationText = formatDuration(track.duration || 180);
             const dateText = formatDate(track.timestamps.createdAt);
-            const isPublished = track.status.published;
-            const displayState = track.status.published ? "published" : track.status.releaseState;
+            const displayState = resolveTrackReleaseState(track.status);
+            const isPublished = displayState === "published";
             
             return (
               <View key={track.id}>

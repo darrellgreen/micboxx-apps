@@ -10,6 +10,7 @@ import type {
   DashboardTrackSummary,
   DashboardUploadOptions,
 } from "@/contracts/creator";
+import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 
 export function resolveOnboardingHref(
   onboardingState: CreatorOnboardingState,
@@ -95,7 +96,7 @@ export function resolveCreateEntryHref(input: {
   if (input.createEntryTarget === "continue_backend_draft") {
     const draftTrack = pickNewestTrack(
       input.tracksSummary?.tracks ?? [],
-      (track) => track.status.releaseState === "draft",
+      (track) => resolveTrackReleaseState(track.status) === "draft",
     );
     if (draftTrack) {
       return `/create/review/${draftTrack.id}` as Href;
