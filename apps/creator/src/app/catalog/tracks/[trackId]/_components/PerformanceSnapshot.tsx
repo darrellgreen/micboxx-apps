@@ -201,8 +201,10 @@ export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
     playsData?.totalPlays,
   );
   const listenersMetric = firstMetric(
-    playsData?.uniqueListeners,
+    publicStats?.uniqueListeners,
+    track.stats?.uniqueListeners,
     trackPerf?.uniqueListeners,
+    playsData?.uniqueListeners,
   );
   const likesMetric = firstMetric(publicStats?.likes, track.stats?.likes, socialState.likeCount);
   const downloadsMetric = firstMetric(

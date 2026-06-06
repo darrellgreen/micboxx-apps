@@ -204,6 +204,7 @@ export interface DashboardTrack {
   };
   stats?: {
     plays?: number;
+    uniqueListeners?: number;
     likes?: number;
     comments?: number;
     favourites?: number;

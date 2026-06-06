@@ -155,6 +155,7 @@ export interface PublicTrack extends PublicTrackSummary {
   };
   stats: {
     plays: number;
+    uniqueListeners?: number;
     likes: number;
     comments: number;
     favourites: number;
