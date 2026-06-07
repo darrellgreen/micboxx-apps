@@ -275,8 +275,8 @@ export default function EditAlbumScreen() {
   function handleDelete() {
     if (!albumId) return;
     Alert.alert(
-      "Delete Album",
-      "Are you sure you want to permanently delete this album and clear all track associations?",
+      "Delete Draft",
+      "This will permanently delete the draft release and all of its attached tracks. This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -722,17 +722,19 @@ export default function EditAlbumScreen() {
           </Text>
         </AnimatedPressable>
 
-        <AnimatedPressable
-          style={[
-            styles.deleteBtn,
-            (saving || publishing || !album) && styles.deleteBtnDisabled,
-          ]}
-          onPress={handleDelete}
-          disabled={saving || publishing || !album}
-          haptic="selection"
-        >
-          <Text style={styles.deleteBtnText}>Delete Album</Text>
-        </AnimatedPressable>
+        {releaseState === "draft" && (
+          <AnimatedPressable
+            style={[
+              styles.deleteBtn,
+              (saving || publishing || !album) && styles.deleteBtnDisabled,
+            ]}
+            onPress={handleDelete}
+            disabled={saving || publishing || !album}
+            haptic="selection"
+          >
+            <Text style={styles.deleteBtnText}>Delete Draft</Text>
+          </AnimatedPressable>
+        )}
       </View>
 
       <BottomActionSheet

@@ -84,7 +84,7 @@ export function useMicboxxNotifications({
     let cancelled = false;
 
     const fetchRoomItems = async () => {
-      setRoomLoading((current) => current || roomItems.length === 0);
+      setRoomLoading(true);
       try {
         const response = await adapter.fetchRoomNotifications({
           maxItems,
@@ -118,7 +118,7 @@ export function useMicboxxNotifications({
       cancelled = true;
       clearInterval(intervalId);
     };
-  }, [accessToken, maxItems, reloadNonce, roomItems.length, adapter]);
+  }, [accessToken, maxItems, reloadNonce, adapter]);
 
   const items = useMemo<NotificationItem[]>(() => {
     return normalizeAndSortNotifications(socialItems, roomItems, maxItems);

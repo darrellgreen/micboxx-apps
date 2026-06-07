@@ -4,7 +4,7 @@ import { createTrackUpload } from "@/shared/api/creator-dashboard";
 export const ExpoTrackUploadAdapter: TrackUploadAdapter = {
   async uploadTrack(
     audio: MediaAsset,
-    artwork: MediaAsset,
+    artwork: MediaAsset | null,
     metadata: TrackMetadata
   ): Promise<{ id: string }> {
     const formData = new FormData();
@@ -19,11 +19,13 @@ export const ExpoTrackUploadAdapter: TrackUploadAdapter = {
       type: audio.mimeType ?? "audio/mpeg",
     } as any);
 
-    formData.append("artwork", {
-      uri: artwork.uri,
-      name: artwork.fileName ?? "track-artwork.jpg",
-      type: artwork.mimeType ?? "image/jpeg",
-    } as any);
+    if (artwork) {
+      formData.append("artwork", {
+        uri: artwork.uri,
+        name: artwork.fileName ?? "track-artwork.jpg",
+        type: artwork.mimeType ?? "image/jpeg",
+      } as any);
+    }
 
     const track = await createTrackUpload(formData);
     return { id: String(track.id) };

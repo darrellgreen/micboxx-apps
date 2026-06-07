@@ -536,3 +536,18 @@ export async function getAlbumPlays(
     `/v1/dashboard/albums/${albumId}/analytics/plays?days=${days}`,
   );
 }
+
+export async function reorderAlbumTracks(
+  albumId: string | number,
+  tracks: Array<{ trackId: number; position: number }>,
+): Promise<DashboardAlbum> {
+  const response = await creatorFetch<{ album: DashboardAlbum }>(
+    `/v1/dashboard/albums/${albumId}/tracks/order`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ tracks }),
+    },
+  );
+
+  return response.album;
+}

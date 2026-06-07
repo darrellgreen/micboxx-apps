@@ -487,7 +487,9 @@ export interface DashboardAlbum {
   uuid: string;
   title: string;
   slug: string;
+  subtitle: string | null;
   description: string | null;
+  releaseType: "single" | "ep" | "album";
   owner: {
     id: number;
     displayName: string;
@@ -544,7 +546,9 @@ export interface DashboardAlbumSummary {
   uuid: string;
   title: string;
   slug: string;
+  subtitle: string | null;
   description: string | null;
+  releaseType: "single" | "ep" | "album";
   artworkUrl: string | null;
   status: {
     published: boolean;
@@ -626,7 +630,9 @@ export interface DashboardRoomList {
 
 export interface AlbumMetadataUpdate {
   title?: string;
+  subtitle?: string;
   description?: string;
+  releaseType?: "single" | "ep" | "album";
   trackIds?: number[];
   genreId?: number | null;
   secondaryGenreId?: number | null;

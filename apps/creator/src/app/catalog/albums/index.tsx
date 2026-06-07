@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View, ScrollView } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 
@@ -52,31 +52,33 @@ export default function AlbumsListScreen() {
 
   const unreadCount = useUnreadNotificationCount();
 
-  useEffect(() => {
-    let active = true;
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getMyAlbums(1, 50);
-        if (!active) return;
-        setItems(response.albums);
-      } catch (nextError) {
-        if (!active) return;
-        setError(
-          nextError instanceof Error ? nextError.message : "Unable to load albums.",
-        );
-      } finally {
-        if (active) setLoading(false);
+      async function load() {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await getMyAlbums(1, 50);
+          if (!active) return;
+          setItems(response.albums);
+        } catch (nextError) {
+          if (!active) return;
+          setError(
+            nextError instanceof Error ? nextError.message : "Unable to load albums.",
+          );
+        } finally {
+          if (active) setLoading(false);
+        }
       }
-    }
 
-    void load();
-    return () => {
-      active = false;
-    };
-  }, []);
+      void load();
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   const filterCounts = useMemo(() => {
     const draft = items.filter((item) => item.status.releaseState === "draft").length;
@@ -114,8 +116,8 @@ export default function AlbumsListScreen() {
 
         {/* Center: Title & Subtitle */}
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Albums</Text>
-          <Text style={styles.headerSubtitle}>{filterCounts.published} Published</Text>
+          <Text style={styles.headerTitle}>Releases</Text>
+          <Text style={styles.headerSubtitle}>{filterCounts.published} Published · {filterCounts.draft} Draft</Text>
         </View>
 
         {/* Right: Notifications & Ellipsis Menu */}
@@ -213,7 +215,13 @@ export default function AlbumsListScreen() {
                 
                 <AnimatedPressable
                   style={styles.albumRow}
-                  onPress={() => router.push(`/catalog/albums/${album.id}` as never)}
+                  onPress={() => {
+                    if (album.status.releaseState === "draft") {
+                      router.push(`/create/release?draftAlbumId=${album.id}` as never);
+                    } else {
+                      router.push(`/catalog/albums/${album.id}` as never);
+                    }
+                  }}
                   haptic="selection"
                 >
                   {/* Left: Artwork */}
@@ -267,28 +275,6 @@ export default function AlbumsListScreen() {
           })}
         </View>
       )}
-
-      {/* Footer decorative wave graphic */}
-      {!loading && filteredItems.length > 0 ? (
-        <View style={styles.footerContainer}>
-          <View style={styles.waveGraphic}>
-            <Svg height="24" width="80" viewBox="0 0 80 24">
-              {/* Left waves */}
-              <Path d="M 12 12 A 8 8 0 0 1 20 6" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" fill="none" />
-              <Path d="M 6 12 A 14 14 0 0 1 20 2" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="none" />
-              
-              {/* Center circle */}
-              <Circle cx="40" cy="12" r="10" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" fill="transparent" />
-              <Path d="M 38 15 L 38 9 L 43 7 L 43 13" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none" />
-              
-              {/* Right waves */}
-              <Path d="M 68 12 A 8 8 0 0 0 60 6" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" fill="none" />
-              <Path d="M 74 12 A 14 14 0 0 0 60 2" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="none" />
-            </Svg>
-          </View>
-          <Text style={styles.footerText}>{"You've reached the end"}</Text>
-        </View>
-      ) : null}
     </Screen>
   );
 }
@@ -385,8 +371,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   albumsCard: {
-    backgroundColor: "#131820",
-    borderRadius: 16,
     padding: 16,
   },
   albumRow: {
@@ -471,21 +455,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "rgba(255, 255, 255, 0.04)",
     marginVertical: 12,
-  },
-  footerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-    marginBottom: 40,
-    gap: 4,
-  },
-  waveGraphic: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  footerText: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "500",
   },
 });

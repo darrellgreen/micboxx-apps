@@ -132,7 +132,7 @@ export function useTrackUpload(adapter: TrackUploadAdapter) {
   });
 
   const uploadTrack = useCallback(
-    async (audio: MediaAsset, artwork: MediaAsset, metadata: TrackMetadata) => {
+    async (audio: MediaAsset, artwork: MediaAsset | null, metadata: TrackMetadata) => {
       setState({ status: "uploading", error: null, trackId: null });
       try {
         const result = await adapter.uploadTrack(audio, artwork, metadata);

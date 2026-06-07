@@ -30,7 +30,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 const DEFAULT_DURATION_MS = 3200;
-const TOP_OFFSET = 48;
+const TOP_OFFSET = 64;
 
 const toneColors: Record<ToastTone, string> = {
   success: tokens.colors.success,

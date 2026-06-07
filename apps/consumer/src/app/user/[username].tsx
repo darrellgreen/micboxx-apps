@@ -20,6 +20,7 @@ import {
 } from "@micboxx/ui";
 import {
   DetailHeroCard,
+  DetailStatusPanel,
   RelatedLaneSection,
 } from "@/features/catalog/components/detail-shared";
 import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";

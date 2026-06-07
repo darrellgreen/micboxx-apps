@@ -11,6 +11,8 @@ import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { tokens } from "@micboxx/theme";
 
+const RECENT_ACTIVITY_LIMIT = 3;
+
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 
 function formatMetric(n: number): string {
@@ -202,23 +204,42 @@ export default function DashboardScreen() {
 
   const recentActivity = useMemo(() => {
     const tracks = bootstrap.tracksSummary?.tracks ?? [];
-    return tracks
-      .map((track) => ({
-        track,
-        releaseState: resolveTrackReleaseState(track.status),
-      }))
-      .filter(({ releaseState }) => releaseState !== "draft")
+    const albums = bootstrap.albumsSummary?.albums ?? [];
+
+    return [
+      ...tracks
+        .map((track) => ({
+          key: `track-${track.id}`,
+          title: track.title,
+          releaseState: resolveTrackReleaseState(track.status),
+          timestamp: track.timestamps.updatedAt,
+          href: `/catalog/tracks/${track.id}`,
+          type: "track" as const,
+        }))
+        .filter(({ releaseState }) => releaseState !== "draft"),
+      ...albums
+        .filter((album) => album.status.releaseState !== "draft")
+        .map((album) => ({
+          key: `album-${album.id}`,
+          title: album.title,
+          releaseState: album.status.releaseState,
+          timestamp: album.timestamps.updatedAt,
+          href: `/catalog/albums/${album.id}`,
+          type: "album" as const,
+        })),
+    ]
       .sort(
         (a, b) =>
-          new Date(b.track.timestamps.updatedAt).getTime() -
-          new Date(a.track.timestamps.updatedAt).getTime(),
+          new Date(b.timestamp).getTime() -
+          new Date(a.timestamp).getTime(),
       )
-      .slice(0, 3)
-      .map(({ track, releaseState }) => {
+      .slice(0, RECENT_ACTIVITY_LIMIT)
+      .map((item) => {
+        const releaseState = item.releaseState;
         const isPub = releaseState === "published";
         const isSched = releaseState === "scheduled";
         
-        let icon: keyof typeof Ionicons.glyphMap = "time-outline";
+        let icon: keyof typeof Ionicons.glyphMap = item.type === "album" ? "albums-outline" : "time-outline";
         let iconColor = "#a78bfa";
         let iconBg = "rgba(167,139,250,0.12)";
 
@@ -233,17 +254,17 @@ export default function DashboardScreen() {
         }
 
         return {
-          key: `track-${track.id}`,
-          title: track.title,
+          key: item.key,
+          title: item.title,
           actionText: ` was ${releaseState}`,
-          timestamp: activityDate(track.timestamps.updatedAt),
+          timestamp: activityDate(item.timestamp),
           icon,
           iconColor,
           iconBg,
-          href: `/catalog/tracks/${track.id}`,
+          href: item.href,
         };
       });
-  }, [bootstrap.tracksSummary]);
+  }, [bootstrap.albumsSummary, bootstrap.tracksSummary]);
 
   const needsProfile = !bootstrap.profile?.bio?.trim() || !bootstrap.profile?.avatarUrl;
 
@@ -252,7 +273,7 @@ export default function DashboardScreen() {
 
       {/* ── Welcome ────────────────────────────────────────────────── */}
       <View style={s.welcome}>
-        <Text style={s.welcomeTitle}>Welcome back, {displayName} 👋</Text>
+        <Text style={s.welcomeTitle}>Welcome back, {displayName}</Text>
         <Text style={s.welcomeSubtitle}>Here{"'"}s what{"'"}s happening with your music today.</Text>
       </View>
 
@@ -618,8 +639,6 @@ const s = StyleSheet.create({
     alignItems: "flex-start",
   },
   bottomCard: {
-    backgroundColor: CARD_BG,
-    borderRadius: 18,
     padding: 14,
     gap: 10,
   },

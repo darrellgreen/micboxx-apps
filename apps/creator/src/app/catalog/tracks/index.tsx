@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View, ScrollView } from "react-native";
 import Svg, { Circle, Path, Line } from "react-native-svg";
 
@@ -62,31 +62,33 @@ export default function TracksListScreen() {
   
   const unreadCount = useUnreadNotificationCount();
 
-  useEffect(() => {
-    let active = true;
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getMyTracks(1, 50);
-        if (!active) return;
-        setItems(response.tracks);
-      } catch (nextError) {
-        if (!active) return;
-        setError(
-          nextError instanceof Error ? nextError.message : "Unable to load tracks.",
-        );
-      } finally {
-        if (active) setLoading(false);
+      async function load() {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await getMyTracks(1, 50);
+          if (!active) return;
+          setItems(response.tracks);
+        } catch (nextError) {
+          if (!active) return;
+          setError(
+            nextError instanceof Error ? nextError.message : "Unable to load tracks.",
+          );
+        } finally {
+          if (active) setLoading(false);
+        }
       }
-    }
 
-    void load();
-    return () => {
-      active = false;
-    };
-  }, []);
+      void load();
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   const filterCounts = useMemo(() => {
     const draft = items.filter((item) => {
@@ -164,18 +166,6 @@ export default function TracksListScreen() {
 
   return (
     <Screen header={renderCustomHeader()} contentContainerStyle={styles.screenContent}>
-      {/* Upload Track button - Left Aligned */}
-      <View style={styles.actionsRow}>
-        <AnimatedPressable
-          style={styles.uploadBtn}
-          onPress={() => router.push("/create")}
-          haptic="selection"
-        >
-          <Ionicons name="cloud-upload-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.uploadBtnLabel}>Upload Track</Text>
-        </AnimatedPressable>
-      </View>
-
       {/* Pill Filter Bar */}
       <View style={styles.filterBarContainer}>
         <ScrollView
@@ -287,28 +277,6 @@ export default function TracksListScreen() {
           })}
         </View>
       )}
-
-      {/* Footer decorative wave graphic */}
-      {!loading && filteredItems.length > 0 ? (
-        <View style={styles.footerContainer}>
-          <View style={styles.waveGraphic}>
-            <Svg height="24" width="80" viewBox="0 0 80 24">
-              {/* Left waves */}
-              <Path d="M 12 12 A 8 8 0 0 1 20 6" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" fill="none" />
-              <Path d="M 6 12 A 14 14 0 0 1 20 2" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="none" />
-              
-              {/* Center circle */}
-              <Circle cx="40" cy="12" r="10" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" fill="transparent" />
-              <Path d="M 38 15 L 38 9 L 43 7 L 43 13" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none" />
-              
-              {/* Right waves */}
-              <Path d="M 68 12 A 8 8 0 0 0 60 6" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" fill="none" />
-              <Path d="M 74 12 A 14 14 0 0 0 60 2" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="none" />
-            </Svg>
-          </View>
-          <Text style={styles.footerText}>{"You've reached the end"}</Text>
-        </View>
-      ) : null}
     </Screen>
   );
 }
@@ -359,24 +327,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 16,
   },
-  actionsRow: {
-    flexDirection: "row",
-  },
-  uploadBtn: {
-    backgroundColor: "#00B3A6",
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    alignSelf: "flex-start",
-  },
-  uploadBtnLabel: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700",
-  },
   filterBarContainer: {
     backgroundColor: "#131820",
     borderRadius: 12,
@@ -405,8 +355,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   tracksCard: {
-    backgroundColor: "#131820",
-    borderRadius: 16,
     padding: 16,
   },
   trackRow: {
@@ -491,21 +439,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "rgba(255, 255, 255, 0.04)",
     marginVertical: 12,
-  },
-  footerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-    marginBottom: 40,
-    gap: 4,
-  },
-  waveGraphic: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  footerText: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "500",
   },
 });

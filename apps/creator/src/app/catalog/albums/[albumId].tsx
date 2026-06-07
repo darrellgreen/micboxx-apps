@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Share, StyleSheet, Text, View } from "react-native";
+import { NestableScrollContainer } from "react-native-draggable-flatlist";
 import { tokens } from "@micboxx/theme";
 
 import type { DashboardAlbum } from "@/contracts/creator";
@@ -161,9 +162,13 @@ export default function AlbumDetailScreen() {
   };
 
   return (
-    <Screen header={renderCustomHeader()}>
+    <Screen scroll={false} noPaddingHorizontal noPaddingBottom contentContainerStyle={styles.noInnerPadding} header={renderCustomHeader()}>
+      <NestableScrollContainer
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
-      
+
       {loading || !album ? (
         <Panel title="Loading album" description="Reading the current dashboard album payload." />
       ) : (
@@ -209,6 +214,7 @@ export default function AlbumDetailScreen() {
               album={album}
               highlightTrackId={highlightTrackId}
               pendingTrackTitle={uploadingTrackTitle}
+              onAlbumUpdate={setAlbum}
             />
           ) : (
             <ComingSoonStub tab={activeTab} />
@@ -222,11 +228,23 @@ export default function AlbumDetailScreen() {
           />
         </>
       )}
+      </NestableScrollContainer>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  noInnerPadding: {
+    padding: 0,
+    gap: 0,
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 160,
+    gap: 18,
+  },
   headerContainer: {
     height: 56,
     flexDirection: "row",

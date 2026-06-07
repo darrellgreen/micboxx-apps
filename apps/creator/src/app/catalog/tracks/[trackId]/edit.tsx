@@ -314,16 +314,27 @@ export default function EditTrackScreen() {
     },
   ];
 
+  const trackAlbumId = track?.album?.id;
   const overflowSheetItems = [
-    {
+    ...(trackAlbumId ? [{
+      key: "view-release",
+      label: "View Release",
+      icon: "albums-outline" as const,
+      onPress: () => {
+        setOverflowSheetVisible(false);
+        router.push(`/catalog/albums/${trackAlbumId}` as never);
+      },
+    }] : []),
+    ...(track?.permissions.canDelete ? [{
       key: "delete",
       label: "Delete Track",
       icon: "trash-outline" as const,
       tone: "destructive" as const,
       onPress: () => {
+        setOverflowSheetVisible(false);
         handleDelete();
       },
-    },
+    }] : []),
   ];
 
   return (

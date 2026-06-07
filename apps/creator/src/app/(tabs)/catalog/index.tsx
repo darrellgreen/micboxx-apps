@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router } from "expo-router";
-import { useMemo } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { resolveCreateEntryHref } from "@/features/bootstrap/routes";
+import { getMyTracks, getMyAlbums } from "@/shared/api/creator-dashboard";
+import type { DashboardTrackSummary, DashboardAlbumSummary } from "@/contracts/creator";
 import { resolveTrackReleaseState } from "@/features/catalog/release-state";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { tokens } from "@micboxx/theme";
@@ -71,11 +72,27 @@ function getActivityIconName(state: string): keyof typeof Ionicons.glyphMap {
 export default function CatalogHomeScreen() {
   const bootstrap = useCreatorBootstrap();
 
-  const tracks = useMemo(() => bootstrap.tracksSummary?.tracks ?? [], [bootstrap.tracksSummary]);
-  const albums = useMemo(() => bootstrap.albumsSummary?.albums ?? [], [bootstrap.albumsSummary]);
+  const [tracks, setTracks] = useState<DashboardTrackSummary[]>(
+    () => bootstrap.tracksSummary?.tracks ?? [],
+  );
+  const [albums, setAlbums] = useState<DashboardAlbumSummary[]>(
+    () => bootstrap.albumsSummary?.albums ?? [],
+  );
 
-  const totalTracks  = bootstrap.tracksSummary?.meta.total ?? 0;
-  const totalAlbums  = bootstrap.albumsSummary?.meta.total ?? 0;
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void Promise.all([getMyTracks(1, 12), getMyAlbums(1, 12)]).then(([t, a]) => {
+        if (!active) return;
+        setTracks(t.tracks);
+        setAlbums(a.albums);
+      }).catch(() => {});
+      return () => { active = false; };
+    }, []),
+  );
+
+  const totalTracks  = tracks.length;
+  const totalAlbums  = albums.length;
   const totalReleases = totalTracks + totalAlbums;
 
   const publishedCount =
@@ -85,7 +102,7 @@ export default function CatalogHomeScreen() {
   const scheduledCount =
     tracks.filter((t) => resolveTrackReleaseState(t.status) === "scheduled").length +
     albums.filter((a) => a.status.releaseState === "scheduled").length;
-  const failedCount    = bootstrap.tracksSummary?.meta.summary.failed ?? 0;
+  const failedCount    = tracks.filter((t) => t.status.processing === "failed").length;
 
   const totalPlays = bootstrap.analytics?.basic.totalPlays ?? 0;
 
@@ -140,17 +157,6 @@ export default function CatalogHomeScreen() {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 5);
   }, [tracks, albums]);
-
-  const uploadHref = resolveCreateEntryHref({
-    createEntryTarget: bootstrap.createEntryTarget,
-    tracksSummary: bootstrap.tracksSummary,
-    uploadOptions: bootstrap.uploadOptions,
-  });
-
-  const canCreateAlbums = Boolean(
-    bootstrap.uploadOptions?.currentUser.permissions?.canCreateAlbums ||
-      bootstrap.uploadOptions?.currentUser.permissions?.canAdministerAlbums,
-  );
 
   return (
     <Screen
@@ -217,35 +223,6 @@ export default function CatalogHomeScreen() {
         </View>
       </View>
 
-      {/* ── Quick Actions ─────────────────────────────────────────────── */}
-      <View style={s.quickRow}>
-        <AnimatedPressable
-          style={s.quickCard}
-          onPress={() => router.push(uploadHref as never)}
-        >
-          <View style={[s.quickIconCircle, { backgroundColor: "rgba(0,179,166,0.15)" }]}>
-            <Ionicons name="cloud-upload" size={22} color={tokens.colors.accent} />
-          </View>
-          <View style={s.quickText}>
-            <Text style={[s.quickLabel, { color: tokens.colors.accent }]}>Upload Track</Text>
-            <Text style={s.quickSub}>Add a new single</Text>
-          </View>
-        </AnimatedPressable>
-
-        <AnimatedPressable
-          style={s.quickCard}
-          onPress={() => router.push("/create/release" as never)}
-        >
-          <View style={[s.quickIconCircle, { backgroundColor: "rgba(167,139,250,0.15)" }]}>
-            <Ionicons name="disc" size={22} color="#a78bfa" />
-          </View>
-          <View style={s.quickText}>
-            <Text style={[s.quickLabel, { color: "#a78bfa" }]}>Create Release</Text>
-            <Text style={s.quickSub}>Add a new release</Text>
-          </View>
-        </AnimatedPressable>
-      </View>
-
       {/* ── Tracks + Albums (side by side) ────────────────────────────── */}
       <View style={s.catalogRow}>
         {/* Tracks */}
@@ -306,7 +283,7 @@ export default function CatalogHomeScreen() {
             <View style={[s.catalogIconWrap, { backgroundColor: "rgba(167,139,250,0.12)" }]}>
               <Ionicons name="albums" size={15} color="#a78bfa" />
             </View>
-            <Text style={s.catalogCardTitle}>Albums</Text>
+            <Text style={s.catalogCardTitle}>Releases</Text>
             <Text style={s.catalogCardCount}>{totalAlbums}</Text>
           </View>
 
@@ -345,7 +322,7 @@ export default function CatalogHomeScreen() {
             onPress={() => router.push("/catalog/albums" as never)}
             haptic="selection"
           >
-            <Text style={[s.catalogCtaLabel, { color: "#a78bfa" }]}>View all albums</Text>
+            <Text style={[s.catalogCtaLabel, { color: "#a78bfa" }]}>View all releases</Text>
             <Ionicons name="chevron-forward" size={14} color="#a78bfa" />
           </AnimatedPressable>
         </View>
@@ -532,42 +509,6 @@ const s = StyleSheet.create({
     fontWeight: "500",
   },
 
-  /* quick actions */
-  quickRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  quickCard: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#131820",
-    borderRadius: 16,
-    padding: 14,
-  },
-  quickIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  quickText: {
-    flex: 1,
-    gap: 2,
-  },
-  quickLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  quickSub: {
-    color: tokens.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "500",
-  },
-
   /* catalog cards — side by side */
   catalogRow: {
     flexDirection: "row",
@@ -696,8 +637,6 @@ const s = StyleSheet.create({
 
   /* recent activity */
   activitySection: {
-    backgroundColor: "#131820",
-    borderRadius: 20,
     padding: 16,
     gap: 4,
   },

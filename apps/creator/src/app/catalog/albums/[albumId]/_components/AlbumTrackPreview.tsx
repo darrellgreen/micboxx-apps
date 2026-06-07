@@ -10,17 +10,22 @@ const CARD_BG = "#131820";
 interface TrackRowProps {
   index: number;
   title: string;
+  trackId: number;
 }
 
-function TrackRow({ index, title }: TrackRowProps) {
+function TrackRow({ index, title, trackId }: TrackRowProps) {
   return (
-    <View style={styles.row}>
+    <AnimatedPressable
+      onPress={() => router.push(`/catalog/tracks/${trackId}` as never)}
+      style={styles.row}
+      haptic="selection"
+    >
       <View style={styles.left}>
         <Text style={styles.index}>{index}.</Text>
         <Text style={styles.trackTitle}>{title}</Text>
       </View>
       <Ionicons name="chevron-forward" size={14} color={tokens.colors.textSecondary} />
-    </View>
+    </AnimatedPressable>
   );
 }
 
@@ -43,7 +48,12 @@ export function AlbumTrackPreview({ album, onViewAll }: AlbumTrackPreviewProps) 
         <>
           <View style={styles.list}>
             {previewTracks.map((track, idx) => (
-              <TrackRow key={track.trackId} index={idx + 1} title={track.title} />
+              <TrackRow
+                key={track.trackId}
+                index={idx + 1}
+                title={track.title}
+                trackId={track.trackId}
+              />
             ))}
           </View>
 
@@ -57,16 +67,8 @@ export function AlbumTrackPreview({ album, onViewAll }: AlbumTrackPreviewProps) 
           <Ionicons name="musical-notes-outline" size={22} color={tokens.colors.textSecondary} />
           <Text style={styles.emptyTitle}>No tracks added yet</Text>
           <Text style={styles.emptyCopy}>
-            Add the first track to this release, then return here to review the track list.
+            Tracks will be shown here once they are added to this release draft.
           </Text>
-          <AnimatedPressable
-            style={styles.emptyCta}
-            onPress={() => router.push(`/create/upload-push?albumId=${album.id}` as never)}
-            haptic="selection"
-          >
-            <Ionicons name="add" size={16} color={tokens.colors.accent} />
-            <Text style={styles.emptyCtaText}>Add Track</Text>
-          </AnimatedPressable>
         </View>
       )}
     </View>

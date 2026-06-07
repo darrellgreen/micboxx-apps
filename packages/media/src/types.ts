@@ -82,7 +82,7 @@ export interface TrackUploadState {
 }
 
 export interface TrackUploadAdapter {
-  uploadTrack(audio: MediaAsset, artwork: MediaAsset, metadata: TrackMetadata): Promise<{ id: string }>;
+  uploadTrack(audio: MediaAsset, artwork: MediaAsset | null, metadata: TrackMetadata): Promise<{ id: string }>;
 }
 
 export interface AlbumMetadata {
