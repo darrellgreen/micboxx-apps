@@ -865,7 +865,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(18, 214, 197, 0.1)",
   },
   badgeScheduled: {
-    backgroundColor: "rgba(255, 149, 0, 0.1)",
+    backgroundColor: "rgba(167, 139, 250, 0.14)",
   },
   badgeDraft: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
     color: "#12D6C5",
   },
   badgeTextScheduled: {
-    color: "#FF9500",
+    color: "#a78bfa",
   },
   badgeTextDraft: {
     color: "#A9B4C0",

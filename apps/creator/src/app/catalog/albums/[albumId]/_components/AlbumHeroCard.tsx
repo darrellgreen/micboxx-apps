@@ -29,12 +29,20 @@ export function AlbumHeroCard({ album, onShare }: AlbumHeroCardProps) {
   const renderStatusBadge = () => {
     const state = album.status.releaseState || "published";
     const displayState = state.toUpperCase();
-    
+    const badgeStyle = state === "scheduled"
+      ? styles.badgeScheduled
+      : state === "published"
+        ? styles.badge
+        : styles.badgeDraft;
+    const badgeTextStyle = state === "scheduled"
+      ? styles.badgeTextScheduled
+      : state === "published"
+        ? styles.badgeText
+        : styles.badgeTextDraft;
+
     return (
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>
-          {displayState}
-        </Text>
+      <View style={badgeStyle}>
+        <Text style={badgeTextStyle}>{displayState}</Text>
       </View>
     );
   };
@@ -137,12 +145,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: "rgba(122, 196, 20, 0.15)", // Micboxx green status tint
+    backgroundColor: "rgba(122, 196, 20, 0.15)",
+  },
+  badgeScheduled: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "rgba(167, 139, 250, 0.14)",
+  },
+  badgeDraft: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
   },
   badgeText: {
     fontSize: 9,
     fontWeight: "800",
-    color: "#7AC414", // Micboxx green
+    color: "#7AC414",
+    letterSpacing: 0.5,
+  },
+  badgeTextScheduled: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#a78bfa",
+    letterSpacing: 0.5,
+  },
+  badgeTextDraft: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: tokens.colors.textSecondary,
     letterSpacing: 0.5,
   },
   title: {

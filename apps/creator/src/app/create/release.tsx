@@ -124,6 +124,7 @@ export default function CreateReleaseScreen() {
     highlightTrackId?: string;
     refreshKey?: string;
     uploadingTrackTitle?: string;
+    uploadError?: string;
     step?: string;
   }>();
 
@@ -520,7 +521,7 @@ export default function CreateReleaseScreen() {
           message: `${nextRelease.title} is scheduled for ${formatReleaseDateTime(releaseDate)}.`,
         });
         router.dismissAll();
-        router.replace(`/catalog/albums/${nextRelease.id}` as never);
+        router.replace("/(tabs)/catalog" as never);
       } else {
         const nextRelease = await publishAlbum(savedRelease.id);
         setSavedRelease(nextRelease);
@@ -769,6 +770,7 @@ export default function CreateReleaseScreen() {
               saving={saving}
               highlightTrackId={params.highlightTrackId}
               pendingTrackTitle={params.uploadingTrackTitle}
+              pendingTrackError={params.uploadError}
               onAddTrack={() => void handleAddTrack()}
               onReleaseUpdate={setSavedRelease}
             />
@@ -1078,6 +1080,7 @@ function ReleaseTrackManagementSection({
   saving,
   highlightTrackId,
   pendingTrackTitle,
+  pendingTrackError,
   onAddTrack,
   onReleaseUpdate,
 }: {
@@ -1086,6 +1089,7 @@ function ReleaseTrackManagementSection({
   saving: boolean;
   highlightTrackId?: string;
   pendingTrackTitle?: string;
+  pendingTrackError?: string;
   onAddTrack: () => void;
   onReleaseUpdate?: (album: DashboardAlbum) => void;
 }) {
@@ -1120,6 +1124,17 @@ function ReleaseTrackManagementSection({
   const onReleaseUpdateRef = useRef(onReleaseUpdate);
   onReleaseUpdateRef.current = onReleaseUpdate;
 
+  // When highlightTrackId arrives (upload just completed), do an immediate fetch
+  // so the new track appears without waiting for the first poll interval.
+  useEffect(() => {
+    const albumId = release?.id;
+    if (!albumId || !highlightTrackId) return;
+    void getAlbumStatus(albumId).then((updated) => {
+      setLocalTracks(updated.tracks);
+      onReleaseUpdateRef.current?.(updated);
+    }).catch(() => {});
+  }, [highlightTrackId, release?.id]);
+
   useEffect(() => {
     const albumId = release?.id;
     if (!albumId) return;
@@ -1131,8 +1146,16 @@ function ReleaseTrackManagementSection({
       );
       const isUploading =
         !!pendingTrackTitle && !current.some((t) => t.title === pendingTrackTitle);
+      const isHighlightedPending =
+        !!highlightTrackId &&
+        !current.some(
+          (t) =>
+            String(t.trackId) === highlightTrackId &&
+            t.status?.processing !== "pending" &&
+            t.status?.processing !== "processing",
+        );
 
-      if (!isProcessing && !isUploading) return;
+      if (!isProcessing && !isUploading && !isHighlightedPending) return;
 
       try {
         const updatedAlbum = await getAlbumStatus(albumId);
@@ -1143,8 +1166,6 @@ function ReleaseTrackManagementSection({
           (t) => t.status?.processing === "pending" || t.status?.processing === "processing",
         );
         setLocalTracks(updatedAlbum.tracks);
-        // Only notify parent when processing actually finishes so it can
-        // refresh canPublish — avoids re-rendering the whole screen each poll.
         if (hadProcessing && nowDone) {
           onReleaseUpdateRef.current?.(updatedAlbum);
         }
@@ -1154,12 +1175,49 @@ function ReleaseTrackManagementSection({
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [release?.id, pendingTrackTitle]);
+  }, [release?.id, pendingTrackTitle, highlightTrackId]);
 
   const tracks = localTracks;
   const trackCount = tracks.length;
   const totalDuration = tracks.reduce((acc, t) => acc + (t.duration || 0), 0);
   const runtimeText = formatDuration(totalDuration);
+
+  const handleRemoveTrack = useCallback(
+    (trackId: number) => {
+      const currentRelease = releaseRef.current;
+      if (!currentRelease) return;
+      Alert.alert(
+        "Remove from release",
+        "Are you sure you want to remove this track from the release? The track itself will not be deleted.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const updatedTrackIds = currentRelease.tracks
+                  .map((t) => t.trackId)
+                  .filter((id) => id !== trackId);
+                const updatedAlbum = await updateAlbumMetadata(currentRelease.id, {
+                  trackIds: updatedTrackIds,
+                });
+                onReleaseUpdateRef.current?.(updatedAlbum);
+                setLocalTracks(updatedAlbum.tracks);
+              } catch (err) {
+                showToast({
+                  tone: "error",
+                  title: "Remove Failed",
+                  message: err instanceof Error ? err.message : "Failed to remove track.",
+                });
+              }
+            },
+          },
+        ],
+      );
+    },
+    [showToast],
+  );
 
   const handleReorder = useCallback(
     async (reorderedTracks: import("@/contracts/creator").DashboardAlbumTrack[]) => {
@@ -1192,7 +1250,7 @@ function ReleaseTrackManagementSection({
       <SectionCard title="Track" helper="A single release carries one primary track.">
         <View style={styles.shapePanel}>
           {isPending ? (
-            <View style={[styles.trackSlot, styles.rowPending]}>
+            <View style={[styles.trackSlot, pendingTrackError ? styles.rowFailed : styles.rowPending]}>
               <View style={styles.left}>
                 {release?.artworkUrl ? (
                   <Image source={{ uri: release.artworkUrl }} style={styles.trackSlotArtwork} contentFit="cover" />
@@ -1204,9 +1262,9 @@ function ReleaseTrackManagementSection({
                 <View style={styles.shapeCopy}>
                   <Text style={styles.shapeTitle}>{pendingTrackTitle}</Text>
                   <View style={styles.statusLine}>
-                    <View style={[styles.statusDot, styles.statusDot_working]} />
-                    <Text style={[styles.trackStatus, styles.trackStatus_working]}>
-                      Uploading...
+                    <View style={[styles.statusDot, pendingTrackError ? styles.statusDot_failed : styles.statusDot_working]} />
+                    <Text style={[styles.trackStatus, pendingTrackError ? styles.trackStatus_failed : styles.trackStatus_working]}>
+                      {pendingTrackError ?? "Uploading..."}
                     </Text>
                   </View>
                 </View>
@@ -1258,8 +1316,10 @@ function ReleaseTrackManagementSection({
           tracks={tracks}
           reorderEnabled={trackCount > 1}
           onReorder={handleReorder}
+          onTrackRemove={handleRemoveTrack}
           highlightTrackId={highlightTrackId}
           pendingTrackTitle={pendingTrackTitle}
+          pendingTrackError={pendingTrackError}
         />
 
         {isLimitReached ? (
@@ -1296,9 +1356,11 @@ function ReleaseTrackManagementSection({
         tracks={tracks}
         reorderEnabled={trackCount > 1}
         onReorder={handleReorder}
+        onTrackRemove={handleRemoveTrack}
         highlightTrackId={highlightTrackId}
         pendingTrackTitle={pendingTrackTitle}
-        />
+        pendingTrackError={pendingTrackError}
+      />
 
         <AnimatedPressable
           style={styles.secondaryCta}
@@ -1900,6 +1962,10 @@ const styles = StyleSheet.create({
   rowPending: {
     backgroundColor: "rgba(0, 179, 166, 0.06)",
     borderBottomColor: "rgba(0, 179, 166, 0.12)",
+  },
+  rowFailed: {
+    backgroundColor: "rgba(255, 69, 58, 0.06)",
+    borderBottomColor: "rgba(255, 69, 58, 0.12)",
   },
   emptyState: {
     minHeight: 120,

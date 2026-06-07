@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   NestableDraggableFlatList,
   type RenderItemParams,
@@ -8,7 +8,6 @@ import {
 } from "react-native-draggable-flatlist";
 
 import { tokens } from "@micboxx/theme";
-import { AnimatedPressable } from "@micboxx/ui";
 import type { DashboardAlbumTrack } from "@/contracts/creator";
 
 export interface DraggableTrackItem {
@@ -22,9 +21,11 @@ interface DraggableTrackListProps {
   tracks: DashboardAlbumTrack[];
   reorderEnabled: boolean;
   onTrackPress?: (trackId: number) => void;
+  onTrackRemove?: (trackId: number) => void;
   onReorder: (reorderedTracks: DashboardAlbumTrack[]) => void;
   highlightTrackId?: string;
   pendingTrackTitle?: string;
+  pendingTrackError?: string;
 }
 
 function resolveTrackStatus(track: DashboardAlbumTrack): {
@@ -43,9 +44,11 @@ export function DraggableTrackList({
   tracks,
   reorderEnabled,
   onTrackPress,
+  onTrackRemove,
   onReorder,
   highlightTrackId,
   pendingTrackTitle,
+  pendingTrackError,
 }: DraggableTrackListProps) {
   const [localTracks, setLocalTracks] = useState(tracks);
 
@@ -77,10 +80,9 @@ export function DraggableTrackList({
             isActive && styles.rowActive,
           ]}
         >
-          <AnimatedPressable
+          <Pressable
             style={styles.rowContent}
             onPress={onTrackPress ? () => onTrackPress(track.trackId) : undefined}
-            haptic="selection"
           >
             <View style={styles.left}>
               <Text style={styles.index}>{index + 1}.</Text>
@@ -112,28 +114,36 @@ export function DraggableTrackList({
                 </View>
               </View>
             </View>
-          </AnimatedPressable>
+          </Pressable>
+
+          {onTrackRemove ? (
+            <Pressable
+              style={styles.removeBtn}
+              onPress={() => onTrackRemove(track.trackId)}
+            >
+              <Ionicons name="remove-circle-outline" size={18} color={tokens.colors.danger} />
+            </Pressable>
+          ) : null}
 
           {reorderEnabled ? (
-            <AnimatedPressable
+            <Pressable
               style={styles.dragHandle}
               onLongPress={drag}
               delayLongPress={100}
-              haptic="selection"
             >
               <Ionicons
                 name="reorder-three-outline"
                 size={22}
                 color={tokens.colors.textSecondary}
               />
-            </AnimatedPressable>
-          ) : (
+            </Pressable>
+          ) : !onTrackRemove ? (
             <Ionicons name="chevron-forward" size={14} color={tokens.colors.textSecondary} />
-          )}
+          ) : null}
         </View>
       );
     },
-    [highlightTrackId, localTracks.length, onTrackPress, reorderEnabled],
+    [highlightTrackId, localTracks.length, onTrackPress, onTrackRemove, reorderEnabled],
   );
 
   const visibleTrackCount = localTracks.length + (pendingTrackTitle ? 1 : 0);
@@ -158,20 +168,26 @@ export function DraggableTrackList({
       {localTracks.length > 0 || pendingTrackTitle ? (
         <>
           {pendingTrackTitle ? (
-            <View style={[styles.row, styles.rowPending]}>
+            <View style={[styles.row, pendingTrackError ? styles.rowFailed : styles.rowPending]}>
               <View style={styles.left}>
                 <Text style={styles.index}>{localTracks.length + 1}.</Text>
                 <View style={styles.trackCopy}>
                   <Text style={styles.trackTitle}>{pendingTrackTitle}</Text>
                   <View style={styles.statusLine}>
-                    <View style={[styles.statusDot, styles.statusDot_working]} />
-                    <Text style={[styles.trackStatus, styles.trackStatus_working]}>
-                      Uploading...
+                    <View style={[styles.statusDot, pendingTrackError ? styles.statusDot_failed : styles.statusDot_working]} />
+                    <Text style={[styles.trackStatus, pendingTrackError ? styles.trackStatus_failed : styles.trackStatus_working]}>
+                      {pendingTrackError ?? "Uploading..."}
                     </Text>
                   </View>
                 </View>
               </View>
-              <Ionicons name="cloud-upload-outline" size={14} color={tokens.colors.accent} />
+              <View style={styles.dragHandle}>
+                <Ionicons
+                  name={pendingTrackError ? "alert-circle-outline" : "cloud-upload-outline"}
+                  size={22}
+                  color={pendingTrackError ? tokens.colors.danger : tokens.colors.accent}
+                />
+              </View>
             </View>
           ) : null}
 
@@ -275,6 +291,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 179, 166, 0.06)",
     borderBottomColor: "rgba(0, 179, 166, 0.12)",
   },
+  rowFailed: {
+    backgroundColor: "rgba(255, 69, 58, 0.06)",
+    borderBottomColor: "rgba(255, 69, 58, 0.12)",
+  },
   left: {
     flexDirection: "row",
     alignItems: "center",
@@ -319,6 +339,10 @@ const styles = StyleSheet.create({
   trackStatus_working: { color: tokens.colors.accent },
   trackStatus_failed: { color: tokens.colors.danger },
   trackStatus_draft: { color: tokens.colors.textSecondary },
+  removeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  },
   dragHandle: {
     paddingHorizontal: 8,
     paddingVertical: 10,

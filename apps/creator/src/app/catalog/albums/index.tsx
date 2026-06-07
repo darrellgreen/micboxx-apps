@@ -208,6 +208,7 @@ export default function AlbumsListScreen() {
           {filteredItems.map((album, index) => {
             const dateText = formatDate(album.timestamps.createdAt);
             const isPublished = album.status.releaseState === "published";
+            const isScheduled = album.status.releaseState === "scheduled";
             
             return (
               <View key={album.id}>
@@ -216,7 +217,7 @@ export default function AlbumsListScreen() {
                 <AnimatedPressable
                   style={styles.albumRow}
                   onPress={() => {
-                    if (album.status.releaseState === "draft") {
+                    if (album.status.releaseState === "draft" || album.status.releaseState === "scheduled") {
                       router.push(`/create/release?draftAlbumId=${album.id}` as never);
                     } else {
                       router.push(`/catalog/albums/${album.id}` as never);
@@ -255,8 +256,8 @@ export default function AlbumsListScreen() {
 
                   {/* Right Status badge and date */}
                   <View style={styles.albumRight}>
-                    <View style={[styles.statusBadge, isPublished && styles.statusBadgePublished]}>
-                      <Text style={[styles.statusBadgeText, isPublished && styles.statusBadgeTextPublished]}>
+                    <View style={[styles.statusBadge, isPublished && styles.statusBadgePublished, isScheduled && styles.statusBadgeScheduled]}>
+                      <Text style={[styles.statusBadgeText, isPublished && styles.statusBadgeTextPublished, isScheduled && styles.statusBadgeTextScheduled]}>
                         {album.status.releaseState.toUpperCase()}
                       </Text>
                     </View>
@@ -434,6 +435,9 @@ const styles = StyleSheet.create({
   statusBadgePublished: {
     backgroundColor: "rgba(71, 194, 122, 0.12)",
   },
+  statusBadgeScheduled: {
+    backgroundColor: "rgba(167, 139, 250, 0.14)",
+  },
   statusBadgeText: {
     fontSize: 8,
     fontWeight: "800",
@@ -442,6 +446,9 @@ const styles = StyleSheet.create({
   },
   statusBadgeTextPublished: {
     color: "#47C27A",
+  },
+  statusBadgeTextScheduled: {
+    color: "#a78bfa",
   },
   dateText: {
     color: tokens.colors.textSecondary,

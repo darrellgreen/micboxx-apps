@@ -169,15 +169,21 @@ export default function UploadTrackScreen() {
       .then(async ({ id }) => {
         await bootstrap.refetch();
         showToast({ tone: "success", title: "Track uploaded", message: `"${uploadTitle}" is processing now.` });
-        if (params.origin !== "create-release") {
+        if (params.origin === "create-release") {
+          router.replace(`/create/release?draftAlbumId=${targetAlbumId}&step=2&highlightTrackId=${id}` as never);
+        } else {
           router.replace(`/catalog/albums/${targetAlbumId}?tab=tracks&highlightTrackId=${id}` as never);
         }
       })
       .catch((nextError) => {
-        setUploadSubmitting(false);
         const errorMessage = nextError instanceof Error ? nextError.message : "Unable to upload this track.";
-        setValidationError(errorMessage);
-        showToast({ tone: "error", title: "Upload failed", message: errorMessage });
+        if (params.origin === "create-release") {
+          router.setParams({ uploadError: errorMessage } as never);
+        } else {
+          setUploadSubmitting(false);
+          setValidationError(errorMessage);
+          showToast({ tone: "error", title: "Upload failed", message: errorMessage });
+        }
       });
   }
 
