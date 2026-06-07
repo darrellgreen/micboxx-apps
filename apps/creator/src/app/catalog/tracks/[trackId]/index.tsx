@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Linking, Share, StyleSheet, Text, View } from "react-native";
 import { tokens } from "@micboxx/theme";
@@ -152,6 +153,13 @@ export default function TrackDetailScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Re-fetch when returning from the edit screen so changes are reflected immediately
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   const boostActionLabel = useMemo(
     () => getBoostActionLabel(promotionDashboard, track, promotionsLoading),

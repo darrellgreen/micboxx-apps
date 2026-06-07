@@ -425,6 +425,21 @@ export async function updateAlbumMetadata(
   return response.album;
 }
 
+export async function replaceTrackArtwork(
+  trackId: string | number,
+  formData: FormData,
+): Promise<DashboardTrack> {
+  const response = await creatorFetch<{ track: DashboardTrack }>(
+    `/v1/dashboard/tracks/${trackId}/artwork`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+
+  return response.track;
+}
+
 export async function replaceAlbumArtwork(
   albumId: string | number,
   formData: FormData,

@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { tokens } from "@micboxx/theme";
 import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx/ui";
+import { useMediaPicker, type MediaAsset } from "@micboxx/media";
+import { ExpoMediaPickerAdapter } from "@/features/media/ExpoMediaPickerAdapter";
 import type {
   DashboardAlbumSummary,
   DashboardTrack,
@@ -32,7 +34,18 @@ import {
   requeueTrack,
   deleteTrack,
   getMyAlbums,
+  replaceTrackArtwork,
 } from "@/shared/api/creator-dashboard";
+
+function buildArtworkFormData(asset: MediaAsset): FormData {
+  const formData = new FormData();
+  formData.append("artwork", {
+    uri: asset.uri,
+    name: asset.fileName ?? "track-artwork.jpg",
+    type: asset.mimeType ?? "image/jpeg",
+  } as any);
+  return formData;
+}
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -63,6 +76,7 @@ function capitalize(s: string): string {
 export default function EditTrackScreen() {
   const { trackId } = useLocalSearchParams<{ trackId?: string }>();
   const { showToast } = useToast();
+  const artworkPicker = useMediaPicker(ExpoMediaPickerAdapter);
   const [track, setTrack] = useState<DashboardTrack | null>(null);
   const [options, setOptions] = useState<DashboardUploadOptions | null>(null);
   const [albumSummaries, setAlbumSummaries] = useState<DashboardAlbumSummary[]>([]);
@@ -77,6 +91,7 @@ export default function EditTrackScreen() {
   const [publishSheetVisible, setPublishSheetVisible] = useState(false);
   const [overflowSheetVisible, setOverflowSheetVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [artworkDirty, setArtworkDirty] = useState(false);
   const selectedGenre = useMemo(
     () => options?.genres.find((genre) => String(genre.id) === selectedGenreId) ?? null,
     [options?.genres, selectedGenreId],
@@ -146,6 +161,13 @@ export default function EditTrackScreen() {
     };
   }, []);
 
+  async function pickArtwork() {
+    const picked = await artworkPicker.pickImage({ allowsEditing: true, quality: 0.92 });
+    if (picked) {
+      setArtworkDirty(true);
+    }
+  }
+
   async function handleSave() {
     if (!trackId) return;
     setSaving(true);
@@ -157,7 +179,17 @@ export default function EditTrackScreen() {
         albumId: selectedAlbumId ? Number(selectedAlbumId) : null,
       };
 
-      const nextTrack = await updateTrackMetadata(trackId, payload);
+      let nextTrack = await updateTrackMetadata(trackId, payload);
+
+      // Upload artwork if user picked a new image
+      if (artworkPicker.asset && artworkDirty) {
+        nextTrack = await replaceTrackArtwork(
+          trackId,
+          buildArtworkFormData(artworkPicker.asset),
+        );
+        setArtworkDirty(false);
+      }
+
       setTrack(nextTrack);
       showToast({
         title: "Track changes saved",
@@ -344,8 +376,14 @@ export default function EditTrackScreen() {
     >
       <View style={styles.heroCard}>
         <View style={styles.heroRow}>
-          <View style={styles.artworkWrapper}>
-            {track?.assets?.artworkUrl ? (
+          <AnimatedPressable style={styles.artworkWrapper} onPress={() => void pickArtwork()} haptic="selection">
+            {artworkPicker.asset?.uri ? (
+              <Image
+                source={{ uri: artworkPicker.asset.uri }}
+                style={styles.heroArtwork}
+                contentFit="cover"
+              />
+            ) : track?.assets?.artworkUrl ? (
               <Image
                 source={{ uri: track.assets.artworkUrl }}
                 style={styles.heroArtwork}
@@ -356,10 +394,10 @@ export default function EditTrackScreen() {
                 <Ionicons name="musical-note" size={32} color={tokens.colors.textSecondary} />
               </View>
             )}
-            <AnimatedPressable style={styles.editArtworkOverlay} onPress={() => {}} haptic="selection">
+            <View style={styles.editArtworkOverlay} pointerEvents="none">
               <Ionicons name="pencil" size={12} color="#FFFFFF" />
-            </AnimatedPressable>
-          </View>
+            </View>
+          </AnimatedPressable>
 
           <View style={styles.heroInfo}>
             <View style={styles.publishedBadge}>

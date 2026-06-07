@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions, ActivityIndicator } from "react-native";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Svg, {
 
   Circle,
@@ -13,12 +14,13 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-import type { DashboardAnalyticsPeriod } from "@/contracts/creator";
+import type { CreatorAnalyticsPayload, DashboardAnalyticsPeriod } from "@/contracts/creator";
 import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { ErrorState, Panel } from "@/shared/ui/layout";
 import { tokens } from "@micboxx/theme";
+import { getCreatorAnalytics } from "@/shared/api/creator-dashboard";
 
 const PERIOD_OPTIONS: DashboardAnalyticsPeriod[] = ["7d", "30d", "90d"];
 
@@ -94,12 +96,23 @@ function getRelativeBarRatio(value: number, maxValue: number, minPercent = 12) {
 
 type TrendPoint = { label: string; plays: number };
 
+function getVisibleLabelIndexes(length: number): number[] {
+  if (length <= 5) return Array.from({ length }, (_, i) => i);
+  return Array.from(new Set([
+    0,
+    Math.round((length - 1) * 0.25),
+    Math.round((length - 1) * 0.5),
+    Math.round((length - 1) * 0.75),
+    length - 1,
+  ])).sort((a, b) => a - b);
+}
+
 function TrendChart({ points }: { points: TrendPoint[] }) {
   const width = 760;
-  const height = 260;
-  const paddingX = 18;
+  const height = 280;
+  const paddingX = 20;
   const paddingTop = 18;
-  const paddingBottom = 30;
+  const paddingBottom = 8;
   const baseline = height - paddingBottom;
   const chartHeight = baseline - paddingTop;
   const maxValue = Math.max(1, ...points.map((point) => point.plays));
@@ -115,14 +128,15 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
     (best, point) => (point.plays >= best.plays ? point : best),
     coordinates[0] ?? { label: "", plays: 0, x: paddingX, y: baseline },
   );
+  const labelIndexes = getVisibleLabelIndexes(points.length);
 
   return (
     <View style={styles.trendChartWrap}>
       <Svg viewBox={`0 0 ${width} ${height}`} style={styles.trendChartSvg}>
         <Defs>
-          <SvgLinearGradient id="analytics-area" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="rgba(121,201,107,0.15)" />
-            <Stop offset="100%" stopColor="rgba(121,201,107,0.0)" />
+          <SvgLinearGradient id="mbx-dashboard-area" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#BFFF4F" stopOpacity={0.28} />
+            <Stop offset="100%" stopColor="#BFFF4F" stopOpacity={0} />
           </SvgLinearGradient>
         </Defs>
         {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
@@ -134,29 +148,39 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
               x2={width - paddingX}
               y1={y}
               y2={y}
-              stroke={tokens.colors.gridSoft}
+              stroke="rgba(255,255,255,0.08)"
               strokeDasharray="4 8"
             />
           );
         })}
-        <Path d={areaPath} fill="url(#analytics-area)" />
+        <Path d={areaPath} fill="url(#mbx-dashboard-area)" stroke="none" />
         <Polyline
           points={polylinePoints}
           fill="none"
-          stroke={tokens.colors.accent}
+          stroke="rgba(191,255,79,1)"
           strokeWidth={4}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <Circle cx={highlight.x} cy={highlight.y} r={7} fill="rgba(121,201,107,0.26)" />
-        <Circle cx={highlight.x} cy={highlight.y} r={3.5} fill="rgba(121,201,107,1)" />
+        <Circle cx={highlight.x} cy={highlight.y} r={7} fill="rgba(191,255,79,0.24)" />
+        <Circle cx={highlight.x} cy={highlight.y} r={3.5} fill="rgba(191,255,79,1)" />
       </Svg>
       <View style={styles.trendLabels}>
-        {points.map((point) => (
-          <Text key={point.label} style={styles.trendLabelText}>
-            {point.label}
-          </Text>
-        ))}
+        {labelIndexes.map((index) => {
+          const point = points[index];
+          if (!point) return null;
+          // Match the SVG coordinate system: paddingX=20, width=760
+          const svgX = paddingX + (index / Math.max(1, points.length - 1)) * (width - paddingX * 2);
+          const pct = (svgX / width) * 100;
+          return (
+            <Text
+              key={point.label}
+              style={[styles.trendLabelText, { position: "absolute", left: `${pct}%` as any, transform: [{ translateX: -15 }] }]}
+            >
+              {point.label}
+            </Text>
+          );
+        })}
       </View>
     </View>
   );
@@ -227,7 +251,42 @@ export default function DashboardAnalyticsScreen() {
   const { width } = useWindowDimensions();
   const bootstrap = useCreatorBootstrap();
   const isWide = width >= 1120;
-  const analytics = bootstrap.analytics;
+
+  const [selectedPeriod, setSelectedPeriod] = useState<DashboardAnalyticsPeriod>("30d");
+  const [analytics, setAnalytics] = useState<CreatorAnalyticsPayload | null>(bootstrap.analytics);
+  const [periodLoading, setPeriodLoading] = useState(false);
+  const cache = useRef<Map<DashboardAnalyticsPeriod, CreatorAnalyticsPayload>>(new Map());
+
+  // Seed cache and period from bootstrap data
+  useEffect(() => {
+    if (bootstrap.analytics && !analytics) {
+      const period = bootstrap.analytics.overview.period;
+      cache.current.set(period, bootstrap.analytics);
+      setAnalytics(bootstrap.analytics);
+      setSelectedPeriod(period);
+    }
+  }, [bootstrap.analytics]);
+
+  const fetchPeriod = useCallback(async (period: DashboardAnalyticsPeriod) => {
+    // Serve from cache if already loaded
+    const cached = cache.current.get(period);
+    if (cached) {
+      setAnalytics(cached);
+      setSelectedPeriod(period);
+      return;
+    }
+    setPeriodLoading(true);
+    try {
+      const result = await getCreatorAnalytics(period);
+      cache.current.set(period, result);
+      setAnalytics(result);
+      setSelectedPeriod(period);
+    } catch {
+      // keep existing data on error
+    } finally {
+      setPeriodLoading(false);
+    }
+  }, []);
 
   if (!analytics) {
     return (
@@ -269,42 +328,6 @@ export default function DashboardAnalyticsScreen() {
 
         <View style={styles.heroShell}>
           <View style={styles.heroContent}>
-            <View style={styles.heroTopRow}>
-              <View style={styles.heroTagRow}>
-                <View style={styles.heroTag}>
-                  <Ionicons name="sparkles-outline" size={12} color={tokens.colors.secondaryAccent} />
-                  <Text style={styles.heroTagLabel}>Creator Dashboard</Text>
-                </View>
-                <View style={styles.planTag}>
-                  <Text style={styles.planTagLabel}>{analytics.overview.planLabel ?? "Artist account"}</Text>
-                </View>
-                <View style={styles.planSubTag}>
-                  <Text style={styles.planSubTagLabel}>
-                    {hasPremium
-                      ? "VIP insights live"
-                      : hasAdvanced
-                        ? "Advanced insights live"
-                        : "Advanced insights available"}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.periodRow}>
-                <Text style={styles.periodLabel}>{formatPeriodLabel(analytics.overview.period)}</Text>
-                <View style={styles.periodChips}>
-                  {PERIOD_OPTIONS.map((period) => {
-                    const active = analytics.overview.period === period;
-                    return (
-                      <View key={period} style={[styles.periodChip, active && styles.periodChipActive]}>
-                        <Text style={[styles.periodChipLabel, active && styles.periodChipLabelActive]}>
-                          {formatPeriodChip(period)}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            </View>
-
             <View style={styles.heroBottomRow}>
               <View style={styles.heroCopy}>
                 <Text style={styles.heroTitle}>Overview</Text>
@@ -316,14 +339,49 @@ export default function DashboardAnalyticsScreen() {
               {analytics.overview.primaryCta ? (
                 <AnimatedPressable
                   style={styles.heroPrimaryCta}
-                  onPress={() => router.push(analytics.overview.primaryCta?.href as never)}
+                  onPress={() => {
+                    const topTrack = topTracks[0];
+                    if (topTrack) {
+                      router.push(`/catalog/tracks/${topTrack.trackId}` as never);
+                    } else if (analytics.overview.primaryCta?.href) {
+                      router.push(analytics.overview.primaryCta.href as never);
+                    }
+                  }}
                 >
                   <Text style={styles.heroPrimaryCtaLabel}>
                     {analytics.overview.primaryCta.label}
                   </Text>
-                  <Ionicons name="arrow-forward" size={14} color="#0A0E14" />
+                  <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
                 </AnimatedPressable>
               ) : null}
+            </View>
+
+            <View style={styles.periodRow}>
+              <Text style={styles.periodLabel}>{formatPeriodLabel(selectedPeriod)}</Text>
+              <View style={styles.periodChipsWrap}>
+                <View style={styles.periodSpinnerSlot}>
+                  <ActivityIndicator
+                    size="small"
+                    color={tokens.colors.accent}
+                    style={{ opacity: periodLoading ? 1 : 0 }}
+                  />
+                </View>
+                {PERIOD_OPTIONS.map((period) => {
+                  const active = selectedPeriod === period;
+                  return (
+                    <AnimatedPressable
+                      key={period}
+                      style={[styles.periodChip, active && styles.periodChipActive]}
+                      onPress={() => { if (!active && !periodLoading) void fetchPeriod(period); }}
+                      haptic="selection"
+                    >
+                      <Text style={[styles.periodChipLabel, active && styles.periodChipLabelActive]}>
+                        {formatPeriodChip(period)}
+                      </Text>
+                    </AnimatedPressable>
+                  );
+                })}
+              </View>
             </View>
           </View>
         </View>
@@ -864,13 +922,12 @@ export default function DashboardAnalyticsScreen() {
 const styles = StyleSheet.create({
   screenContent: {
     paddingHorizontal: 16,
-    gap: 16,
+    gap: 8,
   },
   heroShell: {
     borderRadius: 10,
     overflow: "hidden",
     borderColor: tokens.colors.borderStrong,
-    paddingHorizontal: 22,
     paddingVertical: 20,
     position: "relative",
   },
@@ -952,7 +1009,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1.1,
   },
   periodRow: {
-    gap: 8,
+    alignItems: "flex-end",
+    gap: 6,
   },
   periodLabel: {
     color: "rgba(247,250,252,0.56)",
@@ -960,6 +1018,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 1.3,
+  },
+  periodChipsWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    position: "relative",
+  },
+  periodSpinnerSlot: {
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   periodChips: {
     flexDirection: "row",
@@ -974,8 +1044,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   periodChipActive: {
-    backgroundColor: tokens.colors.secondaryAccent,
-    borderColor: tokens.colors.secondaryAccent,
+    backgroundColor: tokens.colors.accent,
+    borderColor: tokens.colors.accent,
   },
   periodChipLabel: {
     color: "rgba(247,250,252,0.68)",
@@ -1011,12 +1081,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     borderRadius: 999,
-    backgroundColor: tokens.colors.secondaryAccent,
+    backgroundColor: tokens.colors.accent,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   heroPrimaryCtaLabel: {
-    color: "#0A0E14",
+    color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -1110,28 +1180,31 @@ const styles = StyleSheet.create({
   },
   trendChartWrap: {
     borderRadius: 8,
+    borderWidth: 0.5,
     borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(0,0,0,0.24)",
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 8,
+    backgroundColor: "#141416",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 0,
   },
   trendChartSvg: {
     width: "100%",
-    height: 230,
+    aspectRatio: 760 / 280,
   },
   trendLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 8,
-    paddingHorizontal: 10,
-    marginTop: 2,
+    position: "relative",
+    height: 16,
+    marginTop: 10,
   },
   trendLabelText: {
-    color: "rgba(247,250,252,0.4)",
+    color: "rgba(255,255,255,0.36)",
     fontSize: 10,
     fontWeight: "600",
-    letterSpacing: 1,
+    letterSpacing: 1.8,
     textTransform: "uppercase",
   },
   heroStatsGrid: {
