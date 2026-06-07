@@ -169,10 +169,8 @@ export default function UploadTrackScreen() {
       .then(async ({ id }) => {
         await bootstrap.refetch();
         showToast({ tone: "success", title: "Track uploaded", message: `"${uploadTitle}" is processing now.` });
-        if (params.origin === "create-release") {
-          router.replace(`/create/release?draftAlbumId=${targetAlbumId}&step=2&highlightTrackId=${id}&refreshKey=${Date.now()}` as never);
-        } else {
-          router.replace(`/catalog/albums/${targetAlbumId}?tab=tracks&highlightTrackId=${id}&refreshKey=${Date.now()}` as never);
+        if (params.origin !== "create-release") {
+          router.replace(`/catalog/albums/${targetAlbumId}?tab=tracks&highlightTrackId=${id}` as never);
         }
       })
       .catch((nextError) => {
@@ -195,54 +193,56 @@ export default function UploadTrackScreen() {
       header={
         <AppHeader
           variant="detail"
-          title="Upload Track"
+          title="Add Track"
           fallbackRoute={fallbackRoute}
         />
       }
     >
       {/* Track Hero */}
       <View style={styles.hero}>
-        <Pressable onPress={() => void artworkPicker.pickImage()} style={styles.heroArtworkWrap}>
-          {heroArtworkUri ? (
-            <Image source={{ uri: heroArtworkUri }} style={styles.heroArtwork} contentFit="cover" />
-          ) : (
-            <View style={styles.heroArtworkPlaceholder}>
-              <Ionicons name="image-outline" size={32} color={tokens.colors.textSecondary} />
-            </View>
-          )}
-          <View style={styles.heroArtworkBadge}>
-            <Ionicons name="camera-outline" size={12} color={tokens.colors.textPrimary} />
-          </View>
-        </Pressable>
+        <View style={styles.heroArtworkCol}>
+          <Pressable onPress={() => void artworkPicker.pickImage()} style={styles.heroArtworkWrap}>
+            {heroArtworkUri ? (
+              <Image source={{ uri: heroArtworkUri }} style={styles.heroArtwork} contentFit="cover" />
+            ) : (
+              <View style={styles.heroArtworkPlaceholder}>
+                <Ionicons name="image-outline" size={32} color={tokens.colors.textSecondary} />
+              </View>
+            )}
+          </Pressable>
+          <Pressable onPress={() => void artworkPicker.pickImage()} style={styles.heroArtworkLabel}>
+            <Ionicons
+              name={artworkPicker.asset ? "checkmark-circle" : "camera-outline"}
+              size={12}
+              color={artworkPicker.asset ? tokens.colors.accent : tokens.colors.textSecondary}
+            />
+            <Text style={[styles.heroArtworkLabelText, artworkPicker.asset && styles.heroArtworkLabelDone]}>
+              {artworkPicker.asset ? "Artwork added" : "Replace"}
+            </Text>
+          </Pressable>
+        </View>
 
         <View style={styles.heroMeta}>
           <Text style={styles.heroTitle} numberOfLines={2}>
             {title.trim() || "Untitled"}
           </Text>
-          <Text style={styles.heroArtist} numberOfLines={1}>{targetReleaseTitle ?? "Loading release..."}</Text>
           <View style={styles.heroBadgeRow}>
             <View style={styles.heroDraftBadge}>
               <Text style={styles.heroDraftBadgeText}>Draft</Text>
             </View>
-            {targetReleaseTitle ? (
-              <View style={styles.heroAlbumBadge}>
-                <Ionicons name="albums-outline" size={11} color={tokens.colors.textSecondary} />
-                <Text style={styles.heroAlbumBadgeText} numberOfLines={1}>{targetReleaseTitle}</Text>
-              </View>
-            ) : null}
           </View>
         </View>
       </View>
 
       {/* Track Assets */}
       <Surface tone="section" borderRadius="section" padding="lg" style={styles.section}>
-        <Text style={styles.sectionTitle}>Track Assets</Text>
-
+        <View style={styles.assetSectionHeader}>
+          <Text style={styles.sectionTitle}>Audio File</Text>
+        </View>
         <AudioAssetCard
           asset={audioPicker.asset}
           onPick={() => void audioPicker.pickAudio()}
         />
-
       </Surface>
 
       {/* Track Details */}
@@ -301,8 +301,10 @@ export default function UploadTrackScreen() {
       {/* Readiness progress */}
       <Surface tone="section" borderRadius="section" padding="lg" style={styles.section}>
         <View style={styles.progressHeader}>
-          <Text style={styles.progressLabel}>
-            {requiredDone ? "Ready to upload" : `${readinessItems.filter((r) => !r.optional && r.done).length} of ${readinessItems.filter((r) => !r.optional).length} required`}
+          <Text style={[styles.progressLabel, requiredDone && styles.progressLabelDone]}>
+            {requiredDone
+              ? "Ready to upload"
+              : `${readinessItems.filter((r) => !r.optional && r.done).length} of ${readinessItems.filter((r) => !r.optional).length} required`}
           </Text>
           {requiredDone && (
             <Ionicons name="checkmark-circle" size={14} color={tokens.colors.accent} />
@@ -320,20 +322,24 @@ export default function UploadTrackScreen() {
             />
           ))}
         </View>
-        <View style={styles.progressItems}>
-          {readinessItems.map((item) => (
-            <View key={item.key} style={styles.progressItem}>
-              <Ionicons
-                name={item.done ? "checkmark-circle" : "ellipse-outline"}
-                size={13}
-                color={item.done ? tokens.colors.accent : tokens.colors.textSecondary}
-              />
-              <Text style={[styles.progressItemLabel, item.done && styles.progressItemLabelDone]}>
-                {item.label}{item.optional ? "*" : ""}
-              </Text>
-            </View>
-          ))}
-        </View>
+        {requiredDone ? (
+          <Text style={styles.progressCompleteHint}>Audio, artwork, and metadata all set.</Text>
+        ) : (
+          <View style={styles.progressItems}>
+            {readinessItems.map((item) => (
+              <View key={item.key} style={styles.progressItem}>
+                <Ionicons
+                  name={item.done ? "checkmark-circle" : "ellipse-outline"}
+                  size={13}
+                  color={item.done ? tokens.colors.accent : tokens.colors.textSecondary}
+                />
+                <Text style={[styles.progressItemLabel, item.done && styles.progressItemLabelDone]}>
+                  {item.label}{item.optional ? "*" : ""}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </Surface>
 
       {/* Upload button */}
@@ -345,7 +351,7 @@ export default function UploadTrackScreen() {
           </Surface>
         ) : null}
         <Button
-          label={uploadSubmitting ? "Starting upload..." : "Upload Track"}
+          label={uploadSubmitting ? "Starting upload..." : params.origin === "create-release" ? "Add Track to Release" : "Upload Track"}
           tone="primary"
           size="lg"
           onPress={handleUpload}
@@ -459,9 +465,11 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 8,
   },
-  heroArtworkWrap: {
-    position: "relative",
+  heroArtworkCol: {
+    alignItems: "center",
+    gap: 6,
   },
+  heroArtworkWrap: {},
   heroArtwork: {
     width: 88,
     height: 88,
@@ -478,17 +486,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  heroArtworkBadge: {
-    position: "absolute",
-    bottom: 4,
-    right: 4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.6)",
+  heroArtworkLabel: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 4,
   },
+  heroArtworkLabelText: {
+    fontSize: 11,
+    color: tokens.colors.textSecondary,
+  },
+  heroArtworkLabelDone: {
+    color: tokens.colors.accent,
+  },
+  assetSectionHeader: {},
   heroMeta: {
     flex: 1,
     gap: 4,
@@ -525,22 +535,10 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  heroAlbumBadge: {
+  heroAlbumRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
-    maxWidth: 160,
-  },
-  heroAlbumBadgeText: {
-    fontSize: 11,
-    color: tokens.colors.textSecondary,
-    flexShrink: 1,
+    gap: 5,
   },
 
   // Asset zones
@@ -717,6 +715,13 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 13,
     fontWeight: "600",
+    color: tokens.colors.textSecondary,
+  },
+  progressLabelDone: {
+    color: tokens.colors.textPrimary,
+  },
+  progressCompleteHint: {
+    fontSize: 12,
     color: tokens.colors.textSecondary,
   },
   progressBarTrack: {

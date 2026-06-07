@@ -87,11 +87,6 @@ export default function AlbumDetailScreen() {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (refreshKey) {
-      void load();
-    }
-  }, [load, refreshKey]);
 
   useEffect(() => {
     if (tab === "tracks") {

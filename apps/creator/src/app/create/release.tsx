@@ -1051,7 +1051,13 @@ function TrackRow({
   return (
     <View style={[styles.trackSlot, highlighted && styles.rowHighlighted]}>
       <View style={styles.left}>
-        <Text style={styles.trackSlotNumber}>{index + 1}</Text>
+        {track.artworkUrl ? (
+          <Image source={{ uri: track.artworkUrl }} style={styles.trackSlotArtwork} contentFit="cover" />
+        ) : (
+          <View style={[styles.trackSlotArtwork, styles.trackSlotArtworkPlaceholder]}>
+            <Ionicons name="musical-note-outline" size={14} color={tokens.colors.textSecondary} />
+          </View>
+        )}
         <View style={styles.shapeCopy}>
           <Text style={styles.trackSlotTitle} numberOfLines={1}>{track.title}</Text>
           <View style={styles.statusLine}>
@@ -1188,9 +1194,13 @@ function ReleaseTrackManagementSection({
           {isPending ? (
             <View style={[styles.trackSlot, styles.rowPending]}>
               <View style={styles.left}>
-                <View style={styles.shapeIcon}>
-                  <Ionicons name="cloud-upload-outline" size={18} color={tokens.colors.accent} />
-                </View>
+                {release?.artworkUrl ? (
+                  <Image source={{ uri: release.artworkUrl }} style={styles.trackSlotArtwork} contentFit="cover" />
+                ) : (
+                  <View style={[styles.trackSlotArtwork, styles.trackSlotArtworkPlaceholder]}>
+                    <Ionicons name="musical-note-outline" size={14} color={tokens.colors.textSecondary} />
+                  </View>
+                )}
                 <View style={styles.shapeCopy}>
                   <Text style={styles.shapeTitle}>{pendingTrackTitle}</Text>
                   <View style={styles.statusLine}>
@@ -1690,7 +1700,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   trackSlot: {
-    minHeight: 40,
+    minHeight: 56,
     borderRadius: 10,
     backgroundColor: "rgba(255,255,255,0.025)",
     borderWidth: 1,
@@ -1698,13 +1708,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   trackSlotNumber: {
     width: 20,
     color: tokens.colors.textSecondary,
     fontSize: 12,
     fontWeight: "700",
+  },
+  trackSlotArtwork: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+  },
+  trackSlotArtworkPlaceholder: {
+    backgroundColor: tokens.colors.bgElevated,
+    alignItems: "center",
+    justifyContent: "center",
   },
   trackSlotTitle: {
     flex: 1,
