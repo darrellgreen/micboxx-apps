@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react-native";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -21,6 +22,15 @@ import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
 import { ConsoleAnalyticsAdapter } from "@/features/analytics/adapter";
 import { AccountPreferencesProvider } from "@/features/account/provider";
+
+Sentry.init({
+  dsn: env.sentryDsn,
+  sendDefaultPii: true,
+  enableLogs: true,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+});
 
 configureMicboxxApi({
   baseUrl: env.drupalBaseUrl,

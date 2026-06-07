@@ -49,7 +49,7 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "@reduxjs/toolkit": "^2.11.2",
-    "@sentry/react-native": "^8.7.0",
+    "@sentry/react-native": "^8.13.0",
     "expo": "~54.0.33",
     "expo-audio": "~1.1.1",
     "expo-auth-session": "~7.0.10",
