@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Share, StyleSheet, Text, View } from "react-native";
+import { Alert, Share, StyleSheet, Text, View } from "react-native";
 import { NestableScrollContainer } from "react-native-draggable-flatlist";
 import { tokens } from "@micboxx/theme";
 
 import type { DashboardAlbum } from "@/contracts/creator";
-import { getAlbumStatus } from "@/shared/api/creator-dashboard";
+import { getAlbumStatus, unpublishAlbum } from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
 import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx/ui";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
@@ -51,6 +51,40 @@ export default function AlbumDetailScreen() {
   const { showToast } = useToast();
   const unreadCount = useUnreadNotificationCount();
 
+  const handleUnpublish = async () => {
+    if (!album || !albumId) return;
+    setMenuVisible(false);
+    Alert.alert(
+      "Unpublish Release",
+      "This will take your release offline and move it back to draft. You can re-publish it at any time from the Release Builder.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Unpublish",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await unpublishAlbum(album.id);
+              showToast({
+                tone: "success",
+                title: "Release unpublished",
+                message: "Release unpublished successfully. This release is now a draft.",
+              });
+              router.dismissAll();
+              router.replace(`/create/release?draftAlbumId=${album.id}` as never);
+            } catch (err) {
+              showToast({
+                tone: "error",
+                title: "Unpublish failed",
+                message: err instanceof Error ? err.message : "Unable to unpublish release.",
+              });
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const menuItems = [
     {
       key: "edit",
@@ -68,6 +102,13 @@ export default function AlbumDetailScreen() {
       icon: "share-outline" as const,
       onPress: () => void handleShare(),
     },
+    ...(album?.status.canUnpublish ? [{
+      key: "unpublish",
+      label: "Unpublish Release",
+      icon: "arrow-down-circle-outline" as const,
+      tone: "destructive" as const,
+      onPress: () => void handleUnpublish(),
+    }] : []),
   ];
 
   const load = useCallback(async () => {

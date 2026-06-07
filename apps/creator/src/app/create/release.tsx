@@ -10,13 +10,14 @@ import {
   LayoutAnimation,
   Platform,
   Pressable,
+  ScrollView as RNScrollView,
   StyleSheet,
   Text,
   TextInput,
   UIManager,
   View,
 } from "react-native";
-import { NestableScrollContainer } from "react-native-draggable-flatlist";
+import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMediaPicker, type MediaAsset } from "@micboxx/media";
 
@@ -128,6 +129,7 @@ export default function CreateReleaseScreen() {
     step?: string;
   }>();
 
+  const scrollRef = useRef<RNScrollView>(null);
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [releaseType, setReleaseType] = useState<ReleaseType>("single");
   const [title, setTitle] = useState("");
@@ -564,9 +566,12 @@ export default function CreateReleaseScreen() {
       return;
     }
 
+    const isScheduled = savedRelease.status.releaseState === "scheduled";
     Alert.alert(
-      "Delete Draft",
-      "This will permanently delete the draft release and all of its attached tracks. This cannot be undone.",
+      isScheduled ? "Delete Scheduled Release" : "Delete Draft",
+      isScheduled
+        ? "This will permanently delete this scheduled release and all of its attached tracks. This cannot be undone."
+        : "This will permanently delete the draft release and all of its attached tracks. This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -575,7 +580,7 @@ export default function CreateReleaseScreen() {
           onPress: async () => {
             try {
               await deleteAlbum(savedRelease.id);
-              showToast({ tone: "success", title: "Draft deleted", message: "The release draft has been removed." });
+              showToast({ tone: "success", title: isScheduled ? "Release deleted" : "Draft deleted", message: "The release has been permanently removed." });
               router.replace("/(tabs)/catalog");
             } catch (err) {
               showToast({
@@ -590,19 +595,49 @@ export default function CreateReleaseScreen() {
     );
   }
 
+  const savedReleaseIsScheduled = savedRelease?.status.releaseState === "scheduled";
+
   const overflowSheetItems = [
     {
       key: "save",
-      label: "Save Draft",
+      label: savedReleaseIsScheduled ? "Save Changes" : "Save Draft",
       icon: "save-outline" as const,
       onPress: () => {
         setOverflowSheetVisible(false);
         void saveDraft();
       },
     },
-    ...(savedRelease && (savedRelease.status.releaseState ?? "draft") === "draft" ? [{
+    ...(savedReleaseIsScheduled ? [{
+      key: "publish-now",
+      label: "Publish Now",
+      icon: "radio-button-on-outline" as const,
+      onPress: async () => {
+        setOverflowSheetVisible(false);
+        if (!savedRelease) return;
+        setPublishing(true);
+        try {
+          const nextRelease = await publishAlbum(savedRelease.id);
+          setSavedRelease(nextRelease);
+          setHasUnsavedChanges(false);
+          await bootstrap.refetch();
+          showToast({
+            tone: "success",
+            title: "Release published",
+            message: `${nextRelease.title} is now live.`,
+          });
+          router.dismissAll();
+          router.replace(`/catalog/albums/${nextRelease.id}` as never);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unable to publish release.";
+          showToast({ tone: "error", title: "Publish failed", message });
+        } finally {
+          setPublishing(false);
+        }
+      },
+    }] : []),
+    ...(savedRelease && ["draft", "scheduled"].includes(savedRelease.status.releaseState ?? "draft") ? [{
       key: "delete",
-      label: "Delete Draft",
+      label: savedReleaseIsScheduled ? "Delete Scheduled Release" : "Delete Release",
       icon: "trash-outline" as const,
       tone: "destructive" as const,
       onPress: () => {
@@ -641,7 +676,8 @@ export default function CreateReleaseScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.root}
       >
-        <NestableScrollContainer
+        <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
@@ -768,6 +804,7 @@ export default function CreateReleaseScreen() {
               releaseType={releaseType}
               release={savedRelease}
               saving={saving}
+              outerScrollRef={scrollRef}
               highlightTrackId={params.highlightTrackId}
               pendingTrackTitle={params.uploadingTrackTitle}
               pendingTrackError={params.uploadError}
@@ -907,7 +944,7 @@ export default function CreateReleaseScreen() {
             onClose={() => setOverflowSheetVisible(false)}
           />
 
-        </NestableScrollContainer>
+        </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
           {validationError ? (
@@ -1081,12 +1118,14 @@ function ReleaseTrackManagementSection({
   highlightTrackId,
   pendingTrackTitle,
   pendingTrackError,
+  outerScrollRef,
   onAddTrack,
   onReleaseUpdate,
 }: {
   releaseType: ReleaseType;
   release: DashboardAlbum | null;
   saving: boolean;
+  outerScrollRef?: React.RefObject<RNScrollView>;
   highlightTrackId?: string;
   pendingTrackTitle?: string;
   pendingTrackError?: string;
@@ -1315,6 +1354,7 @@ function ReleaseTrackManagementSection({
         <DraggableTrackList
           tracks={tracks}
           reorderEnabled={trackCount > 1}
+          outerScrollRef={outerScrollRef}
           onReorder={handleReorder}
           onTrackRemove={handleRemoveTrack}
           highlightTrackId={highlightTrackId}
@@ -1355,6 +1395,7 @@ function ReleaseTrackManagementSection({
       <DraggableTrackList
         tracks={tracks}
         reorderEnabled={trackCount > 1}
+        outerScrollRef={outerScrollRef}
         onReorder={handleReorder}
         onTrackRemove={handleRemoveTrack}
         highlightTrackId={highlightTrackId}

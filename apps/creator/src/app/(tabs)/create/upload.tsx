@@ -317,22 +317,20 @@ export default function UploadTrackScreen() {
           )}
         </View>
         <View style={styles.progressBarTrack}>
-          {readinessItems.filter((r) => !r.optional).map((item, i, arr) => (
-            <View
-              key={item.key}
-              style={[
-                styles.progressBarSegment,
-                item.done && styles.progressBarSegmentDone,
-                i < arr.length - 1 && styles.progressBarSegmentGap,
-              ]}
-            />
-          ))}
+          <View
+            style={[
+              styles.progressBarFill,
+              {
+                width: `${(readinessItems.filter((r) => !r.optional && r.done).length / readinessItems.filter((r) => !r.optional).length) * 100}%`,
+              },
+            ]}
+          />
         </View>
         {requiredDone ? (
           <Text style={styles.progressCompleteHint}>Audio, artwork, and metadata all set.</Text>
         ) : (
           <View style={styles.progressItems}>
-            {readinessItems.map((item) => (
+            {readinessItems.filter((r) => !r.optional).map((item) => (
               <View key={item.key} style={styles.progressItem}>
                 <Ionicons
                   name={item.done ? "checkmark-circle" : "ellipse-outline"}
@@ -340,7 +338,7 @@ export default function UploadTrackScreen() {
                   color={item.done ? tokens.colors.accent : tokens.colors.textSecondary}
                 />
                 <Text style={[styles.progressItemLabel, item.done && styles.progressItemLabelDone]}>
-                  {item.label}{item.optional ? "*" : ""}
+                  {item.label}
                 </Text>
               </View>
             ))}
@@ -731,25 +729,19 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSecondary,
   },
   progressBarTrack: {
-    flexDirection: "row",
     height: 4,
     borderRadius: 2,
     overflow: "hidden",
-    gap: 3,
-  },
-  progressBarSegment: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
     backgroundColor: tokens.colors.bgElevated,
   },
-  progressBarSegmentDone: {
+  progressBarFill: {
+    height: 4,
+    borderRadius: 2,
     backgroundColor: tokens.colors.accent,
   },
-  progressBarSegmentGap: {},
   progressItems: {
     flexDirection: "row",
-    gap: 14,
+    justifyContent: "space-between",
   },
   progressItem: {
     flexDirection: "row",

@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import {
-  NestableDraggableFlatList,
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import DraggableFlatList, {
   type RenderItemParams,
   type DragEndParams,
 } from "react-native-draggable-flatlist";
@@ -20,6 +19,7 @@ export interface DraggableTrackItem {
 interface DraggableTrackListProps {
   tracks: DashboardAlbumTrack[];
   reorderEnabled: boolean;
+  outerScrollRef?: React.RefObject<ScrollView>;
   onTrackPress?: (trackId: number) => void;
   onTrackRemove?: (trackId: number) => void;
   onReorder: (reorderedTracks: DashboardAlbumTrack[]) => void;
@@ -43,6 +43,7 @@ function resolveTrackStatus(track: DashboardAlbumTrack): {
 export function DraggableTrackList({
   tracks,
   reorderEnabled,
+  outerScrollRef,
   onTrackPress,
   onTrackRemove,
   onReorder,
@@ -73,6 +74,7 @@ export function DraggableTrackList({
 
       return (
         <View
+          collapsable={false}
           style={[
             styles.row,
             isLast && styles.rowLast,
@@ -191,11 +193,14 @@ export function DraggableTrackList({
             </View>
           ) : null}
 
-          <NestableDraggableFlatList
+          <DraggableFlatList
             data={localTracks}
             keyExtractor={(item) => String(item.trackId)}
             renderItem={renderItem}
             onDragEnd={handleDragEnd}
+            onDragBegin={() => outerScrollRef?.current?.setNativeProps({ scrollEnabled: false })}
+            onRelease={() => outerScrollRef?.current?.setNativeProps({ scrollEnabled: true })}
+            scrollEnabled={false}
             dragItemOverflow
             ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
