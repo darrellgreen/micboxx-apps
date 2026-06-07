@@ -26,7 +26,12 @@ export function ChipTabs({
         return (
           <AnimatedPressable
             key={option.key}
-            onPress={() => onChange(option.key)}
+            disabled={active}
+            onPress={() => {
+              if (!active) {
+                onChange(option.key);
+              }
+            }}
             haptic="selection"
             style={[styles.chip, active && styles.chipActive]}
           >

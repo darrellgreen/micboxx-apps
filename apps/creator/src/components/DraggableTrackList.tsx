@@ -19,7 +19,7 @@ export interface DraggableTrackItem {
 interface DraggableTrackListProps {
   tracks: DashboardAlbumTrack[];
   reorderEnabled: boolean;
-  outerScrollRef?: React.RefObject<ScrollView>;
+  outerScrollRef?: React.RefObject<ScrollView | null>;
   onTrackPress?: (trackId: number) => void;
   onTrackRemove?: (trackId: number) => void;
   onReorder: (reorderedTracks: DashboardAlbumTrack[]) => void;

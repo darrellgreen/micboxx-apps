@@ -48,7 +48,7 @@ function formatDate(isoString: string | null): string {
 
 export default function TracksListScreen() {
   const params = useLocalSearchParams<{ filter?: string }>();
-  const filter: TrackFilter =
+  const initialFilter: TrackFilter =
     params.filter === "draft" ||
     params.filter === "scheduled" ||
     params.filter === "published" ||
@@ -59,6 +59,7 @@ export default function TracksListScreen() {
   const [items, setItems] = useState<DashboardTrackSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<TrackFilter>(initialFilter);
   
   const unreadCount = useUnreadNotificationCount();
 
@@ -159,9 +160,9 @@ export default function TracksListScreen() {
   };
 
   const handleFilterChange = (val: TrackFilter) => {
-    router.replace(
-      val === "all" ? "/catalog/tracks" : `/catalog/tracks?filter=${val}`,
-    );
+    if (val !== filter) {
+      setFilter(val);
+    }
   };
 
   return (
@@ -184,6 +185,7 @@ export default function TracksListScreen() {
             return (
               <AnimatedPressable
                 key={opt.key}
+                disabled={isActive}
                 style={[styles.filterChip, isActive && styles.filterChipActive]}
                 onPress={() => handleFilterChange(opt.key as TrackFilter)}
               >

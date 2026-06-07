@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View, type StyleProp, type TextStyle } from "react-native";
 
 import { tokens } from "@micboxx/theme";
 import {
@@ -31,12 +31,14 @@ export function TextField({
   placeholder,
   multiline,
   keyboardType,
+  style,
 }: {
   value: string;
   onChangeText: (value: string) => void;
   placeholder?: string;
   multiline?: boolean;
   keyboardType?: "default" | "numeric" | "email-address" | "url";
+  style?: StyleProp<TextStyle>;
 }) {
   return (
     <TextInput
@@ -46,7 +48,7 @@ export function TextField({
       placeholderTextColor={tokens.colors.textMuted}
       multiline={multiline}
       keyboardType={keyboardType}
-      style={[styles.input, multiline && styles.inputMultiline]}
+      style={[styles.input, multiline && styles.inputMultiline, style]}
     />
   );
 }

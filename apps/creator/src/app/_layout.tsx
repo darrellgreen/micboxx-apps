@@ -128,7 +128,7 @@ export default function RootLayout() {
                         options={{ headerShown: false }}
                       />
                       <Stack.Screen
-                        name="audience"
+                        name="audience/index"
                         options={{
                           headerShown: false,
                           animation: "slide_from_right",
@@ -168,7 +168,7 @@ export default function RootLayout() {
                         }}
                       />
                       <Stack.Screen
-                        name="catalog/tracks/[trackId]"
+                        name="catalog/tracks/[trackId]/index"
                         options={{
                           headerShown: false,
                           animation: "slide_from_right",
@@ -188,7 +188,7 @@ export default function RootLayout() {
                         }}
                       />
                       <Stack.Screen
-                        name="catalog/albums/[albumId]"
+                        name="catalog/albums/[albumId]/index"
                         options={{
                           headerShown: false,
                           animation: "slide_from_right",

@@ -13,15 +13,15 @@ import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
 import { useAccountPreferences } from "@/features/account/provider";
 
-import { AlbumHeroCard } from "./[albumId]/_components/AlbumHeroCard";
-import { AlbumPerformanceSnapshot } from "./[albumId]/_components/AlbumPerformanceSnapshot";
-import { AlbumTabs } from "./[albumId]/_components/AlbumTabs";
-import { AlbumPerformanceOverviewChart } from "./[albumId]/_components/AlbumPerformanceOverviewChart";
-import { AlbumAudienceSummaryCards } from "./[albumId]/_components/AlbumAudienceSummaryCards";
-import { AlbumReleaseHealthPanel } from "./[albumId]/_components/AlbumReleaseHealthPanel";
-import { AlbumReleaseInfoPanel } from "./[albumId]/_components/AlbumReleaseInfoPanel";
-import { AlbumTrackPreview } from "./[albumId]/_components/AlbumTrackPreview";
-import { AlbumFullTrackList } from "./[albumId]/_components/AlbumFullTrackList";
+import { AlbumAudienceSummaryCards } from "@/features/catalog/album-detail-components/AlbumAudienceSummaryCards";
+import { AlbumFullTrackList } from "@/features/catalog/album-detail-components/AlbumFullTrackList";
+import { AlbumHeroCard } from "@/features/catalog/album-detail-components/AlbumHeroCard";
+import { AlbumPerformanceOverviewChart } from "@/features/catalog/album-detail-components/AlbumPerformanceOverviewChart";
+import { AlbumPerformanceSnapshot } from "@/features/catalog/album-detail-components/AlbumPerformanceSnapshot";
+import { AlbumReleaseHealthPanel } from "@/features/catalog/album-detail-components/AlbumReleaseHealthPanel";
+import { AlbumReleaseInfoPanel } from "@/features/catalog/album-detail-components/AlbumReleaseInfoPanel";
+import { AlbumTabs } from "@/features/catalog/album-detail-components/AlbumTabs";
+import { AlbumTrackPreview } from "@/features/catalog/album-detail-components/AlbumTrackPreview";
 
 function ComingSoonStub({ tab }: { tab: string }) {
   const title = tab.charAt(0).toUpperCase() + tab.slice(1);
@@ -50,6 +50,11 @@ export default function AlbumDetailScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const { showToast } = useToast();
   const unreadCount = useUnreadNotificationCount();
+
+  const handleChangeTab = useCallback((nextTab: string) => {
+    setMenuVisible(false);
+    setActiveTab(nextTab);
+  }, []);
 
   const handleUnpublish = async () => {
     if (!album || !albumId) return;
@@ -221,7 +226,7 @@ export default function AlbumDetailScreen() {
           {/* Tabs Selector */}
           <AlbumTabs
             activeTab={activeTab}
-            onChangeTab={setActiveTab}
+            onChangeTab={handleChangeTab}
           />
           
           {/* Tab active screen rendering */}
@@ -242,7 +247,7 @@ export default function AlbumDetailScreen() {
               {/* Tracks preview */}
               <AlbumTrackPreview
                 album={album}
-                onViewAll={() => setActiveTab("tracks")}
+                onViewAll={() => handleChangeTab("tracks")}
               />
             </>
           ) : activeTab === "tracks" ? (

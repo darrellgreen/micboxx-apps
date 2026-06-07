@@ -39,7 +39,7 @@ function formatDate(isoString: string | null): string {
 
 export default function AlbumsListScreen() {
   const params = useLocalSearchParams<{ filter?: string }>();
-  const filter: AlbumFilter =
+  const initialFilter: AlbumFilter =
     params.filter === "draft" ||
     params.filter === "scheduled" ||
     params.filter === "published"
@@ -49,6 +49,7 @@ export default function AlbumsListScreen() {
   const [items, setItems] = useState<DashboardAlbumSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<AlbumFilter>(initialFilter);
 
   const unreadCount = useUnreadNotificationCount();
 
@@ -142,9 +143,9 @@ export default function AlbumsListScreen() {
   };
 
   const handleFilterChange = (val: AlbumFilter) => {
-    router.replace(
-      val === "all" ? "/catalog/albums" : `/catalog/albums?filter=${val}`,
-    );
+    if (val !== filter) {
+      setFilter(val);
+    }
   };
 
   return (
@@ -178,6 +179,7 @@ export default function AlbumsListScreen() {
             return (
               <AnimatedPressable
                 key={opt.key}
+                disabled={isActive}
                 style={[styles.filterChip, isActive && styles.filterChipActive]}
                 onPress={() => handleFilterChange(opt.key as AlbumFilter)}
               >

@@ -19,13 +19,13 @@ import { Screen, AnimatedPressable, BottomActionSheet, useToast } from "@micboxx
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
 
-import { TrackHeroCard } from "./[trackId]/_components/TrackHeroCard";
-import { PerformanceSnapshot } from "./[trackId]/_components/PerformanceSnapshot";
-import { TrackTabs } from "./[trackId]/_components/TrackTabs";
-import { PerformanceOverviewChart } from "./[trackId]/_components/PerformanceOverviewChart";
-import { AudienceSummaryCards } from "./[trackId]/_components/AudienceSummaryCards";
-import { TrackStatusPanel } from "./[trackId]/_components/TrackStatusPanel";
-import { TrackPromotionSheet } from "./[trackId]/_components/TrackPromotionSheet";
+import { AudienceSummaryCards } from "@/features/catalog/track-detail-components/AudienceSummaryCards";
+import { PerformanceOverviewChart } from "@/features/catalog/track-detail-components/PerformanceOverviewChart";
+import { PerformanceSnapshot } from "@/features/catalog/track-detail-components/PerformanceSnapshot";
+import { TrackHeroCard } from "@/features/catalog/track-detail-components/TrackHeroCard";
+import { TrackPromotionSheet } from "@/features/catalog/track-detail-components/TrackPromotionSheet";
+import { TrackStatusPanel } from "@/features/catalog/track-detail-components/TrackStatusPanel";
+import { TrackTabs } from "@/features/catalog/track-detail-components/TrackTabs";
 
 function ComingSoonStub({ tab }: { tab: string }) {
   const title = tab.charAt(0).toUpperCase() + tab.slice(1);
@@ -80,6 +80,12 @@ export default function TrackDetailScreen() {
   const [promotionSheetVisible, setPromotionSheetVisible] = useState(false);
   const { showToast } = useToast();
   const unreadCount = useUnreadNotificationCount();
+
+  const handleChangeTab = useCallback((nextTab: string) => {
+    setMenuVisible(false);
+    setPromotionSheetVisible(false);
+    setActiveTab(nextTab);
+  }, []);
 
   const menuItems = [
     {
@@ -285,7 +291,7 @@ export default function TrackDetailScreen() {
           
           <PerformanceSnapshot track={track} />
           
-          <TrackTabs activeTab={activeTab} onChangeTab={setActiveTab} />
+          <TrackTabs activeTab={activeTab} onChangeTab={handleChangeTab} />
           
           {activeTab === "overview" ? (
             <>

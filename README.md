@@ -27,10 +27,10 @@ micboxx-apps/
 npm install
 
 # Start the consumer app
-npm run dev:consumer
+npm run start:consumer
 
 # Start the creator app
-npm run dev:creator
+npm run start:creator
 ```
 
 ## Requirements
@@ -53,3 +53,32 @@ npm run <script> --workspace=@micboxx/creator
 # Run across all workspaces
 npm run <script> --workspaces --if-present
 ```
+
+## Production Builds
+
+Production builds are run through EAS from the app directory, with a root
+wrapper that typechecks the target workspace first and pins the production
+profile/platform explicitly.
+
+```bash
+# Consumer app
+npm run build:consumer:ios
+npm run build:consumer:android
+npm run build:consumer
+
+# Creator app
+npm run build:creator:ios
+npm run build:creator:android
+npm run build:creator
+```
+
+The platform-specific commands are safest for store release work. The commands
+without a platform suffix use EAS `--platform all`.
+
+Before release, make sure each app has production EAS environment values for:
+
+- `EXPO_PUBLIC_DRUPAL_BASE_URL`
+- `EXPO_PUBLIC_DRUPAL_OAUTH_CLIENT_ID`
+- `EXPO_PUBLIC_DRUPAL_OAUTH_SCOPE`
+- any app-specific Firebase, Sentry, LiveKit, or OAuth callback secrets managed
+  outside this repository

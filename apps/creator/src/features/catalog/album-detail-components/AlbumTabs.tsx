@@ -15,6 +15,14 @@ const TABS = [
 ];
 
 export function AlbumTabs({ activeTab, onChangeTab }: AlbumTabsProps) {
+  function handlePress(tab: (typeof TABS)[number]) {
+    if (tab.disabled || tab.id === activeTab) {
+      return;
+    }
+
+    onChangeTab(tab.id);
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -27,7 +35,8 @@ export function AlbumTabs({ activeTab, onChangeTab }: AlbumTabsProps) {
           return (
             <Pressable
               key={tab.id}
-              onPress={() => onChangeTab(tab.id)}
+              disabled={tab.disabled || isActive}
+              onPress={() => handlePress(tab)}
               style={[
                 styles.tab,
                 isActive && styles.activeTab,

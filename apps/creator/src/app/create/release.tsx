@@ -1125,7 +1125,7 @@ function ReleaseTrackManagementSection({
   releaseType: ReleaseType;
   release: DashboardAlbum | null;
   saving: boolean;
-  outerScrollRef?: React.RefObject<RNScrollView>;
+  outerScrollRef?: React.RefObject<RNScrollView | null>;
   highlightTrackId?: string;
   pendingTrackTitle?: string;
   pendingTrackError?: string;

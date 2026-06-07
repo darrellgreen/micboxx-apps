@@ -16,6 +16,14 @@ const TABS = [
 ];
 
 export function TrackTabs({ activeTab, onChangeTab }: TrackTabsProps) {
+  function handlePress(tab: (typeof TABS)[number]) {
+    if (tab.disabled || tab.id === activeTab) {
+      return;
+    }
+
+    onChangeTab(tab.id);
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -28,7 +36,8 @@ export function TrackTabs({ activeTab, onChangeTab }: TrackTabsProps) {
           return (
             <Pressable
               key={tab.id}
-              onPress={() => onChangeTab(tab.id)}
+              disabled={tab.disabled || isActive}
+              onPress={() => handlePress(tab)}
               style={[
                 styles.tab,
                 isActive && styles.activeTab,
