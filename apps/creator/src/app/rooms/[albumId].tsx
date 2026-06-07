@@ -6,11 +6,15 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Animated,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     View,
+    useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@micboxx/ui";
 import {
@@ -44,8 +48,8 @@ import type {
 } from "@/features/rooms/types";
 import { formatRelativeTime } from "@micboxx/api";
 import { CreatorApiError } from "@/shared/api/creator-dashboard";
-import { KeyValueRow, Panel, PillButton } from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
+import { Panel, PillButton } from "@/shared/ui/layout";
+import { AppHeader, BottomSheetSurface } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,8 +121,30 @@ export default function RoomManagementScreen() {
   const [pollDraftQuestion, setPollDraftQuestion] = useState("");
   const [pollDraftOptions, setPollDraftOptions] = useState<string[]>(createDefaultPollDraftOptions);
   const [activeControl, setActiveControl] = useState<RoomControlMode>("live");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const goLiveAttemptRef = useRef(0);
   const pollDraftHydratedRoomRef = useRef<string | null>(null);
+  const { width: windowWidth } = useWindowDimensions();
+
+  // Animated values
+  const sliderAnim = useRef(new Animated.Value(0)).current;
+
+  const pulseDotAnim = useRef(new Animated.Value(1)).current;
+
+  const controlModes = useRef<RoomControlMode[]>(["live", "qa", "poll", "support"]).current;
+
+  const handleSetActiveControl = useCallback((mode: RoomControlMode) => {
+    const idx = controlModes.indexOf(mode);
+    Animated.spring(sliderAnim, {
+      toValue: idx,
+      useNativeDriver: true,
+      tension: 260,
+      friction: 26,
+    }).start();
+    setActiveControl(mode);
+    setSheetOpen(true);
+  }, [controlModes, sliderAnim]);
+
 
   const roomId = entry?.room.id ?? null;
   const canonicalRoomId = roomId == null ? null : String(roomId);
@@ -174,6 +200,22 @@ export default function RoomManagementScreen() {
   const isBusy = busyAction !== null;
   const listenerCount = runtime.presenceSummary.activeCount;
   const listeners = runtime.presenceSummary.topAvatars;
+
+  // Pulsing dot for live broadcast
+  useEffect(() => {
+    if (!activeLiveVideoMoment) {
+      pulseDotAnim.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseDotAnim, { toValue: 0.3, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulseDotAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [activeLiveVideoMoment, pulseDotAnim]);
 
   // ── Data loading ────────────────────────────────────────────────────────
 
@@ -646,6 +688,10 @@ export default function RoomManagementScreen() {
     { mode: "support", label: "Support", icon: "sparkles-outline" },
   ];
 
+  // Compute strip width for sliding indicator
+  // 4 tabs, gap: 6 between, 16px horizontal padding each side
+  // We'll measure via onLayout instead — use % fallback: each tab is 25% of strip
+
   const qnaQuestions = qnaSnapshot?.questions.slice(0, 3) ?? [];
   const pollOptions = pollSnapshot?.options.slice(0, 4) ?? [];
 
@@ -664,14 +710,12 @@ export default function RoomManagementScreen() {
 
   if (loading) {
     return (
-      <Screen
-        header={<AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
-      >
-        <Panel>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />
+        <View style={styles.centerState}>
           <ActivityIndicator color={tokens.colors.accent} />
-        </Panel>
-      </Screen>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -679,61 +723,74 @@ export default function RoomManagementScreen() {
 
   if (!detail || !entry) {
     return (
-      <Screen
-        header={<AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
-      >
-        <View>
-          <PillButton label="Back" onPress={() => router.back()} />
-        </View>
-        {error ? <Panel title="Something went wrong" description={error} /> : null}
-        <PillButton label="Try again" tone="accent" onPress={() => void load()} />
-      </Screen>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />
+        <ScrollView contentContainerStyle={styles.screenContent}>
+          <View>
+            <PillButton label="Back" onPress={() => router.back()} />
+          </View>
+          {error ? <Panel title="Something went wrong" description={error} /> : null}
+          <PillButton label="Try again" tone="accent" onPress={() => void load()} />
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   // ── Production Room screen ──────────────────────────────────────────────
 
   return (
-    <Screen
-      header={<AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />}
-      contentContainerStyle={styles.screenContent}
-    >
-      {/* ── Notices & errors ─────────────────────────────────────────── */}
-      {error ? <Panel title="Something went wrong" description={error} /> : null}
-      {notice ? <Panel title="Room updated" description={notice} /> : null}
-
-      <View style={styles.heroCard}>
-        <LinearGradient
-          colors={[
-            "rgba(0, 0, 0, 0.18)",
-            "rgba(7, 10, 16, 0.72)",
-            "rgba(7, 10, 16, 0.96)",
-          ]}
-          style={StyleSheet.absoluteFillObject}
-        />
-        {detail.album.artworkUrl ? (
+    <View style={styles.rootContainer}>
+      {/* ── Full-screen blurred artwork background (truly behind everything) ── */}
+      {detail.album.artworkUrl ? (
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
           <Image
             source={{ uri: detail.album.artworkUrl }}
             style={StyleSheet.absoluteFillObject}
             contentFit="cover"
-            transition={220}
+            transition={400}
           />
-        ) : null}
-        <BlurView
-          intensity={52}
-          tint="dark"
-          experimentalBlurMethod="dimezisBlurView"
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={styles.heroGlow} />
+          <BlurView
+            intensity={72}
+            tint="dark"
+            experimentalBlurMethod="dimezisBlurView"
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={styles.fullscreenBgOverlay} />
+          <LinearGradient
+            colors={["transparent", tokens.colors.canvas]}
+            locations={[0.45, 1]}
+            style={styles.fullscreenBgFade}
+          />
+        </View>
+      ) : (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: tokens.colors.canvas }]} pointerEvents="none" />
+      )}
+
+      <SafeAreaView style={styles.safeAreaTransparent} edges={["top"]}>
+        <AppHeader variant="detail" title="Room" fallbackRoute="/(tabs)/rooms" />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.screenContent}
+          showsVerticalScrollIndicator={false}
+        >
+
+      {/* ── Notices & errors ─────────────────────────────────────────── */}
+      {error ? <Panel title="Something went wrong" description={error} /> : null}
+      {notice ? <Panel title="Room updated" description={notice} /> : null}
+
+      {/* ── Hero card ────────────────────────────────────────────────── */}
+      <View style={styles.heroCard}>
         <View style={styles.heroContent}>
+          {/* Status badges */}
           <View style={styles.heroBadgeRow}>
             <View style={[styles.heroBadge, activeLiveVideoMoment && styles.heroBadgeLive]}>
-              <View
+              <Animated.View
                 style={[
                   styles.heroBadgeDot,
-                  { backgroundColor: activeLiveVideoMoment ? tokens.colors.success : tokens.colors.accent },
+                  {
+                    backgroundColor: activeLiveVideoMoment ? tokens.colors.success : tokens.colors.accent,
+                    opacity: pulseDotAnim,
+                  },
                 ]}
               />
               <Text style={styles.heroBadgeLabel}>
@@ -746,6 +803,7 @@ export default function RoomManagementScreen() {
             </View>
           </View>
 
+          {/* Artwork */}
           <View style={styles.heroArtworkFrame}>
             <View style={styles.heroArtworkInner}>
               {detail.album.artworkUrl ? (
@@ -771,40 +829,74 @@ export default function RoomManagementScreen() {
             {activeLiveVideoMoment ? "Room is live" : "Room is open"}
           </Text>
           <Text style={styles.heroDescription}>
-            {listenerCount} listener{listenerCount === 1 ? "" : "s"} here · {hasActiveMoment ? "Moment running now" : "Choose a moment to start"}
+            {listenerCount} listener{listenerCount === 1 ? "" : "s"} here
+            {" · "}
+            {hasActiveMoment ? "Moment running now" : "Choose a moment to start"}
           </Text>
         </View>
       </View>
 
-      <View style={styles.controlStrip}>
-        {controlTabs.map((tab) => (
-          <AnimatedPressable
-            key={tab.mode}
-            style={[
-              styles.controlTab,
-              activeControl === tab.mode && styles.controlTabActive,
-            ]}
-            onPress={() => setActiveControl(tab.mode)}
-            haptic="light"
-          >
-            <Ionicons
-              name={tab.icon}
-              size={18}
-              color={activeControl === tab.mode ? tokens.colors.bgInk : tokens.colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.controlTabLabel,
-                activeControl === tab.mode && styles.controlTabLabelActive,
-              ]}
+      {/* ── Premium mode buttons with sliding indicator ─────────────── */}
+      <View
+        style={styles.controlStrip}
+        onLayout={(e) => {
+          // no-op; we use percentage-based positioning
+          void e;
+        }}
+      >
+        {/* Sliding active pill */}
+        <Animated.View
+          style={[
+            styles.controlSlider,
+            {
+              transform: [
+                {
+                  translateX: sliderAnim.interpolate({
+                    inputRange: [0, 1, 2, 3],
+                    outputRange: [0, 1, 2, 3].map((i) => {
+                      // Total strip width minus 2*8 padding, divided by 4, times index, plus gap offsets
+                      const stripWidth = windowWidth - 32; // 16px padding each side
+                      const tabWidth = (stripWidth - 18) / 4; // 3 gaps of 6px each
+                      return i * (tabWidth + 6);
+                    }),
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+        {controlTabs.map((tab) => {
+          const isActive = activeControl === tab.mode;
+          return (
+            <AnimatedPressable
+              key={tab.mode}
+              style={styles.controlTab}
+              onPress={() => handleSetActiveControl(tab.mode)}
+              haptic="light"
             >
-              {tab.label}
-            </Text>
-          </AnimatedPressable>
-        ))}
+              <Ionicons
+                name={tab.icon}
+                size={18}
+                color={isActive ? "#fff" : tokens.colors.textMuted}
+              />
+              <Text
+                style={[
+                  styles.controlTabLabel,
+                  isActive && styles.controlTabLabelActive,
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </AnimatedPressable>
+          );
+        })}
       </View>
 
-      <View style={styles.stageCard}>
+      <BottomSheetSurface
+        visible={sheetOpen}
+        onDismiss={() => setSheetOpen(false)}
+        scrollable
+      >
         {activeControl === "live" ? (
           <>
             <View style={styles.stageHeader}>
@@ -943,35 +1035,60 @@ export default function RoomManagementScreen() {
                 ))
               ) : (
                 <View style={styles.emptyStageCard}>
-                  <Ionicons name="chatbubbles-outline" size={24} color={tokens.colors.textMuted} />
-                  <Text style={styles.emptyStageText}>No fan questions yet. Keep Q&A open to collect listener submissions.</Text>
+                  <Ionicons name="chatbubbles-outline" size={28} color={tokens.colors.textMuted} />
+                  <Text style={styles.emptyStageText}>
+                    {activeQnaMoment
+                      ? "Waiting for fan questions — they'll appear here as they come in."
+                      : "Waiting for fan questions — Start Q&A when you're ready to answer live."}
+                  </Text>
                 </View>
               )}
             </View>
 
             <View style={styles.liveActions}>
               {activeQnaMoment ? (
-                <AnimatedPressable
-                  style={[styles.ctaButton, styles.ctaEndLive, (isBusy || !canManageInteractiveMoments) && styles.ctaDisabled]}
-                  onPress={handleCloseQna}
-                  disabled={isBusy || !canManageInteractiveMoments}
-                  haptic="light"
-                >
-                  <Ionicons name="stop-circle-outline" size={18} color={tokens.colors.textPrimary} />
-                  <Text style={styles.ctaLabel}>{busyAction === "qna-close" ? "Closing..." : "Close Q&A"}</Text>
-                </AnimatedPressable>
+                <>
+                  <AnimatedPressable
+                    style={[styles.ctaButton, styles.ctaEndLive, (isBusy || !canManageInteractiveMoments) && styles.ctaDisabled]}
+                    onPress={handleCloseQna}
+                    disabled={isBusy || !canManageInteractiveMoments}
+                    haptic="light"
+                  >
+                    <Ionicons name="stop-circle-outline" size={18} color={tokens.colors.textPrimary} />
+                    <Text style={styles.ctaLabel}>{busyAction === "qna-close" ? "Closing..." : "Close Q&A"}</Text>
+                  </AnimatedPressable>
+                  <AnimatedPressable
+                    style={[styles.ctaButton, styles.ctaGhost, toolsLoading && styles.ctaDisabled]}
+                    onPress={() => void refreshRoomTools()}
+                    disabled={toolsLoading}
+                    haptic="light"
+                  >
+                    <Ionicons name="refresh-outline" size={16} color={tokens.colors.textSecondary} />
+                    <Text style={styles.ctaGhostLabel}>{toolsLoading ? "Checking..." : "Check for questions"}</Text>
+                  </AnimatedPressable>
+                </>
               ) : (
-                <AnimatedPressable
-                  style={[styles.ctaButton, styles.ctaMoment, (!canManageInteractiveMoments || isBusy || hasActiveMoment) && styles.ctaDisabled]}
-                  onPress={handleStartQna}
-                  disabled={!canManageInteractiveMoments || isBusy || hasActiveMoment}
-                  haptic="light"
-                >
-                  <Ionicons name="play-circle-outline" size={18} color={tokens.colors.textPrimary} />
-                  <Text style={styles.ctaLabel}>{busyAction === "qna" ? "Starting..." : "Start Q&A"}</Text>
-                </AnimatedPressable>
+                <>
+                  <AnimatedPressable
+                    style={[styles.ctaButton, styles.ctaHero, (!canManageInteractiveMoments || isBusy || hasActiveMoment) && styles.ctaDisabled]}
+                    onPress={handleStartQna}
+                    disabled={!canManageInteractiveMoments || isBusy || hasActiveMoment}
+                    haptic="light"
+                  >
+                    <Ionicons name="play-circle-outline" size={20} color="#fff" />
+                    <Text style={styles.ctaHeroLabel}>{busyAction === "qna" ? "Starting..." : "Start Q&A"}</Text>
+                  </AnimatedPressable>
+                  <AnimatedPressable
+                    style={[styles.ctaButton, styles.ctaGhost, toolsLoading && styles.ctaDisabled]}
+                    onPress={() => void refreshRoomTools()}
+                    disabled={toolsLoading}
+                    haptic="light"
+                  >
+                    <Ionicons name="refresh-outline" size={16} color={tokens.colors.textSecondary} />
+                    <Text style={styles.ctaGhostLabel}>{toolsLoading ? "Checking..." : "Check for questions"}</Text>
+                  </AnimatedPressable>
+                </>
               )}
-              <PillButton label={toolsLoading ? "Refreshing..." : "Refresh Q&A"} tone="subtle" onPress={() => void refreshRoomTools()} disabled={toolsLoading} />
             </View>
           </>
         ) : activeControl === "poll" ? (
@@ -1150,7 +1267,7 @@ export default function RoomManagementScreen() {
             ) : null}
           </>
         )}
-      </View>
+      </BottomSheetSurface>
 
       <View style={styles.audienceCard}>
         <View style={styles.audienceHeaderRow}>
@@ -1200,12 +1317,10 @@ export default function RoomManagementScreen() {
           </View>
         )}
       </View>
-      <Panel title="Troubleshooting">
-        <KeyValueRow label="Album ID" value={String(detail.album.id)} />
-        <KeyValueRow label="Connection ID" value={canonicalRoomId ?? "Unknown"} />
-        <KeyValueRow label="Transport layer" value="LiveKit Mesh + Firebase RTDB" />
-      </Panel>
-    </Screen>
+
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -1214,68 +1329,55 @@ export default function RoomManagementScreen() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  // ── Root layout ─────────────────────────────────────────────────────────
+  rootContainer: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: tokens.colors.canvas,
+  },
+  safeAreaTransparent: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+  scroll: {
+    flex: 1,
+  },
+  centerState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   screenContent: {
     paddingHorizontal: 16,
-    gap: 12,
+    paddingTop: 0,
+    paddingBottom: 160,
+    gap: 6,
   },
-  // ── Status bar ──────────────────────────────────────────────────────────
-  statusBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 6,
+
+  // ── Full-screen artwork background ──────────────────────────────────────
+  fullscreenBgOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(7, 10, 16, 0.76)",
   },
-  statusIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
-    color: tokens.colors.accent,
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
-  statusTextLive: {
-    color: tokens.colors.danger,
-  },
-  listenerBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: tokens.colors.bgElevated,
-    borderRadius: tokens.radii.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  listenerBadgeText: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "700",
+  fullscreenBgFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "50%",
   },
 
   // ── Hero / control surface ─────────────────────────────────────────────
   heroCard: {
-    borderRadius: 28,
-    overflow: "hidden",
-    minHeight: 420,
-    backgroundColor: tokens.colors.bgInk,
+    minHeight: 360,
     justifyContent: "center",
-  },
-  heroGlow: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.18)",
   },
   heroContent: {
     paddingHorizontal: 18,
     paddingTop: 22,
-    paddingBottom: 26,
+    paddingBottom: 8,
     alignItems: "center",
     gap: 12,
   },
@@ -1362,35 +1464,51 @@ const styles = StyleSheet.create({
   },
   controlStrip: {
     flexDirection: "row",
-    gap: 8,
+    gap: 6,
+    backgroundColor: "rgba(10,16,26,0.72)",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    padding: 5,
+    position: "relative",
+  },
+  controlSlider: {
+    position: "absolute",
+    top: 5,
+    left: 5,
+    // width is (100% - 10px padding - 18px gaps) / 4 — set dynamically but we use approximate
+    width: "23.5%" as any,
+    bottom: 5,
+    borderRadius: 13,
+    backgroundColor: tokens.colors.accent,
+    shadowColor: tokens.colors.accent,
+    shadowOpacity: 0.55,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
   },
   controlTab: {
     flex: 1,
-    minHeight: 56,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-    backgroundColor: "rgba(13,20,30,0.45)",
+    minHeight: 50,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
+    zIndex: 1,
   },
-  controlTabActive: {
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderColor: "rgba(0,179,166,0.55)",
-  },
+  controlTabActive: {},
   controlTabLabel: {
-    color: tokens.colors.textSecondary,
+    color: tokens.colors.textMuted,
     fontSize: 11,
     fontWeight: "800",
   },
   controlTabLabelActive: {
-    color: tokens.colors.textPrimary,
+    color: "#fff",
   },
 
   // ── Stage card ──────────────────────────────────────────────────────────
   stageCard: {
-    marginTop: -10,
+    marginTop: 10,
     backgroundColor: "rgba(10,16,24,0.88)",
     borderRadius: tokens.radiusSystem.container,
     borderWidth: 1,
@@ -1456,6 +1574,31 @@ const styles = StyleSheet.create({
   },
   ctaMoment: {
     backgroundColor: tokens.colors.bgElevated,
+  },
+  ctaHero: {
+    backgroundColor: tokens.colors.accent,
+    shadowColor: tokens.colors.accent,
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  ctaHeroLabel: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  ctaGhost: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+    flex: 0.7,
+  },
+  ctaGhostLabel: {
+    color: tokens.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
   },
   ctaDisabled: {
     opacity: 0.4,
