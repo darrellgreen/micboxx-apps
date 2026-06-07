@@ -1,19 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { StyleSheet, Text, View, ScrollView } from "react-native";
-import Svg, { Circle, Path } from "react-native-svg";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { RefreshControl, StyleSheet, Text, View, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { DashboardAlbumSummary } from "@/contracts/creator";
 import { getMyAlbums } from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
-import { Screen, AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable, AppBackdrop, Skeleton } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
 import { useUnreadNotificationCount } from "@/features/social/hooks/useUnreadNotificationCount";
 
 type AlbumFilter = "all" | "draft" | "scheduled" | "published";
+
+let albumsListCache: DashboardAlbumSummary[] | null = null;
+let albumsListSignature = "";
 
 function matchesFilter(album: DashboardAlbumSummary, filter: AlbumFilter) {
   if (filter === "draft") return album.status.releaseState === "draft";
@@ -37,6 +40,50 @@ function formatDate(isoString: string | null): string {
   }
 }
 
+function getAlbumsListSignature(items: DashboardAlbumSummary[]) {
+  return items
+    .map((item) => [
+      item.id,
+      item.title,
+      item.slug,
+      item.artworkUrl ?? "",
+      item.status.releaseState,
+      item.status.publishAt ?? "",
+      item.counts.tracks,
+      item.counts.publicReadyTracks,
+      item.timestamps.updatedAt,
+    ].join(":"))
+    .join("|");
+}
+
+function AlbumListSkeleton() {
+  return (
+    <View style={styles.albumsCard}>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <View key={`album-skeleton-${index}`}>
+          {index > 0 ? <View style={styles.divider} /> : null}
+          <View style={styles.albumRow}>
+            <Skeleton width={56} height={56} borderRadius={10} />
+            <View style={styles.albumInfo}>
+              <Skeleton width="76%" height={15} borderRadius={6} />
+              <Skeleton width="58%" height={12} borderRadius={6} />
+              <View style={styles.albumMetaRow}>
+                <Skeleton width={12} height={12} borderRadius={6} />
+                <Skeleton width="48%" height={11} borderRadius={6} />
+              </View>
+            </View>
+            <View style={styles.albumRight}>
+              <Skeleton width={62} height={16} borderRadius={6} />
+              <Skeleton width={72} height={11} borderRadius={6} />
+            </View>
+            <Skeleton width={16} height={16} borderRadius={8} style={styles.chevron} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export default function AlbumsListScreen() {
   const params = useLocalSearchParams<{ filter?: string }>();
   const initialFilter: AlbumFilter =
@@ -46,39 +93,75 @@ export default function AlbumsListScreen() {
       ? params.filter
       : "all";
 
-  const [items, setItems] = useState<DashboardAlbumSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<DashboardAlbumSummary[]>(albumsListCache ?? []);
+  const [loading, setLoading] = useState(!albumsListCache);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<AlbumFilter>(initialFilter);
+  const hasLoadedRef = useRef(Boolean(albumsListCache));
 
   const unreadCount = useUnreadNotificationCount();
+
+  const loadAlbums = useCallback(async (options?: {
+    showRefreshControl?: boolean;
+    isActive?: () => boolean;
+  }) => {
+    const showLoadingState = !hasLoadedRef.current;
+    if (showLoadingState) {
+      setLoading(true);
+    }
+    if (options?.showRefreshControl) {
+      setRefreshing(true);
+    }
+
+    setError(null);
+    try {
+      const response = await getMyAlbums(1, 50);
+      if (options?.isActive && !options.isActive()) {
+        return;
+      }
+      const nextSignature = getAlbumsListSignature(response.albums);
+      albumsListCache = response.albums;
+      if (nextSignature !== albumsListSignature) {
+        albumsListSignature = nextSignature;
+        setItems(response.albums);
+      }
+      hasLoadedRef.current = true;
+    } catch (nextError) {
+      if (options?.isActive && !options.isActive()) {
+        return;
+      }
+      if (!hasLoadedRef.current) {
+        setError(
+          nextError instanceof Error ? nextError.message : "Unable to load albums.",
+        );
+      }
+    } finally {
+      if (options?.isActive && !options.isActive()) {
+        return;
+      }
+      if (showLoadingState) {
+        setLoading(false);
+      }
+      if (options?.showRefreshControl) {
+        setRefreshing(false);
+      }
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
 
       async function load() {
-        setLoading(true);
-        setError(null);
-        try {
-          const response = await getMyAlbums(1, 50);
-          if (!active) return;
-          setItems(response.albums);
-        } catch (nextError) {
-          if (!active) return;
-          setError(
-            nextError instanceof Error ? nextError.message : "Unable to load albums.",
-          );
-        } finally {
-          if (active) setLoading(false);
-        }
+        await loadAlbums({ isActive: () => active });
       }
 
       void load();
       return () => {
         active = false;
       };
-    }, []),
+    }, [loadAlbums]),
   );
 
   const filterCounts = useMemo(() => {
@@ -148,141 +231,160 @@ export default function AlbumsListScreen() {
     }
   };
 
-  return (
-    <Screen header={renderCustomHeader()} contentContainerStyle={styles.screenContent}>
-      {/* Create Release button - Left Aligned */}
-      <View style={styles.actionsRow}>
-        <AnimatedPressable
-          style={styles.uploadBtn}
-          onPress={() => router.push("/create/release")}
-          haptic="selection"
-        >
-          <Ionicons name="disc-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.uploadBtnLabel}>Create Release</Text>
-        </AnimatedPressable>
-      </View>
+  const handleRefresh = useCallback(() => {
+    void loadAlbums({ showRefreshControl: true });
+  }, [loadAlbums]);
 
-      {/* Pill Filter Bar */}
-      <View style={styles.filterBarContainer}>
+  return (
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <View style={styles.root}>
+        <AppBackdrop />
+        {renderCustomHeader()}
         <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScroll}
+          style={styles.scroll}
+          contentContainerStyle={styles.screenContent}
+          showsVerticalScrollIndicator={false}
+          alwaysBounceVertical
+          bounces
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#FFFFFF"
+              colors={["#00B3A6"]}
+              progressBackgroundColor={tokens.colors.canvas}
+            />
+          }
         >
-          {[
-            { key: "all", label: "All", count: filterCounts.all },
-            { key: "draft", label: "Drafts", count: filterCounts.draft },
-            { key: "scheduled", label: "Scheduled", count: filterCounts.scheduled },
-            { key: "published", label: "Published", count: filterCounts.published },
-          ].map((opt) => {
-            const isActive = filter === opt.key;
-            return (
-              <AnimatedPressable
-                key={opt.key}
-                disabled={isActive}
-                style={[styles.filterChip, isActive && styles.filterChipActive]}
-                onPress={() => handleFilterChange(opt.key as AlbumFilter)}
-              >
-                <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
-                  {opt.label} • {opt.count}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
+          {/* Pill Filter Bar */}
+          <View style={styles.filterBarContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterScroll}
+            >
+              {[
+                { key: "all", label: "All", count: filterCounts.all },
+                { key: "draft", label: "Drafts", count: filterCounts.draft },
+                { key: "scheduled", label: "Scheduled", count: filterCounts.scheduled },
+                { key: "published", label: "Published", count: filterCounts.published },
+              ].map((opt) => {
+                const isActive = filter === opt.key;
+                return (
+                  <AnimatedPressable
+                    key={opt.key}
+                    disabled={isActive}
+                    style={[styles.filterChip, isActive && styles.filterChipActive]}
+                    onPress={() => handleFilterChange(opt.key as AlbumFilter)}
+                  >
+                    <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                      {opt.label} • {opt.count}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {error ? <ErrorState message={error} /> : null}
+
+          {loading ? (
+            <AlbumListSkeleton />
+          ) : filteredItems.length === 0 ? (
+            <Panel
+              title="No albums in this filter"
+              description="Try another state filter or create a new album."
+            />
+          ) : (
+            /* Unified Albums Card container */
+            <View style={styles.albumsCard}>
+              {filteredItems.map((album, index) => {
+                const dateText = formatDate(album.timestamps.createdAt);
+                const isPublished = album.status.releaseState === "published";
+                const isScheduled = album.status.releaseState === "scheduled";
+                
+                return (
+                  <View key={album.id}>
+                    {index > 0 ? <View style={styles.divider} /> : null}
+                    
+                    <AnimatedPressable
+                      style={styles.albumRow}
+                      onPress={() => {
+                        if (album.status.releaseState === "draft" || album.status.releaseState === "scheduled") {
+                          router.push(`/create/release?draftAlbumId=${album.id}` as never);
+                        } else {
+                          router.push(`/catalog/albums/${album.id}` as never);
+                        }
+                      }}
+                      haptic="selection"
+                    >
+                      {album.artworkUrl ? (
+                        <Image
+                          source={{ uri: album.artworkUrl }}
+                          style={styles.albumArtwork}
+                          contentFit="cover"
+                        />
+                      ) : (
+                        <View style={styles.artworkPlaceholder}>
+                          <Ionicons name="disc-outline" size={24} color={tokens.colors.textSecondary} />
+                        </View>
+                      )}
+
+                      <View style={styles.albumInfo}>
+                        <Text style={styles.albumTitle} numberOfLines={1}>
+                          {album.title}
+                        </Text>
+                        <Text style={styles.albumSubtitle} numberOfLines={1}>
+                          {album.counts.tracks} tracks • {album.counts.publicReadyTracks} public-ready
+                        </Text>
+                        <View style={styles.albumMetaRow}>
+                          <Ionicons name="albums-outline" size={12} color={tokens.colors.textSecondary} />
+                          <Text style={styles.albumMetaText}>
+                            Album Code • {album.slug}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.albumRight}>
+                        <View style={[styles.statusBadge, isPublished && styles.statusBadgePublished, isScheduled && styles.statusBadgeScheduled]}>
+                          <Text style={[styles.statusBadgeText, isPublished && styles.statusBadgeTextPublished, isScheduled && styles.statusBadgeTextScheduled]}>
+                            {album.status.releaseState.toUpperCase()}
+                          </Text>
+                        </View>
+                        <Text style={styles.dateText}>{dateText}</Text>
+                      </View>
+
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color={tokens.colors.textSecondary}
+                        style={styles.chevron}
+                      />
+                    </AnimatedPressable>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </ScrollView>
       </View>
-
-      {error ? <ErrorState message={error} /> : null}
-
-      {loading ? (
-        <Panel
-          title="Loading albums"
-          description="Pulling creator album rows from the dashboard endpoint."
-        />
-      ) : filteredItems.length === 0 ? (
-        <Panel
-          title="No albums in this filter"
-          description="Try another state filter or create a new album."
-        />
-      ) : (
-        /* Unified Albums Card container */
-        <View style={styles.albumsCard}>
-          {filteredItems.map((album, index) => {
-            const dateText = formatDate(album.timestamps.createdAt);
-            const isPublished = album.status.releaseState === "published";
-            const isScheduled = album.status.releaseState === "scheduled";
-            
-            return (
-              <View key={album.id}>
-                {index > 0 ? <View style={styles.divider} /> : null}
-                
-                <AnimatedPressable
-                  style={styles.albumRow}
-                  onPress={() => {
-                    if (album.status.releaseState === "draft" || album.status.releaseState === "scheduled") {
-                      router.push(`/create/release?draftAlbumId=${album.id}` as never);
-                    } else {
-                      router.push(`/catalog/albums/${album.id}` as never);
-                    }
-                  }}
-                  haptic="selection"
-                >
-                  {/* Left: Artwork */}
-                  {album.artworkUrl ? (
-                    <Image
-                      source={{ uri: album.artworkUrl }}
-                      style={styles.albumArtwork}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View style={styles.artworkPlaceholder}>
-                      <Ionicons name="disc-outline" size={24} color={tokens.colors.textSecondary} />
-                    </View>
-                  )}
-
-                  {/* Center info */}
-                  <View style={styles.albumInfo}>
-                    <Text style={styles.albumTitle} numberOfLines={1}>
-                      {album.title}
-                    </Text>
-                    <Text style={styles.albumSubtitle} numberOfLines={1}>
-                      {album.counts.tracks} tracks • {album.counts.publicReadyTracks} public-ready
-                    </Text>
-                    <View style={styles.albumMetaRow}>
-                      <Ionicons name="albums-outline" size={12} color={tokens.colors.textSecondary} />
-                      <Text style={styles.albumMetaText}>
-                        Album Code • {album.slug}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Right Status badge and date */}
-                  <View style={styles.albumRight}>
-                    <View style={[styles.statusBadge, isPublished && styles.statusBadgePublished, isScheduled && styles.statusBadgeScheduled]}>
-                      <Text style={[styles.statusBadgeText, isPublished && styles.statusBadgeTextPublished, isScheduled && styles.statusBadgeTextScheduled]}>
-                        {album.status.releaseState.toUpperCase()}
-                      </Text>
-                    </View>
-                    <Text style={styles.dateText}>{dateText}</Text>
-                  </View>
-
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={tokens.colors.textSecondary}
-                    style={styles.chevron}
-                  />
-                </AnimatedPressable>
-              </View>
-            );
-          })}
-        </View>
-      )}
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: tokens.colors.canvas,
+  },
+  root: {
+    flex: 1,
+    backgroundColor: tokens.colors.canvas,
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: tokens.colors.canvas,
+  },
   headerContainer: {
     height: 56,
     flexDirection: "row",
@@ -326,25 +428,9 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 160,
     gap: 16,
-  },
-  actionsRow: {
-    flexDirection: "row",
-  },
-  uploadBtn: {
-    backgroundColor: "#00B3A6",
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    alignSelf: "flex-start",
-  },
-  uploadBtnLabel: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700",
   },
   filterBarContainer: {
     backgroundColor: "#131820",

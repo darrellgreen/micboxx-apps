@@ -34,7 +34,7 @@ function ComingSoonStub({ tab }: { tab: string }) {
 }
 
 export default function AlbumDetailScreen() {
-  const { albumId, tab, highlightTrackId, refreshKey, uploadingTrackTitle } = useLocalSearchParams<{
+  const { albumId, tab, highlightTrackId, uploadingTrackTitle } = useLocalSearchParams<{
     albumId?: string;
     tab?: string;
     highlightTrackId?: string;
@@ -221,7 +221,7 @@ export default function AlbumDetailScreen() {
           />
           
           {/* Performance Snapshots */}
-          <AlbumPerformanceSnapshot />
+          <AlbumPerformanceSnapshot album={album} />
           
           {/* Tabs Selector */}
           <AlbumTabs

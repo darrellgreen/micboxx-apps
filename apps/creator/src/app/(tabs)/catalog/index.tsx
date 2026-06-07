@@ -1,14 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated as RNAnimated, Easing, StyleSheet, Text, View } from "react-native";
 
 import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { getMyTracks, getMyAlbums } from "@/shared/api/creator-dashboard";
 import type { DashboardTrackSummary, DashboardAlbumSummary } from "@/contracts/creator";
 import { resolveTrackReleaseState } from "@/features/catalog/release-state";
+import {
+  AnimatedDashboardNumber,
+  useReducedMotionPreference,
+} from "@/features/catalog/components/AnimatedDashboardNumber";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { tokens } from "@micboxx/theme";
 
@@ -71,6 +75,9 @@ function getActivityIconName(state: string): keyof typeof Ionicons.glyphMap {
 
 export default function CatalogHomeScreen() {
   const bootstrap = useCreatorBootstrap();
+  const reducedMotion = useReducedMotionPreference();
+  const footerProgress = useRef(new RNAnimated.Value(0)).current;
+  const footerAnimationStartedRef = useRef(false);
 
   const [tracks, setTracks] = useState<DashboardTrackSummary[]>(
     () => bootstrap.tracksSummary?.tracks ?? [],
@@ -105,6 +112,43 @@ export default function CatalogHomeScreen() {
   const failedCount    = tracks.filter((t) => t.status.processing === "failed").length;
 
   const totalPlays = bootstrap.analytics?.basic.totalPlays ?? 0;
+  const formatCount = useCallback(
+    (value: number) => new Intl.NumberFormat("en-US").format(value),
+    [],
+  );
+
+  useEffect(() => {
+    if (reducedMotion) {
+      footerProgress.setValue(1);
+      return;
+    }
+
+    if (totalPlays <= 0 || footerAnimationStartedRef.current) {
+      return;
+    }
+
+    footerAnimationStartedRef.current = true;
+    footerProgress.setValue(0);
+    RNAnimated.timing(footerProgress, {
+      toValue: 1,
+      duration: 260,
+      delay: 420,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [footerProgress, reducedMotion, totalPlays]);
+
+  const footerAnimatedStyle = {
+    opacity: footerProgress,
+    transform: [
+      {
+        translateY: footerProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [8, 0],
+        }),
+      },
+    ],
+  };
 
   const lastPublishedDate = useMemo(() => {
     const sorted = tracks
@@ -174,7 +218,11 @@ export default function CatalogHomeScreen() {
           <View style={s.snapshotTopText}>
             <Text style={s.snapshotEyebrow}>Catalog Snapshot</Text>
             <Text style={s.snapshotHeadline}>
-              {totalReleases}{" "}
+              <AnimatedDashboardNumber
+                value={totalReleases}
+                formatter={formatCount}
+                reducedMotion={reducedMotion}
+              />{" "}
               <Text style={s.snapshotHeadlineMuted}>
                 {totalReleases === 1 ? "Release" : "Releases"}
               </Text>
@@ -185,22 +233,42 @@ export default function CatalogHomeScreen() {
         {/* stat columns */}
         <View style={s.snapshotRow}>
           <View style={s.snapshotCol}>
-            <Text style={s.snapshotNum}>{publishedCount}</Text>
+            <AnimatedDashboardNumber
+              value={publishedCount}
+              formatter={formatCount}
+              reducedMotion={reducedMotion}
+              style={s.snapshotNum}
+            />
             <Text style={[s.snapshotColLabel, { color: STATUS_COLOR.published }]}>Published</Text>
           </View>
           <View style={s.snapshotDivider} />
           <View style={s.snapshotCol}>
-            <Text style={s.snapshotNum}>{draftCount}</Text>
+            <AnimatedDashboardNumber
+              value={draftCount}
+              formatter={formatCount}
+              reducedMotion={reducedMotion}
+              style={s.snapshotNum}
+            />
             <Text style={[s.snapshotColLabel, { color: STATUS_COLOR.draft }]}>Drafts</Text>
           </View>
           <View style={s.snapshotDivider} />
           <View style={s.snapshotCol}>
-            <Text style={s.snapshotNum}>{scheduledCount}</Text>
+            <AnimatedDashboardNumber
+              value={scheduledCount}
+              formatter={formatCount}
+              reducedMotion={reducedMotion}
+              style={s.snapshotNum}
+            />
             <Text style={[s.snapshotColLabel, { color: STATUS_COLOR.scheduled }]}>Scheduled</Text>
           </View>
           <View style={s.snapshotDivider} />
           <View style={s.snapshotCol}>
-            <Text style={s.snapshotNum}>{failedCount}</Text>
+            <AnimatedDashboardNumber
+              value={failedCount}
+              formatter={formatCount}
+              reducedMotion={reducedMotion}
+              style={s.snapshotNum}
+            />
             <Text style={[s.snapshotColLabel, { color: STATUS_COLOR.failed }]}>Failed</Text>
           </View>
         </View>
@@ -208,12 +276,17 @@ export default function CatalogHomeScreen() {
         {/* footer */}
         <View style={s.snapshotFooter}>
           {totalPlays > 0 ? (
-            <View style={s.snapshotFooterLeft}>
+            <RNAnimated.View style={[s.snapshotFooterLeft, footerAnimatedStyle]}>
               <Ionicons name="trending-up" size={13} color={tokens.colors.accent} />
               <Text style={s.snapshotFooterAccent}>
-                {new Intl.NumberFormat("en-US").format(totalPlays)} plays this week
+                <AnimatedDashboardNumber
+                  value={totalPlays}
+                  formatter={formatCount}
+                  reducedMotion={reducedMotion}
+                />{" "}
+                plays this week
               </Text>
-            </View>
+            </RNAnimated.View>
           ) : <View />}
           {lastPublishedDate ? (
             <Text style={s.snapshotFooterMuted}>

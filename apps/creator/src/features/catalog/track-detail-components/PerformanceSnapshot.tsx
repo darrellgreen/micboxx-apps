@@ -11,6 +11,10 @@ import {
   getTrackPlays,
   type PlayTimeseriesData,
 } from "@/shared/api/creator-dashboard";
+import {
+  AnimatedDashboardNumber,
+  useReducedMotionPreference,
+} from "@/features/catalog/components/AnimatedDashboardNumber";
 
 interface PerformanceSnapshotProps {
   track: DashboardTrack;
@@ -21,13 +25,26 @@ type TrackStats = NonNullable<DashboardTrack["stats"]>;
 interface SnapshotCardProps {
   label: string;
   value: string;
+  numericValue?: number | null;
   trendText: string;
   trend: "up" | "down" | "flat";
   iconName: keyof typeof Ionicons.glyphMap;
   iconType: "teal" | "red";
+  formatter?: (value: number) => string;
+  reducedMotion?: boolean;
 }
 
-function SnapshotCard({ label, value, trendText, trend, iconName, iconType }: SnapshotCardProps) {
+function SnapshotCard({
+  label,
+  value,
+  numericValue,
+  trendText,
+  trend,
+  iconName,
+  iconType,
+  formatter,
+  reducedMotion,
+}: SnapshotCardProps) {
   const isTeal = iconType === "teal";
 
   const iconBg = isTeal ? "rgba(0, 179, 166, 0.12)" : "rgba(217, 92, 92, 0.12)";
@@ -49,7 +66,16 @@ function SnapshotCard({ label, value, trendText, trend, iconName, iconType }: Sn
       </View>
       
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      {numericValue != null && Number.isFinite(numericValue) ? (
+        <AnimatedDashboardNumber
+          value={numericValue}
+          formatter={formatter}
+          reducedMotion={reducedMotion}
+          style={styles.value}
+        />
+      ) : (
+        <Text style={styles.value}>{value}</Text>
+      )}
 
       {hasTrend ? (
         <View style={styles.trendRow}>
@@ -72,7 +98,7 @@ function formatMetric(value: number | null | undefined) {
   }).format(value);
 }
 
-function firstMetric(...values: Array<number | null | undefined>) {
+function firstMetric(...values: (number | null | undefined)[]) {
   return values.find((value) => value != null && Number.isFinite(value)) ?? null;
 }
 
@@ -111,6 +137,7 @@ function getRecentTrend(
 
 export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
   const { analytics } = useCreatorBootstrap();
+  const reducedMotion = useReducedMotionPreference();
   const [playsData, setPlaysData] = useState<PlayTimeseriesData | null>(null);
   const [playsLoading, setPlaysLoading] = useState(true);
   const [publicStats, setPublicStats] = useState<TrackStats | null>(track.stats ?? null);
@@ -231,6 +258,9 @@ export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
         <SnapshotCard
           label="Plays"
           value={playsVal}
+          numericValue={playsLoading && playsMetric == null ? null : playsMetric}
+          formatter={formatMetric}
+          reducedMotion={reducedMotion}
           trend={playTrend.trend}
           trendText={playTrend.trendText}
           iconName="play"
@@ -239,6 +269,9 @@ export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
         <SnapshotCard
           label="Listeners"
           value={listenersVal}
+          numericValue={listenersMetric}
+          formatter={formatMetric}
+          reducedMotion={reducedMotion}
           trend={listenerTrend.trend}
           trendText={listenerTrend.trendText}
           iconName="people"
@@ -247,6 +280,9 @@ export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
         <SnapshotCard
           label="Likes"
           value={likesVal}
+          numericValue={likesMetric}
+          formatter={formatMetric}
+          reducedMotion={reducedMotion}
           trend="flat"
           trendText=""
           iconName="heart"
@@ -255,6 +291,9 @@ export function PerformanceSnapshot({ track }: PerformanceSnapshotProps) {
         <SnapshotCard
           label="Downloads"
           value={downloadsVal}
+          numericValue={downloadsMetric}
+          formatter={formatMetric}
+          reducedMotion={reducedMotion}
           trend="flat"
           trendText=""
           iconName="download"
