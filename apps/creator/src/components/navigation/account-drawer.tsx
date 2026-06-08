@@ -147,7 +147,7 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
     items.push({
       key: "profile",
       label: "Profile",
-      subtitle: "Display name, bio, and links",
+      subtitle: "Your public artist page",
       icon: "person-circle-outline",
       onPress: () => openAccountDestination("profile"),
       requiresAuth: true,
@@ -164,8 +164,8 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
 
     items.push({
       key: "plan",
-      label: "Plan / access",
-      subtitle: "Capabilities and upload limits",
+      label: "Plans",
+      subtitle: "Upgrade to Pro and manage your subscription",
       icon: "diamond-outline",
       onPress: () => openAccountDestination("plan"),
       requiresAuth: true,
@@ -185,13 +185,6 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
 
   const supportItems = useMemo<DrawerItem[]>(() => {
     const items: DrawerItem[] = [
-      {
-        key: "settings",
-        label: "Settings",
-        subtitle: "Session and app preferences",
-        icon: "settings-outline",
-        onPress: () => openAccountDestination("settings", false),
-      },
       {
         key: "support",
         label: "Support",

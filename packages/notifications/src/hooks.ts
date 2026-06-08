@@ -110,13 +110,9 @@ export function useMicboxxNotifications({
     };
 
     void fetchRoomItems();
-    const intervalId = setInterval(() => {
-      void fetchRoomItems();
-    }, 20000);
 
     return () => {
       cancelled = true;
-      clearInterval(intervalId);
     };
   }, [accessToken, maxItems, reloadNonce, adapter]);
 
@@ -228,13 +224,9 @@ export function useMicboxxUnreadNotificationCount({
     };
 
     void fetchRoomUnreadCount();
-    const intervalId = setInterval(() => {
-      void fetchRoomUnreadCount();
-    }, 20000);
 
     return () => {
       cancelled = true;
-      clearInterval(intervalId);
     };
   }, [accessToken, adapter]);
 

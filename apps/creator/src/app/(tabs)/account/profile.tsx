@@ -1,72 +1,270 @@
-import { useEffect, useState } from "react";
+/**
+ * Public artist profile screen
+ *
+ * Mobile equivalent of the web artist page — shows the creator's public
+ * appearance (cover, avatar, name, bio, links, counts) without tracks or
+ * music sections. An "Edit profile" button routes to the edit form.
+ */
 
+import { Image } from "expo-image";
+import { router } from "expo-router";
+import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable, Avatar } from "@micboxx/ui";
+
+import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import { updateUserProfile } from "@/shared/api/creator-dashboard";
-import { ErrorText, Field, TextField } from "@/shared/ui/form";
-import { Panel, PillButton } from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
+import { useGetArtistPageQuery } from "@micboxx/api";
+import { tokens } from "@micboxx/theme";
 
-export default function AccountProfileScreen() {
-  const bootstrap = useCreatorBootstrap();
-  const [displayName, setDisplayName] = useState("");
-  const [bio, setBio] = useState("");
-  const [website, setWebsite] = useState("");
-  const [instagram, setInstagram] = useState("");
-  const [twitter, setTwitter] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const COVER_HEIGHT = 220;
 
-  useEffect(() => {
-    setDisplayName(bootstrap.profile?.displayName ?? "");
-    setBio(bootstrap.profile?.bio ?? "");
-    setWebsite(bootstrap.profile?.links.website ?? "");
-    setInstagram(bootstrap.profile?.links.instagram ?? "");
-    setTwitter(bootstrap.profile?.links.twitter ?? "");
-  }, [bootstrap.profile]);
+// ─── Social link row ──────────────────────────────────────────────────────────
 
-  async function handleSave() {
-    setSaving(true);
-    setError(null);
-    try {
-      await updateUserProfile({
-        displayName: displayName.trim(),
-        bio: bio.trim(),
-        website: website.trim(),
-        instagram: instagram.trim(),
-        twitter: twitter.trim(),
-      });
-      await bootstrap.refetch();
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Profile update failed.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
+function SocialLink({
+  icon,
+  label,
+  url,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  label: string;
+  url: string;
+}) {
   return (
-    <Screen
-      header={<AppHeader variant="detail" title="Edit Profile" fallbackRoute="/(tabs)/dashboard" />}
-      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+    <AnimatedPressable
+      onPress={() => void Linking.openURL(url)}
+      haptic="selection"
+      style={sl.row}
     >
-      <Panel title="Profile fields">
-        <Field label="Display name">
-          <TextField value={displayName} onChangeText={setDisplayName} />
-        </Field>
-        <Field label="Bio">
-          <TextField value={bio} onChangeText={setBio} multiline />
-        </Field>
-        <Field label="Website">
-          <TextField value={website} onChangeText={setWebsite} keyboardType="url" />
-        </Field>
-        <Field label="Instagram">
-          <TextField value={instagram} onChangeText={setInstagram} />
-        </Field>
-        <Field label="Twitter">
-          <TextField value={twitter} onChangeText={setTwitter} />
-        </Field>
-        {error ? <ErrorText>{error}</ErrorText> : null}
-        <PillButton label={saving ? "Saving…" : "Save profile"} tone="accent" onPress={() => void handleSave()} />
-      </Panel>
-    </Screen>
+      <Ionicons name={icon} size={16} color={tokens.colors.accent} />
+      <Text style={sl.label} numberOfLines={1}>{label}</Text>
+      <Ionicons name="open-outline" size={13} color={tokens.colors.textSecondary} />
+    </AnimatedPressable>
   );
 }
+const sl = StyleSheet.create({
+  row: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingVertical: 11, paddingHorizontal: 16,
+    borderBottomWidth: 1, borderBottomColor: tokens.colors.borderSubtle,
+  },
+  label: { flex: 1, color: tokens.colors.textPrimary, fontSize: 14, fontWeight: "500" },
+});
+
+// ─── Stat pill ────────────────────────────────────────────────────────────────
+
+function StatPill({ value, label }: { value: number; label: string }) {
+  const display = value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value);
+  return (
+    <View style={stat.wrap}>
+      <Text style={stat.value}>{display}</Text>
+      <Text style={stat.label}>{label}</Text>
+    </View>
+  );
+}
+const stat = StyleSheet.create({
+  wrap: { alignItems: "center", gap: 2, flex: 1 },
+  value: { color: tokens.colors.textPrimary, fontSize: 18, fontWeight: "800" },
+  label: { color: tokens.colors.textSecondary, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.6 },
+});
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+export default function ProfileScreen() {
+  const bootstrap = useCreatorBootstrap();
+  const profile = bootstrap.profile;
+  const username = profile?.username ?? "";
+
+  const { data: artistPage } = useGetArtistPageQuery(username, { skip: !username });
+
+  const hasCover = !!profile?.coverUrl;
+  const isVerified = profile?.flags.verifiedBadge ?? false;
+  const counts = artistPage?.artist.counts ?? { followers: 0, following: 0, tracks: 0, albums: 0 };
+
+  const socialLinks = [
+    profile?.links.website
+      ? { icon: "globe-outline" as const, label: profile.links.website.replace(/^https?:\/\//, ""), url: profile.links.website }
+      : null,
+    profile?.links.instagram
+      ? { icon: "logo-instagram" as const, label: `@${profile.links.instagram.replace(/^@/, "")}`, url: `https://instagram.com/${profile.links.instagram.replace(/^@/, "")}` }
+      : null,
+    profile?.links.twitter
+      ? { icon: "logo-twitter" as const, label: `@${profile.links.twitter.replace(/^@/, "")}`, url: `https://x.com/${profile.links.twitter.replace(/^@/, "")}` }
+      : null,
+    profile?.links.facebook
+      ? { icon: "logo-facebook" as const, label: profile.links.facebook, url: profile.links.facebook }
+      : null,
+  ].filter((l): l is NonNullable<typeof l> => l !== null);
+
+  return (
+    <SafeAreaView style={s.safe} edges={["top"]}>
+      <ScreenHeader
+        title="Profile"
+        subtitle="Your public artist page"
+        showBackButton
+      />
+
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* ── Cover hero ──────────────────────────────────────────── */}
+        <View style={s.heroWrap}>
+          {hasCover ? (
+            <Image
+              source={{ uri: profile.coverUrl! }}
+              style={s.cover}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={[s.cover, s.coverFallback]} />
+          )}
+          <View style={s.gradient} pointerEvents="none" />
+
+          {/* Avatar anchored to bottom-left of hero */}
+          <View style={s.avatarAnchor}>
+            <View style={[s.avatarRing, hasCover && s.avatarRingOnCover]}>
+              <Avatar
+                uri={profile?.avatarUrl}
+                displayName={profile?.displayName ?? ""}
+                size={88}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* ── Identity ────────────────────────────────────────────── */}
+        <View style={s.identity}>
+          <View style={s.nameRow}>
+            <Text style={s.displayName} numberOfLines={1}>
+              {profile?.displayName ?? "Creator"}
+            </Text>
+            {isVerified && (
+              <Ionicons name="checkmark-circle" size={20} color={tokens.colors.accent} />
+            )}
+          </View>
+          <Text style={s.handle}>@{username}</Text>
+        </View>
+
+        {/* ── Stats ───────────────────────────────────────────────── */}
+        <View style={s.statsRow}>
+          <StatPill value={counts.followers ?? 0} label="Followers" />
+          <View style={s.statDivider} />
+          <StatPill value={counts.following ?? 0} label="Following" />
+          <View style={s.statDivider} />
+          <StatPill value={counts.tracks ?? 0} label="Tracks" />
+          <View style={s.statDivider} />
+          <StatPill value={counts.albums ?? 0} label="Albums" />
+        </View>
+
+        {/* ── Bio ─────────────────────────────────────────────────── */}
+        {profile?.bio ? (
+          <View style={s.section}>
+            <Text style={s.sectionLabel}>About</Text>
+            <Text style={s.bio}>{profile.bio}</Text>
+          </View>
+        ) : null}
+
+        {/* ── Social links ────────────────────────────────────────── */}
+        {socialLinks.length > 0 && (
+          <View style={s.section}>
+            <Text style={s.sectionLabel}>Links</Text>
+            <View style={s.linksCard}>
+              {socialLinks.map((link, i) => (
+                <View
+                  key={link.url}
+                  style={i === socialLinks.length - 1 ? s.lastLink : undefined}
+                >
+                  <SocialLink icon={link.icon} label={link.label} url={link.url} />
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* ── Edit nudge ──────────────────────────────────────────── */}
+        <AnimatedPressable
+          onPress={() => router.push("/account/profile-edit" as never)}
+          haptic="selection"
+          style={s.editNudge}
+        >
+          <Ionicons name="pencil-outline" size={16} color={tokens.colors.textSecondary} />
+          <Text style={s.editNudgeLabel}>Edit your public profile</Text>
+          <Ionicons name="chevron-forward" size={14} color={tokens.colors.textSecondary} />
+        </AnimatedPressable>
+
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
+  scroll: { paddingBottom: 60 },
+
+
+  // Hero
+  heroWrap: { height: COVER_HEIGHT, position: "relative" },
+  cover: { width: "100%", height: "100%" },
+  coverFallback: { backgroundColor: tokens.colors.bgElevated },
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  avatarAnchor: { position: "absolute", bottom: -44, left: 20 },
+  avatarRing: {
+    borderRadius: 50, borderWidth: 3,
+    borderColor: tokens.colors.bgApp,
+    backgroundColor: tokens.colors.bgApp,
+  },
+  avatarRingOnCover: { borderColor: "rgba(255,255,255,0.15)" },
+
+  // Identity
+  identity: { marginTop: 52, paddingHorizontal: 20, gap: 4 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  displayName: {
+    color: tokens.colors.textPrimary, fontSize: 26,
+    fontWeight: "800", letterSpacing: -0.5, flexShrink: 1,
+  },
+  handle: { color: tokens.colors.textSecondary, fontSize: 15, fontWeight: "500" },
+
+  // Stats
+  statsRow: {
+    flexDirection: "row", alignItems: "center",
+    marginHorizontal: 20, marginTop: 20,
+    backgroundColor: tokens.colors.bgSurface,
+    borderRadius: tokens.radii.xl,
+    borderWidth: 1, borderColor: tokens.colors.borderSubtle,
+    paddingVertical: 14,
+  },
+  statDivider: { width: 1, height: 28, backgroundColor: tokens.colors.borderSubtle },
+
+  // Sections
+  section: { marginTop: 24, paddingHorizontal: 20, gap: 10 },
+  sectionLabel: {
+    color: tokens.colors.textSecondary, fontSize: 11, fontWeight: "700",
+    textTransform: "uppercase", letterSpacing: 0.8,
+  },
+  bio: { color: tokens.colors.textPrimary, fontSize: 15, lineHeight: 23 },
+
+  // Links
+  linksCard: {
+    backgroundColor: tokens.colors.bgSurface,
+    borderRadius: tokens.radii.xl,
+    borderWidth: 1, borderColor: tokens.colors.borderSubtle,
+    overflow: "hidden",
+  },
+  lastLink: { borderBottomWidth: 0 },
+
+  // Edit nudge
+  editNudge: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    marginHorizontal: 20, marginTop: 28,
+    paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: tokens.colors.bgSurface,
+    borderRadius: tokens.radii.xl,
+    borderWidth: 1, borderColor: tokens.colors.borderSubtle,
+  },
+  editNudgeLabel: { flex: 1, color: tokens.colors.textSecondary, fontSize: 14, fontWeight: "500" },
+});

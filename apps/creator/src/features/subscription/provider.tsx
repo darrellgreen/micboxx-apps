@@ -28,11 +28,10 @@ import { Platform } from "react-native";
 // ─── constants ───────────────────────────────────────────────────────────────
 
 /**
- * RevenueCat API key.
- * The `test_` prefix means this is a sandbox/development key.
- * Replace with a production key (no `test_` prefix) for release builds.
+ * RevenueCat iOS SDK key — injected at build time from EXPO_PUBLIC_REVENUECAT_IOS_KEY.
+ * Set this in .env (or as an EAS secret for CI builds).
  */
-const REVENUECAT_API_KEY = "test_TtAypDoWMGgAjhrfqCHHbTTaLue";
+const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? "";
 
 /** The entitlement identifier configured in the RevenueCat dashboard. */
 export const ENTITLEMENT_PRO = "MicBoxx Pro";
@@ -40,6 +39,8 @@ export const ENTITLEMENT_PRO = "MicBoxx Pro";
 /** Product identifiers — must match the offering in the RC dashboard. */
 export const PRODUCT_YEARLY = "yearly";
 export const PRODUCT_MONTHLY = "monthly";
+export const PRODUCT_VIP_MONTHLY = "vip_monthly";
+export const PRODUCT_VIP_YEARLY = "vip_yearly";
 
 // ─── types ───────────────────────────────────────────────────────────────────
 

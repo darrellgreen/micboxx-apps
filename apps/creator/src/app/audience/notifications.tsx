@@ -1,206 +1,351 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
-import { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { useNotifications } from "@/features/social/hooks/useNotifications";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ChipTabs,
-  ListHeader,
-  ListRow,
-  ListShell,
-  StatusPill,
-} from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, SectionTitle } from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { AnimatedPressable, Skeleton } from "@micboxx/ui";
+import type { NotificationItem } from "@micboxx/notifications";
+import { useNotifications } from "@/features/social/hooks/useNotifications";
+import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { tokens } from "@micboxx/theme";
 
-export default function NotificationsScreen() {
-  const notifications = useNotifications(30);
-  const [filterKey, setFilterKey] = useState<"all" | "unread" | "read">("all");
-  const filteredItems = useMemo(() => {
-    if (filterKey === "unread") {
-      return notifications.items.filter((item) => !item.isRead);
-    }
-    if (filterKey === "read") {
-      return notifications.items.filter((item) => item.isRead);
-    }
-    return notifications.items;
-  }, [filterKey, notifications.items]);
+// ─── Icon colours — mirrors web notification-center ──────────────────────────
 
-  const filterOptions = [
-    { key: "all", label: "All", count: notifications.items.length },
-    { key: "unread", label: "Unread", count: notifications.unreadCount },
-    {
-      key: "read",
-      label: "Read",
-      count: Math.max(0, notifications.items.length - notifications.unreadCount),
-    },
-  ] as const;
+function typeColor(type: NotificationItem["type"]): { bg: string; fg: string } {
+  if (type === "room")           return { bg: "rgba(52,211,153,0.15)",  fg: "#6EE7B7" };
+  if (type === "direct_message") return { bg: "rgba(232,121,249,0.15)", fg: "#E879F9" };
+  if (type === "follow")         return { bg: "rgba(56,189,248,0.15)",  fg: "#7DD3FC" };
+  if (type === "track_comment")  return { bg: "rgba(52,211,153,0.15)",  fg: "#6EE7B7" };
+  // like / default → accent
+  return { bg: "rgba(0,179,166,0.15)", fg: tokens.colors.accent };
+}
+
+function rewardColor(): { bg: string; fg: string } {
+  return { bg: "rgba(252,211,77,0.15)", fg: "#FDE68A" };
+}
+
+// ─── Type icon ────────────────────────────────────────────────────────────────
+
+function NotifIcon({ item }: { item: NotificationItem }) {
+  const isReward =
+    item.type === "room" && item.source === "room" && item.roomType === "room-reward";
+  const { fg } = isReward ? rewardColor() : typeColor(item.type);
+
+  const name: React.ComponentProps<typeof Ionicons>["name"] = (() => {
+    if (isReward)                  return "trophy-outline";
+    if (item.type === "room")      return "radio-outline";
+    if (item.type === "direct_message") return "chatbubble-outline";
+    if (item.type === "follow")    return "person-add-outline";
+    if (item.type === "track_comment") return "chatbubble-ellipses-outline";
+    return "heart-outline";
+  })();
+
+  return <Ionicons name={name} size={16} color={fg} />;
+}
+
+// ─── Relative date ────────────────────────────────────────────────────────────
+
+function formatRelative(value: string | null): string {
+  if (!value) return "just now";
+  const diffMs = Date.now() - new Date(value).getTime();
+  const m = Math.floor(diffMs / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+// ─── Single row ───────────────────────────────────────────────────────────────
+
+function NotifRow({
+  item,
+  onMarkRead,
+  markingId,
+}: {
+  item: NotificationItem;
+  onMarkRead: (item: NotificationItem) => void;
+  markingId: string | null;
+}) {
+  const isReward =
+    item.type === "room" && item.source === "room" && item.roomType === "room-reward";
+  const { bg } = isReward ? rewardColor() : typeColor(item.type);
+  const isMarking = markingId === item.id;
+
+  function handlePress() {
+    if (!item.isRead) onMarkRead(item);
+    if (item.href) router.push(item.href as never);
+  }
 
   return (
-    <Screen
-      header={<AppHeader variant="detail" title="Notifications" fallbackRoute="/(tabs)/dashboard" />}
-      contentContainerStyle={styles.screenContent}
-    >
-      <Stack.Screen options={{ headerShown: false }} />
-      {notifications.error ? <ErrorState message={notifications.error} onRetry={notifications.retry} /> : null}
-
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{notifications.items.length}</Text>
-          <Text style={styles.summaryLabel}>Total alerts</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{notifications.unreadCount}</Text>
-          <Text style={styles.summaryLabel}>Unread alerts</Text>
-        </View>
+    <Pressable onPress={handlePress} style={[s.row, !item.isRead && s.rowUnread]}>
+      {/* Unread dot */}
+      <View style={s.dotCol}>
+        {!item.isRead && <View style={s.unreadDot} />}
       </View>
 
-      <SectionTitle title="Activity stream" subtitle="Table-style feed adapted from the web dashboard pattern." />
-      <ChipTabs
-        options={filterOptions.map((option) => ({ ...option }))}
-        value={filterKey}
-        onChange={(next) => setFilterKey(next as "all" | "unread" | "read")}
-      />
+      {/* Icon bubble */}
+      <View style={[s.iconWrap, { backgroundColor: bg }]}>
+        <NotifIcon item={item} />
+      </View>
 
-      {notifications.loading ? (
-        <Panel title="Loading notifications" description="Connecting to the creator notification feed." />
-      ) : filteredItems.length === 0 ? (
-        <Panel title="No notifications yet" description="Creator alerts will appear here when the social layer emits them." />
-      ) : (
-        <ListShell>
-          <ListHeader
-            columns={[
-              { key: "event", label: "Event" },
-              { key: "status", label: "Status", align: "right" },
-            ]}
-          />
-          {filteredItems.map((item) => (
-            <ListRow
-              key={item.id}
-              onPress={() => router.push(`/audience/activity/${item.id}` as never)}
-            >
-              <View style={styles.row}>
-                <View style={styles.rowMain}>
-                  <View style={styles.rowTitleRow}>
-                    <Ionicons
-                      name="notifications-outline"
-                      size={14}
-                      color={tokens.colors.textSecondary}
-                    />
-                    <Text style={styles.rowTitle} numberOfLines={1}>
-                      {formatTypeLabel(item.type)}
-                    </Text>
-                  </View>
-                  <Text style={styles.rowPreview} numberOfLines={2}>
-                    {item.preview ?? "Creator activity"}
-                  </Text>
-                </View>
-                <View style={styles.rowMeta}>
-                  <StatusPill
-                    label={item.isRead ? "Read" : "Unread"}
-                    tone={item.isRead ? "muted" : "warning"}
-                  />
-                  <Text style={styles.rowTime}>{formatRelative(item.createdAt)}</Text>
-                </View>
-              </View>
-            </ListRow>
-          ))}
-        </ListShell>
+      {/* Text */}
+      <View style={s.content}>
+        <Text style={s.label} numberOfLines={3}>{item.label}</Text>
+        <Text style={s.time}>{formatRelative(item.createdAt)}</Text>
+      </View>
+
+      {/* Mark read button */}
+      {!item.isRead && (
+        <AnimatedPressable
+          onPress={() => onMarkRead(item)}
+          haptic="selection"
+          style={s.markBtn}
+        >
+          {isMarking ? (
+            <ActivityIndicator size="small" color={tokens.colors.textSecondary} />
+          ) : (
+            <Text style={s.markBtnLabel}>Mark read</Text>
+          )}
+        </AnimatedPressable>
       )}
-    </Screen>
+    </Pressable>
   );
 }
 
-function formatTypeLabel(type: string) {
-  return type.replace(/_/g, " ");
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+export default function NotificationsScreen() {
+  const notifications = useNotifications(30);
+  const [filterKey, setFilterKey] = useState<"all" | "unread">("all");
+  const [markingId, setMarkingId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Clear refreshing spinner once the hook finishes loading after a pull
+  useEffect(() => {
+    if (refreshing && !notifications.loading) {
+      setRefreshing(false);
+    }
+  }, [notifications.loading, refreshing]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    notifications.retry();
+  }, [notifications]);
+
+  const filteredItems = useMemo(() => {
+    if (filterKey === "unread") return notifications.items.filter((i) => !i.isRead);
+    return notifications.items;
+  }, [filterKey, notifications.items]);
+
+  const handleMarkRead = useCallback(
+    async (item: NotificationItem) => {
+      if (item.isRead || markingId) return;
+      setMarkingId(item.id);
+      try {
+        await notifications.markRead(item.id);
+      } finally {
+        setMarkingId(null);
+      }
+    },
+    [markingId, notifications],
+  );
+
+  return (
+    <SafeAreaView style={s.safe} edges={["top"]}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader
+        title="Notifications"
+        subtitle={
+          notifications.unreadCount > 0
+            ? `${notifications.unreadCount} unread`
+            : "All caught up"
+        }
+        showBackButton
+      />
+
+      {/* ── Filter chips ────────────────────────────────────────── */}
+      <View style={s.tabsRow}>
+        <View style={s.tabs}>
+          {(["all", "unread"] as const).map((key) => (
+            <Pressable
+              key={key}
+              onPress={() => setFilterKey(key)}
+              style={[s.tab, filterKey === key && s.tabActive]}
+            >
+              <Text style={[s.tabLabel, filterKey === key && s.tabLabelActive]}>
+                {key === "all"
+                  ? "All"
+                  : `Unread${notifications.unreadCount > 0 ? ` · ${notifications.unreadCount}` : ""}`}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      {/* ── Content ─────────────────────────────────────────────── */}
+      {notifications.loading && !refreshing ? (
+        <View style={s.skeletonList}>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <View key={i} style={s.skeletonRow}>
+              {/* dot col */}
+              <View style={s.dotCol} />
+              {/* icon bubble */}
+              <Skeleton width={36} height={36} borderRadius={18} />
+              {/* text lines */}
+              <View style={s.skeletonCopy}>
+                <Skeleton width={`${68 - (i % 3) * 8}%`} height={13} borderRadius={6} />
+                <Skeleton width="30%" height={10} borderRadius={6} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : filteredItems.length === 0 ? (
+        <ScrollView
+          contentContainerStyle={s.center}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={tokens.colors.accent}
+              colors={[tokens.colors.accent]}
+            />
+          }
+        >
+          <Ionicons
+            name="notifications-off-outline"
+            size={36}
+            color={tokens.colors.textSecondary}
+          />
+          <Text style={s.emptyTitle}>
+            {filterKey === "unread" ? "No unread notifications" : "No notifications yet"}
+          </Text>
+          <Text style={s.emptySubtitle}>
+            {filterKey === "unread"
+              ? "You're all caught up."
+              : "Activity from your fans will appear here."}
+          </Text>
+        </ScrollView>
+      ) : (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={s.separator} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={tokens.colors.accent}
+              colors={[tokens.colors.accent]}
+            />
+          }
+          renderItem={({ item }) => (
+            <NotifRow
+              item={item}
+              onMarkRead={(i) => void handleMarkRead(i)}
+              markingId={markingId}
+            />
+          )}
+        />
+      )}
+    </SafeAreaView>
+  );
 }
 
-function formatRelative(isoValue: string | null) {
-  if (!isoValue) {
-    return "No date";
-  }
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-  const dateValue = new Date(isoValue);
-  const diffMs = Date.now() - dateValue.getTime();
-  if (!Number.isFinite(diffMs) || diffMs < 0) {
-    return "Now";
-  }
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
 
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return "Now";
-  if (minutes < 60) return `${minutes}m`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
-
-  return dateValue.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-const styles = StyleSheet.create({
-  screenContent: {
-    paddingHorizontal: 16,
-    gap: 12,
+  center: {
+    flexGrow: 1, alignItems: "center", justifyContent: "center",
+    gap: 12, paddingHorizontal: 32,
   },
-  summaryRow: {
-    flexDirection: "row",
-    gap: 12,
+  emptyTitle: {
+    color: tokens.colors.textPrimary, fontSize: 16,
+    fontWeight: "700", textAlign: "center",
   },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: tokens.colors.panelGlassStrong,
-    borderRadius: tokens.radii.xl,
+  emptySubtitle: {
+    color: tokens.colors.textSecondary, fontSize: 14,
+    textAlign: "center", lineHeight: 20,
+  },
+
+  // Tabs
+  tabsRow: {
+    flexDirection: "row", justifyContent: "flex-end",
+    paddingHorizontal: 16, paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: tokens.colors.borderSubtle,
+  },
+  tabs: {
+    flexDirection: "row", gap: 6,
+  },
+  tab: {
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: tokens.radii.pill,
+    borderWidth: 1, borderColor: "transparent",
+  },
+  tabActive: {
+    backgroundColor: tokens.colors.accentDim,
     borderColor: tokens.colors.borderAccent,
-    padding: 16,
-    gap: 6,
   },
-  summaryValue: {
-    color: tokens.colors.textPrimary,
-    fontSize: 24,
-    fontWeight: "800",
+  tabLabel: { color: tokens.colors.textSecondary, fontSize: 13, fontWeight: "600" },
+  tabLabelActive: { color: tokens.colors.textPrimary },
+
+  // Skeleton
+  skeletonList: { paddingTop: 4 },
+  skeletonRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: tokens.colors.borderSubtle,
   },
-  summaryLabel: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  skeletonCopy: { flex: 1, gap: 8 },
+
+  // List
+  list: { paddingBottom: 40 },
+  separator: { height: 1, backgroundColor: tokens.colors.borderSubtle },
+
+  // Row
   row: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
+    flexDirection: "row", alignItems: "flex-start", gap: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
   },
-  rowMain: {
-    flex: 1,
-    gap: 6,
+  rowUnread: { backgroundColor: "rgba(255,255,255,0.03)" },
+
+  dotCol: { width: 8, alignItems: "center", paddingTop: 12 },
+  unreadDot: {
+    width: 7, height: 7, borderRadius: 4,
+    backgroundColor: tokens.colors.accent,
   },
-  rowTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+
+  iconWrap: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: "center", justifyContent: "center",
+    flexShrink: 0,
   },
-  rowTitle: {
-    color: tokens.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: "700",
-    textTransform: "capitalize",
-    flexShrink: 1,
+
+  content: { flex: 1, gap: 4 },
+  label: { color: tokens.colors.textPrimary, fontSize: 14, lineHeight: 20 },
+  time: { color: tokens.colors.textSecondary, fontSize: 12 },
+
+  markBtn: {
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 8, borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+    alignSelf: "flex-start", marginTop: 2,
+    minWidth: 76, alignItems: "center",
   },
-  rowPreview: {
-    color: tokens.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  rowMeta: {
-    alignItems: "flex-end",
-    gap: 8,
-    minWidth: 74,
-  },
-  rowTime: {
-    color: tokens.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "600",
-  },
+  markBtnLabel: { color: tokens.colors.textSecondary, fontSize: 12, fontWeight: "600" },
 });

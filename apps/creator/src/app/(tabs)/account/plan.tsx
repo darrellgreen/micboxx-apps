@@ -19,7 +19,6 @@ import { AnimatedPressable, Skeleton } from "@micboxx/ui";
 
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useAuth } from "@/features/auth/provider";
-import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import {
   ENTITLEMENT_PRO,
   useSubscription,
@@ -94,6 +93,7 @@ const TIER_PALETTE: Record<
 
 function resolveTierKey(machineKey: string): TierKey {
   const k = machineKey.toLowerCase();
+  if (k.includes("founding")) return "subscriber"; // treated as consumer-only
   if (k.includes("vip")) return "vip";
   if (k.includes("pro")) return "pro";
   if (k.includes("subscriber") || k.includes("listener") || k.includes("premium"))
@@ -293,7 +293,6 @@ function PlanCard({
 
 export default function PlanScreen() {
   const { session } = useAuth();
-  const bootstrap = useCreatorBootstrap();
   const { isPro, customerInfo } = useSubscription();
   const presentPaywallIfNeeded = usePresentPaywallIfNeeded();
   const presentCustomerCenter = usePresentCustomerCenter();
@@ -319,18 +318,16 @@ export default function PlanScreen() {
   );
 
   const visiblePlans = allPlans.filter((p) => {
-    // Hide listener/subscriber-tier plans — not relevant for creators
-    if (resolveTierKey(p.machineKey) === "subscriber") return false;
+    // Allowlist: only show free, pro, and vip tiers in the creator app.
+    // Subscriber/listener and founder plans are consumer-facing only.
+    const tier = resolveTierKey(p.machineKey);
+    if (tier !== "free" && tier !== "pro" && tier !== "vip") return false;
     if (isFreePlan(p)) return true;
     if (billingPeriod === "annual") return isAnnualPlan(p);
     return !isAnnualPlan(p);
   });
 
   const proExpiry = customerInfo?.entitlements.active[ENTITLEMENT_PRO]?.expirationDate;
-
-  const uploadPolicy = bootstrap.uploadOptions?.uploadPolicy;
-  const trackLimit = uploadPolicy?.trackLimit ?? null;
-  const tracksUsed = uploadPolicy?.tracksUsed ?? 0;
 
   async function handleRestore() {
     setIsRestoring(true);
@@ -389,21 +386,6 @@ export default function PlanScreen() {
           )}
         </View>
 
-        {/* ── Upload usage ──────────────────────────────────────────────── */}
-        {trackLimit != null && (
-          <View style={s.usageCard}>
-            <View style={s.usageLabelRow}>
-              <Text style={s.usageLabel}>Track uploads</Text>
-              <Text style={s.usageCount}>{tracksUsed} / {trackLimit}</Text>
-            </View>
-            <UsageBar used={tracksUsed} limit={trackLimit} />
-            {!isPro && tracksUsed >= trackLimit * 0.8 && (
-              <Text style={s.usageWarning}>
-                You're close to your upload limit. Upgrade for expanded access.
-              </Text>
-            )}
-          </View>
-        )}
 
         {/* ── Billing toggle ────────────────────────────────────────────── */}
         {hasAnnualPlans && (
