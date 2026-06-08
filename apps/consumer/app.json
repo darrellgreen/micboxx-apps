@@ -43,6 +43,15 @@
     },
     "plugins": [
       "expo-dev-client",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "buildReactNativeFromSource": true
+          }
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
