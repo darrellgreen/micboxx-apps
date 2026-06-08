@@ -36,6 +36,10 @@ export function getTermsUrl(): string {
   return "https://www.micboxx.com/terms";
 }
 
+export function getPublicProfileUrl(username: string): string | null {
+  return joinWebPath(`/artist/${username}`);
+}
+
 /** @deprecated Use getPrivacyUrl / getTermsUrl directly */
 export function getLegalUrl(): string | null {
   return joinWebPath("/legal");

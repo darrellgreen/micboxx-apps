@@ -997,17 +997,13 @@ const s = StyleSheet.create({
 
   /* ── shared / active-user ─────────────────────────────────────────────── */
   overviewCard: {
-    backgroundColor: CARD_BG,
-    borderRadius: 18,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 4,
     gap: 12,
   },
   overviewHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
   },
   overviewPeriod: {
     flexDirection: "row",

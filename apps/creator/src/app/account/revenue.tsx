@@ -1,209 +1,15 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-
-import { AnimatedPressable } from "@micboxx/ui";
+import { useMemo } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { AnimatedPressable, AppHeader } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
-import {
-  buildPayoutReadinessSummary,
-  buildRevenueTrendSummary,
-} from "@/features/revenue/insights";
-import {
-  ChipTabs,
-  ListHeader,
-  ListRow,
-  ListShell,
-  StatusPill,
-} from "@/shared/ui/dashboard-primitives";
-import {
-  EmptyState,
-  KeyValueRow,
-  Panel,
-  SectionTitle,
-} from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
-export default function RevenueScreen() {
-  const revenue = useCreatorBootstrap().analytics?.revenue;
-  const [filterKey, setFilterKey] = useState<"all" | "track" | "album">("all");
-  const trendSummary = useMemo(
-    () => buildRevenueTrendSummary(revenue ?? null),
-    [revenue],
-  );
-  const payoutReadiness = useMemo(
-    () => buildPayoutReadinessSummary(revenue ?? null),
-    [revenue],
-  );
-  const filteredReleases = useMemo(() => {
-    if (!revenue) {
-      return [];
-    }
-    if (filterKey === "all") {
-      return revenue.topEarningReleases;
-    }
-    return revenue.topEarningReleases.filter((item) => item.type === filterKey);
-  }, [filterKey, revenue]);
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  return (
-    <Screen
-      header={<AppHeader variant="detail" title="Revenue" fallbackRoute="/(tabs)/dashboard" />}
-      contentContainerStyle={styles.screenContent}
-    >
-      {!revenue ? (
-        <EmptyState title="No revenue snapshot" description="Revenue data is missing or not available for this account yet." />
-      ) : (
-        <>
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryValue}>
-                {formatCurrency(revenue.snapshot?.grossRevenue ?? null)}
-              </Text>
-              <Text style={styles.summaryLabel}>Gross revenue</Text>
-            </View>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryValue}>
-                {formatCount(revenue.snapshot?.salesCount ?? null)}
-              </Text>
-              <Text style={styles.summaryLabel}>Sales count</Text>
-            </View>
-          </View>
-
-          <Panel title="Top earners">
-            <View style={styles.topRow}>
-              <View style={styles.topCard}>
-                <Text style={styles.topTitle}>Top track</Text>
-                <Text style={styles.topValue} numberOfLines={1}>
-                  {revenue.snapshot?.topEarningTrack.title ?? "N/A"}
-                </Text>
-                <Text style={styles.topAmount}>
-                  {formatCurrency(revenue.snapshot?.topEarningTrack.amount ?? null)}
-                </Text>
-              </View>
-              <View style={styles.topCard}>
-                <Text style={styles.topTitle}>Top album</Text>
-                <Text style={styles.topValue} numberOfLines={1}>
-                  {revenue.snapshot?.topEarningAlbum.title ?? "N/A"}
-                </Text>
-                <Text style={styles.topAmount}>
-                  {formatCurrency(revenue.snapshot?.topEarningAlbum.amount ?? null)}
-                </Text>
-              </View>
-            </View>
-          </Panel>
-
-          <Panel title="Revenue trend signal">
-            <KeyValueRow
-              label="Average order value"
-              value={formatCurrency(trendSummary.averageOrderValue)}
-            />
-            <KeyValueRow
-              label="Top release share"
-              value={formatPercent(trendSummary.topReleaseSharePercent)}
-            />
-            <KeyValueRow
-              label="Concentration"
-              value={trendSummary.label}
-            />
-            <Text style={styles.signalText}>{trendSummary.description}</Text>
-          </Panel>
-
-          <Panel title="Payout readiness (visibility only)">
-            <KeyValueRow
-              label="State"
-              value={formatReadinessState(payoutReadiness.state)}
-            />
-            <KeyValueRow
-              label="Plan unlocked"
-              value={payoutReadiness.checks.planUnlocked ? "Yes" : "No"}
-            />
-            <KeyValueRow
-              label="Purchasable catalog"
-              value={payoutReadiness.checks.hasPurchasableCatalog ? "Yes" : "No"}
-            />
-            <KeyValueRow
-              label="Recorded sales"
-              value={payoutReadiness.checks.hasRecordedSales ? "Yes" : "No"}
-            />
-            <Text style={styles.signalText}>{payoutReadiness.summary}</Text>
-            <AnimatedPressable
-              style={styles.readinessAction}
-              onPress={() => router.push(payoutReadiness.nextAction.href as never)}
-            >
-              <Text style={styles.readinessActionLabel}>
-                {payoutReadiness.nextAction.label}
-              </Text>
-            </AnimatedPressable>
-          </Panel>
-
-          <SectionTitle title="Ranking" subtitle="Entity and status-aware release ranking." />
-          <ChipTabs
-            options={[
-              { key: "all", label: "All", count: revenue.topEarningReleases.length },
-              {
-                key: "track",
-                label: "Tracks",
-                count: revenue.topEarningReleases.filter((item) => item.type === "track").length,
-              },
-              {
-                key: "album",
-                label: "Albums",
-                count: revenue.topEarningReleases.filter((item) => item.type === "album").length,
-              },
-            ]}
-            value={filterKey}
-            onChange={(next) => setFilterKey(next as "all" | "track" | "album")}
-          />
-          {filteredReleases.length === 0 ? (
-            <Panel title="No ranked releases" description="Revenue ranking will populate when monetized releases have sales." />
-          ) : (
-            <ListShell>
-              <ListHeader
-                columns={[
-                  { key: "release", label: "Release" },
-                  { key: "revenue", label: "Revenue", align: "right" },
-                ]}
-              />
-              {filteredReleases.map((item) => (
-                <ListRow key={`${item.type}-${item.id}`}>
-                  <View style={styles.rankRow}>
-                    <View style={styles.rankMain}>
-                      <Text style={styles.rankTitle} numberOfLines={1}>
-                        {item.title}
-                      </Text>
-                      <View style={styles.rankPills}>
-                        <StatusPill
-                          label={item.type}
-                          tone={item.type === "album" ? "muted" : "default"}
-                        />
-                        <StatusPill
-                          label={item.isPurchasable ? "On sale" : "Locked"}
-                          tone={item.isPurchasable ? "success" : "warning"}
-                        />
-                      </View>
-                    </View>
-                    <View style={styles.rankMeta}>
-                      <Text style={styles.rankAmount}>{formatCurrency(item.revenue)}</Text>
-                      <Text style={styles.rankUnits}>
-                        {item.unitsSold == null ? "N/A" : `${item.unitsSold} sold`}
-                      </Text>
-                    </View>
-                  </View>
-                </ListRow>
-              ))}
-            </ListShell>
-          )}
-        </>
-      )}
-    </Screen>
-  );
-}
-
-function formatCurrency(value: number | null | undefined) {
-  if (value == null) {
-    return "$0.00";
-  }
-
+function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -212,136 +18,383 @@ function formatCurrency(value: number | null | undefined) {
   }).format(value);
 }
 
-function formatCount(value: number | null | undefined) {
-  return new Intl.NumberFormat("en-US").format(value ?? 0);
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function Card({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <View style={[s.card, accent && s.cardAccent]}>{children}</View>
+  );
 }
 
-function formatPercent(value: number | null | undefined) {
-  if (value == null) {
-    return "N/A";
-  }
-
-  return `${value}%`;
+function Divider() {
+  return <View style={s.divider} />;
 }
 
-function formatReadinessState(state: "ready" | "needs_action" | "blocked") {
-  if (state === "ready") {
-    return "Ready";
-  }
-
-  if (state === "blocked") {
-    return "Blocked";
-  }
-
-  return "Needs action";
+function StatRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={s.statRow}>
+      <Text style={s.statLabel}>{label}</Text>
+      <Text style={s.statValue}>{value}</Text>
+    </View>
+  );
 }
 
-const styles = StyleSheet.create({
-  screenContent: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: tokens.colors.panelGlassStrong,
-    borderRadius: tokens.radii.xl,
-    borderColor: tokens.colors.borderAccent,
-    padding: 16,
-    gap: 6,
-  },
-  summaryValue: {
-    color: tokens.colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  summaryLabel: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  topRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  topCard: {
-    flex: 1,
+function CtaButton({ label, onPress, accent }: { label: string; onPress: () => void; accent?: boolean }) {
+  return (
+    <AnimatedPressable onPress={onPress} haptic="selection" style={[s.cta, accent && s.ctaAccent]}>
+      <Text style={[s.ctaLabel, accent && s.ctaLabelAccent]}>{label}</Text>
+    </AnimatedPressable>
+  );
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+export default function EarningsScreen() {
+  const bootstrap = useCreatorBootstrap();
+  const revenue = bootstrap.analytics?.revenue ?? null;
+  const trackCount = bootstrap.tracksSummary?.tracks.length ?? 0;
+  const albumCount = bootstrap.albumsSummary?.albums.length ?? 0;
+
+  const sellingLocked = Boolean(revenue?.sellingLocked ?? true);
+  const grossRevenue = revenue?.snapshot?.grossRevenue ?? 0;
+  const salesCount = revenue?.snapshot?.salesCount ?? 0;
+  const hasSales = salesCount > 0;
+  const topTrack = revenue?.snapshot?.topEarningTrack ?? null;
+  const topAlbum = revenue?.snapshot?.topEarningAlbum ?? null;
+
+  const topEarners = useMemo(() => {
+    if (!revenue?.topEarningReleases) return [];
+    return revenue.topEarningReleases
+      .filter((r) => r.revenue > 0)
+      .slice(0, 5);
+  }, [revenue]);
+
+  // ── State: Free / selling locked ────────────────────────────────────────
+  if (sellingLocked) {
+    return (
+      <SafeAreaView style={s.safe} edges={["top"]}>
+        <AppHeader variant="detail" title="Earnings" fallbackRoute="/(tabs)/dashboard" />
+        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
+          {/* Hero */}
+          <Card accent>
+            <View style={s.heroIcon}>
+              <Ionicons name="storefront-outline" size={28} color={tokens.colors.accent} />
+            </View>
+            <Text style={s.heroTitle}>Start earning from your catalog</Text>
+            <Text style={s.heroBody}>
+              Upgrade to unlock direct-to-fan selling and track your sales here.
+            </Text>
+            <CtaButton
+              label="Unlock selling tools"
+              accent
+              onPress={() => router.push("/account/plan" as never)}
+            />
+          </Card>
+
+          {/* Progress */}
+          <Card>
+            <Text style={s.cardTitle}>Your progress</Text>
+            <Divider />
+            <StatRow label="Tracks uploaded" value={String(trackCount)} />
+            <Divider />
+            <StatRow label="Albums created" value={String(albumCount)} />
+            <Divider />
+            <View style={s.lockedRow}>
+              <Ionicons name="lock-closed" size={13} color="#A78BFA" style={{ marginRight: 6 }} />
+              <Text style={s.lockedLabel}>Selling tools locked on Free</Text>
+            </View>
+            <CtaButton label="View plans" onPress={() => router.push("/account/plan" as never)} />
+          </Card>
+
+          {/* Payouts locked */}
+          <Card>
+            <Text style={s.cardTitle}>Payouts</Text>
+            <Divider />
+            <Text style={s.bodyText}>Available after selling is enabled.</Text>
+            <CtaButton label="View plans" onPress={() => router.push("/account/plan" as never)} />
+          </Card>
+
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ── State: Pro, selling enabled, no sales yet ────────────────────────────
+  if (!hasSales) {
+    return (
+      <SafeAreaView style={s.safe} edges={["top"]}>
+        <AppHeader variant="detail" title="Earnings" fallbackRoute="/(tabs)/dashboard" />
+        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
+          {/* Hero */}
+          <Card accent>
+            <View style={s.heroIcon}>
+              <Ionicons name="checkmark-circle-outline" size={28} color={tokens.colors.accent} />
+            </View>
+            <Text style={s.heroTitle}>Your store is ready</Text>
+            <Text style={s.heroBody}>
+              Sales from tracks and releases will appear here once fans start buying.
+            </Text>
+            <View style={s.heroStats}>
+              <View style={s.heroStat}>
+                <Text style={s.heroStatValue}>$0.00</Text>
+                <Text style={s.heroStatLabel}>Earned</Text>
+              </View>
+              <View style={s.heroStatDivider} />
+              <View style={s.heroStat}>
+                <Text style={s.heroStatValue}>0</Text>
+                <Text style={s.heroStatLabel}>Sales</Text>
+              </View>
+            </View>
+            <CtaButton
+              label="Go to catalog"
+              onPress={() => router.push("/catalog/tracks" as never)}
+            />
+          </Card>
+
+          {/* Next milestone */}
+          <Card>
+            <Text style={s.cardTitle}>Next milestone</Text>
+            <Divider />
+            <View style={s.milestoneRow}>
+              <View style={s.milestoneIcon}>
+                <Ionicons name="trophy-outline" size={20} color={tokens.colors.accent} />
+              </View>
+              <View style={s.milestoneCopy}>
+                <Text style={s.milestoneTitle}>First sale</Text>
+                <Text style={s.milestoneBody}>
+                  Share your latest release to start building momentum.
+                </Text>
+              </View>
+            </View>
+          </Card>
+
+          {/* Progress */}
+          <Card>
+            <Text style={s.cardTitle}>Your progress</Text>
+            <Divider />
+            <StatRow label="Tracks uploaded" value={String(trackCount)} />
+            <Divider />
+            <StatRow label="Albums created" value={String(albumCount)} />
+          </Card>
+
+          {/* Top earners — empty state */}
+          <Card>
+            <Text style={s.cardTitle}>Top earners</Text>
+            <Divider />
+            <Text style={s.bodyText}>
+              Your top earning tracks and albums will appear here once you have sales.
+            </Text>
+          </Card>
+
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ── State: Has sales ─────────────────────────────────────────────────────
+  return (
+    <SafeAreaView style={s.safe} edges={["top"]}>
+      <AppHeader variant="detail" title="Earnings" fallbackRoute="/(tabs)/dashboard" />
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* Hero earnings card */}
+        <Card accent>
+          <View style={s.milestoneRow}>
+            <View style={s.milestoneIcon}>
+              <Ionicons name="ribbon-outline" size={20} color={tokens.colors.accent} />
+            </View>
+            <Text style={s.milestoneTitle}>Milestone unlocked</Text>
+          </View>
+          <Text style={[s.milestoneBody, { marginTop: 4, marginBottom: 16 }]}>
+            Your catalog has started earning.
+          </Text>
+          <View style={s.heroStats}>
+            <View style={s.heroStat}>
+              <Text style={s.heroStatValue}>{formatCurrency(grossRevenue)}</Text>
+              <Text style={s.heroStatLabel}>Total earned</Text>
+            </View>
+            <View style={s.heroStatDivider} />
+            <View style={s.heroStat}>
+              <Text style={s.heroStatValue}>{salesCount}</Text>
+              <Text style={s.heroStatLabel}>Sales</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* Top earners */}
+        {(topTrack?.title || topAlbum?.title) && (
+          <Card>
+            <Text style={s.cardTitle}>Top earners</Text>
+            {topTrack?.title && (
+              <>
+                <Divider />
+                <View style={s.earnerRow}>
+                  <View style={s.earnerCopy}>
+                    <Text style={s.earnerLabel}>Top track</Text>
+                    <Text style={s.earnerTitle} numberOfLines={1}>{topTrack.title}</Text>
+                  </View>
+                  <Text style={s.earnerAmount}>{formatCurrency(topTrack.amount ?? 0)}</Text>
+                </View>
+              </>
+            )}
+            {topAlbum?.title && (
+              <>
+                <Divider />
+                <View style={s.earnerRow}>
+                  <View style={s.earnerCopy}>
+                    <Text style={s.earnerLabel}>Top album</Text>
+                    <Text style={s.earnerTitle} numberOfLines={1}>{topAlbum.title}</Text>
+                  </View>
+                  <Text style={s.earnerAmount}>{formatCurrency(topAlbum.amount ?? 0)}</Text>
+                </View>
+              </>
+            )}
+          </Card>
+        )}
+
+        {/* Ranked releases */}
+        {topEarners.length > 0 && (
+          <Card>
+            <Text style={s.cardTitle}>Sales breakdown</Text>
+            {topEarners.map((item, i) => (
+              <View key={`${item.type}-${item.id}`}>
+                {i > 0 && <Divider />}
+                <View style={s.earnerRow}>
+                  <View style={s.earnerCopy}>
+                    <Text style={s.earnerTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={s.earnerLabel}>{item.type === "album" ? "Album" : "Track"}</Text>
+                  </View>
+                  <View style={s.earnerMeta}>
+                    <Text style={s.earnerAmount}>{formatCurrency(item.revenue)}</Text>
+                    {item.unitsSold != null && (
+                      <Text style={s.earnerUnits}>{item.unitsSold} sold</Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            ))}
+          </Card>
+        )}
+
+        {/* Progress */}
+        <Card>
+          <Text style={s.cardTitle}>Catalog</Text>
+          <Divider />
+          <StatRow label="Tracks" value={String(trackCount)} />
+          <Divider />
+          <StatRow label="Albums" value={String(albumCount)} />
+        </Card>
+
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
+  scroll: { padding: 16, gap: 12, paddingBottom: 60 },
+
+  card: {
     backgroundColor: tokens.colors.bgSurface,
-    borderRadius: tokens.radii.lg,
+    borderRadius: tokens.radii.xl,
+    borderWidth: 1,
     borderColor: tokens.colors.borderSubtle,
-    padding: 12,
-    gap: 6,
+    padding: 16,
+    gap: 12,
   },
-  topTitle: {
+  cardAccent: {
+    borderColor: tokens.colors.borderAccent,
+    backgroundColor: "rgba(0,200,180,0.04)",
+  },
+  cardTitle: {
     color: tokens.colors.textSecondary,
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
-  topValue: {
+  divider: { height: 1, backgroundColor: tokens.colors.borderSubtle },
+
+  // Hero
+  heroIcon: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: tokens.colors.accentDim,
+    alignItems: "center", justifyContent: "center",
+  },
+  heroTitle: {
     color: tokens.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: -0.3,
   },
-  topAmount: {
-    color: tokens.colors.accent,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  signalText: {
+  heroBody: {
     color: tokens.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  readinessAction: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.bgApp,
-    borderColor: tokens.colors.borderSubtle,
-  },
-  readinessActionLabel: {
-    color: tokens.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  rankRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  rankMain: {
-    flex: 1,
-    gap: 8,
-  },
-  rankTitle: {
-    color: tokens.colors.textPrimary,
     fontSize: 14,
-    fontWeight: "700",
+    lineHeight: 21,
   },
-  rankPills: {
+  heroStats: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    backgroundColor: tokens.colors.bgApp,
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+    paddingVertical: 14,
   },
-  rankMeta: {
-    alignItems: "flex-end",
-    gap: 4,
-    minWidth: 88,
+  heroStat: { flex: 1, alignItems: "center", gap: 2 },
+  heroStatValue: { color: tokens.colors.textPrimary, fontSize: 20, fontWeight: "800" },
+  heroStatLabel: { color: tokens.colors.textSecondary, fontSize: 12, fontWeight: "600" },
+  heroStatDivider: { width: 1, height: 28, backgroundColor: tokens.colors.borderSubtle },
+
+  // CTA
+  cta: {
+    alignItems: "center", paddingVertical: 12,
+    borderRadius: tokens.radii.pill,
+    borderWidth: 1, borderColor: tokens.colors.borderSubtle,
+    backgroundColor: tokens.colors.bgApp,
   },
-  rankAmount: {
-    color: tokens.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "800",
+  ctaAccent: {
+    backgroundColor: tokens.colors.accent,
+    borderColor: tokens.colors.accent,
   },
-  rankUnits: {
-    color: tokens.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "600",
+  ctaLabel: { color: tokens.colors.textPrimary, fontSize: 14, fontWeight: "700" },
+  ctaLabelAccent: { color: "#fff" },
+
+  // Stat row
+  statRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  statLabel: { color: tokens.colors.textPrimary, fontSize: 14, fontWeight: "600" },
+  statValue: { color: tokens.colors.textSecondary, fontSize: 14, fontWeight: "600" },
+
+  // Locked
+  lockedRow: { flexDirection: "row", alignItems: "center" },
+  lockedLabel: { color: "#A78BFA", fontSize: 13, fontWeight: "600" },
+
+  // Body text
+  bodyText: { color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 21 },
+
+  // Milestone
+  milestoneRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  milestoneIcon: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: tokens.colors.accentDim,
+    alignItems: "center", justifyContent: "center",
   },
+  milestoneTitle: { color: tokens.colors.textPrimary, fontSize: 15, fontWeight: "700" },
+  milestoneBody: { color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 21 },
+
+  // Earner rows
+  earnerRow: {
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between", gap: 12,
+  },
+  earnerCopy: { flex: 1, gap: 2 },
+  earnerLabel: { color: tokens.colors.textSecondary, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
+  earnerTitle: { color: tokens.colors.textPrimary, fontSize: 14, fontWeight: "700" },
+  earnerMeta: { alignItems: "flex-end", gap: 2 },
+  earnerAmount: { color: tokens.colors.accent, fontSize: 14, fontWeight: "800" },
+  earnerUnits: { color: tokens.colors.textSecondary, fontSize: 11, fontWeight: "600" },
 });

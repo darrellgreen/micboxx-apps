@@ -98,18 +98,21 @@ export default function CatalogHomeScreen() {
     }, []),
   );
 
-  const totalTracks  = tracks.length;
-  const totalAlbums  = albums.length;
-  const totalReleases = totalTracks + totalAlbums;
+  const trackPublishedList = tracks.filter((t) => resolveTrackReleaseState(t.status) === "published");
+  const albumPublishedList = albums.filter((a) => a.status.releaseState === "published");
 
-  const publishedCount =
-    tracks.filter((t) => resolveTrackReleaseState(t.status) === "published").length +
-    albums.filter((a) => a.status.releaseState === "published").length;
-  const draftCount     = tracks.filter((t) => resolveTrackReleaseState(t.status) === "draft").length;
+  const totalTracks  = trackPublishedList.length;
+  const totalAlbums  = albumPublishedList.length;
+
+  const publishedCount = totalTracks + totalAlbums;
+  const draftCount     = tracks.filter((t) => resolveTrackReleaseState(t.status) === "draft").length +
+    albums.filter((a) => a.status.releaseState === "draft").length;
   const scheduledCount =
     tracks.filter((t) => resolveTrackReleaseState(t.status) === "scheduled").length +
     albums.filter((a) => a.status.releaseState === "scheduled").length;
   const failedCount    = tracks.filter((t) => t.status.processing === "failed").length;
+
+  const totalReleases = publishedCount;
 
   const totalPlays = bootstrap.analytics?.basic.totalPlays ?? 0;
   const formatCount = useCallback(
@@ -162,16 +165,20 @@ export default function CatalogHomeScreen() {
   }, [tracks]);
 
   /* per-entity breakdown */
-  const trackPublished = tracks.filter((t) => resolveTrackReleaseState(t.status) === "published").length;
+  const trackPublished = trackPublishedList.length;
   const trackDraft     = tracks.filter((t) => resolveTrackReleaseState(t.status) === "draft").length;
   const trackScheduled = tracks.filter((t) => resolveTrackReleaseState(t.status) === "scheduled").length;
 
-  const albumPublished = albums.filter((a) => a.status.releaseState === "published").length;
+  const albumPublished = albumPublishedList.length;
   const albumDraft     = albums.filter((a) => a.status.releaseState === "draft").length;
   const albumScheduled = albums.filter((a) => a.status.releaseState === "scheduled").length;
 
-  const latestTrack = tracks[0] ?? null;
-  const latestAlbum = albums[0] ?? null;
+  const latestTrack = trackPublishedList
+    .slice()
+    .sort((a, b) => new Date(b.timestamps.updatedAt).getTime() - new Date(a.timestamps.updatedAt).getTime())[0] ?? null;
+  const latestAlbum = albumPublishedList
+    .slice()
+    .sort((a, b) => new Date(b.timestamps.updatedAt).getTime() - new Date(a.timestamps.updatedAt).getTime())[0] ?? null;
 
   const recentActivity = useMemo(() => {
     return [
@@ -224,7 +231,7 @@ export default function CatalogHomeScreen() {
                 reducedMotion={reducedMotion}
               />{" "}
               <Text style={s.snapshotHeadlineMuted}>
-                {totalReleases === 1 ? "Release" : "Releases"}
+                {totalReleases === 1 ? "Published Release" : "Published Releases"}
               </Text>
             </Text>
           </View>
@@ -305,7 +312,6 @@ export default function CatalogHomeScreen() {
               <Ionicons name="musical-notes" size={15} color={STATUS_COLOR.published} />
             </View>
             <Text style={s.catalogCardTitle}>Tracks</Text>
-            <Text style={s.catalogCardCount}>{totalTracks}</Text>
           </View>
 
           {latestTrack ? (
@@ -357,7 +363,6 @@ export default function CatalogHomeScreen() {
               <Ionicons name="albums" size={15} color="#a78bfa" />
             </View>
             <Text style={s.catalogCardTitle}>Releases</Text>
-            <Text style={s.catalogCardCount}>{totalAlbums}</Text>
           </View>
 
           {latestAlbum ? (

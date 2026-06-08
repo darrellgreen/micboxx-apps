@@ -13,8 +13,8 @@ import {
   ListShell,
   StatusPill,
 } from "@/shared/ui/dashboard-primitives";
-import { ErrorState, Panel, PillButton } from "@/shared/ui/layout";
-import { Screen } from "@micboxx/ui";
+import { ErrorState } from "@/shared/ui/layout";
+import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { formatRelativeTime } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
@@ -38,6 +38,77 @@ function formatRoomTime(value: number | null) {
   if (!value) return "not visited yet";
   return formatRelativeTime(new Date(value * 1000).toISOString());
 }
+
+// ─── Empty states ─────────────────────────────────────────────────────────────
+
+function RoomsHeroEmpty() {
+  return (
+    <View style={e.wrap}>
+      {/* Hero card */}
+      <View style={e.heroCard}>
+        <View style={e.iconWrap}>
+          <Ionicons name="radio-outline" size={28} color={tokens.colors.accent} />
+        </View>
+        <Text style={e.heroTitle}>Turn your releases into live fan moments</Text>
+        <Text style={e.heroBody}>
+          Create a release and enable its Room to unlock Live, Q&A, Polls, Support, and real-time audience tools.
+        </Text>
+        <AnimatedPressable
+          style={e.primaryBtn}
+          onPress={() => router.push("/create/release" as never)}
+          haptic="light"
+        >
+          <Ionicons name="add" size={16} color="#000" />
+          <Text style={e.primaryBtnText}>Create release</Text>
+        </AnimatedPressable>
+        <AnimatedPressable
+          style={e.secondaryBtn}
+          onPress={() => router.push("/create/upload-push" as never)}
+          haptic="selection"
+        >
+          <Text style={e.secondaryBtnText}>Upload a track</Text>
+          <Ionicons name="chevron-forward" size={13} color={tokens.colors.accent} />
+        </AnimatedPressable>
+      </View>
+
+      {/* How it works */}
+      <View style={e.howCard}>
+        <Text style={e.howTitle}>How Rooms work</Text>
+        <View style={e.howDivider} />
+        <HowStep number={1} title="Create a release" body="Add tracks, artwork, and release details." />
+        <View style={e.howDivider} />
+        <HowStep number={2} title="Enable the Release Room" body="Turn the release into a live fan space." />
+        <View style={e.howDivider} />
+        <HowStep number={3} title="Start moments" body="Go live, run Q&As, create polls, and invite fan support." />
+      </View>
+    </View>
+  );
+}
+
+function HowStep({ number, title, body }: { number: number; title: string; body: string }) {
+  return (
+    <View style={e.howStep}>
+      <View style={e.howNum}>
+        <Text style={e.howNumText}>{number}</Text>
+      </View>
+      <View style={e.howCopy}>
+        <Text style={e.howStepTitle}>{title}</Text>
+        <Text style={e.howStepBody}>{body}</Text>
+      </View>
+    </View>
+  );
+}
+
+function FilterEmpty({ title, body }: { title: string; body: string }) {
+  return (
+    <View style={e.filterEmpty}>
+      <Text style={e.filterEmptyTitle}>{title}</Text>
+      <Text style={e.filterEmptyBody}>{body}</Text>
+    </View>
+  );
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function RoomsIndexScreen() {
   const [items, setItems] = useState<CreatorRoomListItem[]>([]);
@@ -84,7 +155,7 @@ export default function RoomsIndexScreen() {
   );
 
   return (
-    <Screen header={<ScreenHeader title="Live Rooms" />} contentContainerStyle={styles.screenContent}>
+    <Screen header={<ScreenHeader title="Release Rooms" />} contentContainerStyle={styles.screenContent}>
       <ChipTabs
         value={filter}
         onChange={(next) => setFilter(next as RoomFilter)}
@@ -99,12 +170,17 @@ export default function RoomsIndexScreen() {
       {error ? <ErrorState message={error} /> : null}
 
       {loading ? (
-        <Panel title="Loading Rooms" description="Reading your managed Rooms from MicBoxx." />
+        <FilterEmpty title="Loading rooms…" body="Reading your Release Rooms from MicBoxx." />
       ) : filteredItems.length === 0 ? (
-        <Panel
-          title="No Rooms in this filter"
-          description="Rooms appear for published releases you can manage."
-        />
+        filter === "all" ? (
+          <RoomsHeroEmpty />
+        ) : filter === "active" ? (
+          <FilterEmpty title="No active Rooms" body="Open a Release Room when you're ready to host fans live." />
+        ) : filter === "unvisited" ? (
+          <FilterEmpty title="No unvisited Rooms" body="Rooms you haven't opened yet will appear here." />
+        ) : (
+          <FilterEmpty title="No artist live Rooms" body="Live Rooms will appear here when you're actively hosting." />
+        )
       ) : (
         <ListShell>
           <ListHeader
@@ -141,6 +217,89 @@ export default function RoomsIndexScreen() {
     </Screen>
   );
 }
+
+// ─── Empty state styles ───────────────────────────────────────────────────────
+
+const e = StyleSheet.create({
+  wrap: { gap: 12 },
+
+  // Hero card
+  heroCard: {
+    backgroundColor: "rgba(0,200,180,0.04)",
+    borderRadius: tokens.radii.xl,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderAccent,
+    padding: 20,
+    gap: 14,
+    alignItems: "center",
+  },
+  iconWrap: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: tokens.colors.accentDim,
+    alignItems: "center", justifyContent: "center",
+  },
+  heroTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 20, fontWeight: "800", letterSpacing: -0.3,
+    textAlign: "center",
+  },
+  heroBody: {
+    color: tokens.colors.textSecondary,
+    fontSize: 14, lineHeight: 21,
+    textAlign: "center",
+  },
+  primaryBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: tokens.colors.accent,
+    borderRadius: tokens.radii.pill,
+    paddingHorizontal: 24, paddingVertical: 13,
+    alignSelf: "stretch", justifyContent: "center",
+  },
+  primaryBtnText: { color: "#000", fontSize: 14, fontWeight: "800" },
+  secondaryBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingVertical: 4,
+  },
+  secondaryBtnText: { color: tokens.colors.accent, fontSize: 14, fontWeight: "600" },
+
+  // How it works card
+  howCard: {
+    backgroundColor: tokens.colors.bgSurface,
+    borderRadius: tokens.radii.xl,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+    padding: 16,
+    gap: 12,
+  },
+  howTitle: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11, fontWeight: "700",
+    textTransform: "uppercase", letterSpacing: 0.8,
+  },
+  howDivider: { height: 1, backgroundColor: tokens.colors.borderSubtle },
+  howStep: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  howNum: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: tokens.colors.accentDim,
+    alignItems: "center", justifyContent: "center",
+    flexShrink: 0, marginTop: 1,
+  },
+  howNumText: { color: tokens.colors.accent, fontSize: 12, fontWeight: "800" },
+  howCopy: { flex: 1, gap: 2 },
+  howStepTitle: { color: tokens.colors.textPrimary, fontSize: 14, fontWeight: "700" },
+  howStepBody: { color: tokens.colors.textSecondary, fontSize: 13, lineHeight: 19 },
+
+  // Filter-specific empty state
+  filterEmpty: {
+    paddingVertical: 32,
+    alignItems: "center",
+    gap: 8,
+  },
+  filterEmptyTitle: { color: tokens.colors.textPrimary, fontSize: 15, fontWeight: "700" },
+  filterEmptyBody: { color: tokens.colors.textSecondary, fontSize: 13, lineHeight: 19, textAlign: "center", paddingHorizontal: 24 },
+});
+
+// ─── List styles ──────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   screenContent: {

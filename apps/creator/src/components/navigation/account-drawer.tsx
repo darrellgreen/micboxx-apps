@@ -11,6 +11,7 @@ import {
     type PropsWithChildren,
 } from "react";
 import {
+    Alert,
     Animated,
     Dimensions,
     Pressable,
@@ -124,22 +125,33 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
     [closeDrawer, session],
   );
 
-  const handleAuthAction = useCallback(async () => {
-    closeDrawer();
+  const handleAuthAction = useCallback(() => {
     if (!session) {
+      closeDrawer();
       router.push("/sign-in");
       return;
     }
 
-    try {
-      await signOut();
-      if (pathname.startsWith("/account") || pathname.startsWith("/audience")) {
-        router.replace("/welcome");
-      }
-    } catch {
-      router.push("/sign-in");
-    }
-  }, [closeDrawer, pathname, session, signOut]);
+    Alert.alert(
+      "Sign out",
+      "Are you sure you want to sign out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign out",
+          style: "destructive",
+          onPress: () => {
+            closeDrawer();
+            void signOut().then(() => {
+              router.replace("/welcome");
+            }).catch(() => {
+              router.replace("/welcome");
+            });
+          },
+        },
+      ],
+    );
+  }, [closeDrawer, session, signOut]);
 
   const accountItems = useMemo<DrawerItem[]>(() => {
     const items: DrawerItem[] = [];
@@ -173,8 +185,8 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
 
     items.push({
       key: "revenue",
-      label: "Revenue snapshot",
-      subtitle: "Top earning releases",
+      label: "Earnings",
+      subtitle: "Sales and top earners",
       icon: "cash-outline",
       onPress: () => openAccountDestination("revenue"),
       requiresAuth: true,

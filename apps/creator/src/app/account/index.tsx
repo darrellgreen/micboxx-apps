@@ -324,18 +324,6 @@ export default function AccountScreen() {
         </Card>
       </View>
 
-      {/* ── Session ───────────────────────────────────────────────────── */}
-      <View style={s.section}>
-        <Text style={s.sectionLabel}>Session</Text>
-        <AnimatedPressable
-          onPress={() => void signOut()}
-          haptic="light"
-          style={s.sessionRow}
-        >
-          <Ionicons name="log-out-outline" size={20} color={tokens.colors.textPrimary} />
-          <Text style={s.sessionLabel}>Sign out</Text>
-        </AnimatedPressable>
-      </View>
 
       {/* ── Danger zone ───────────────────────────────────────────────── */}
       <AnimatedPressable
