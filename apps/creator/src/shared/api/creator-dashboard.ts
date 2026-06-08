@@ -552,6 +552,10 @@ export async function getAlbumPlays(
   );
 }
 
+export async function deleteAccount(): Promise<void> {
+  await creatorFetch<void>("/v1/dashboard/user/account", { method: "DELETE" });
+}
+
 export async function reorderAlbumTracks(
   albumId: string | number,
   tracks: Array<{ trackId: number; position: number }>,
