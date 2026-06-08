@@ -42,8 +42,8 @@ export default function AccountHomeScreen() {
     },
     {
       key: "plan",
-      label: "Plan",
-      subtitle: "Current creator plan and monetization access",
+      label: "Plans",
+      subtitle: "Upgrade to Pro, manage your subscription, and view what's included",
       icon: "diamond-outline",
       route: "/account/plan",
     },
