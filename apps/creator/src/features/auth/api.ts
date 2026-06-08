@@ -369,6 +369,8 @@ export async function revokeDrupalSession(
     return;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
   await fetch(`${env.drupalBaseUrl}/oauth/revoke`, {
     method: "POST",
     headers: {
@@ -379,5 +381,6 @@ export async function revokeDrupalSession(
     body: new URLSearchParams({
       token: session.refreshToken,
     }).toString(),
-  }).catch(() => undefined);
+    signal: controller.signal,
+  }).catch(() => undefined).finally(() => clearTimeout(timeout));
 }

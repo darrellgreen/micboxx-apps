@@ -98,8 +98,12 @@ export default function RootLayout() {
                         name="welcome"
                         options={{ headerShown: false }}
                       />
+<Stack.Screen
+                        name="creator-access"
+                        options={{ headerShown: false }}
+                      />
                       <Stack.Screen
-                        name="sign-in"
+                        name="sign-up"
                         options={{
                           headerShown: false,
                           presentation: "modal",
@@ -110,8 +114,14 @@ export default function RootLayout() {
                         }}
                       />
                       <Stack.Screen
-                        name="creator-access"
-                        options={{ headerShown: false }}
+                        name="verify-email"
+                        options={{
+                          headerShown: false,
+                          animation: "slide_from_right",
+                          contentStyle: {
+                            backgroundColor: tokens.colors.bgApp,
+                          },
+                        }}
                       />
                       <Stack.Screen
                         name="handoff/create-account"

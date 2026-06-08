@@ -106,7 +106,7 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
     (slug: CreatorDrawerRoute, requiresAuth = true) => {
       closeDrawer();
       if (requiresAuth && !session) {
-        router.push("/sign-in");
+        router.push("/welcome");
         return;
       }
 
@@ -128,7 +128,7 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
   const handleAuthAction = useCallback(() => {
     if (!session) {
       closeDrawer();
-      router.push("/sign-in");
+      router.push("/welcome");
       return;
     }
 

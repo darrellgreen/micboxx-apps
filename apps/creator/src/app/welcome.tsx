@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen, AnimatedPressable, Button } from "@micboxx/ui";
 import { useAuth } from "@/features/auth/provider";
@@ -14,8 +14,12 @@ export default function WelcomeScreen() {
   const { session, isHydrating, isSigningIn, error, signIn, signOut } =
     useAuth();
 
+  const hasNavigated = useRef(false);
+
   useEffect(() => {
     if (session && !isHydrating && !bootstrap.loading) {
+      if (hasNavigated.current) return;
+      hasNavigated.current = true;
       router.replace(
         resolveCreatorEntryHref({
           hasSession: true,
@@ -24,6 +28,9 @@ export default function WelcomeScreen() {
           createEntryTarget: bootstrap.createEntryTarget,
         }),
       );
+    }
+    if (!session && !isHydrating) {
+      hasNavigated.current = false;
     }
   }, [
     bootstrap.accessState,
@@ -39,23 +46,6 @@ export default function WelcomeScreen() {
 
   return (
     <Screen scroll={false}>
-      <View style={s.topBar}>
-        <AnimatedPressable
-          style={s.closeBtn}
-          hitSlop={8}
-          onPress={() => {
-            if (router.canGoBack()) router.back();
-            else router.replace("/welcome");
-          }}
-        >
-          <Ionicons
-            name="close"
-            size={20}
-            color={tokens.colors.textSecondary}
-          />
-        </AnimatedPressable>
-      </View>
-
       <View style={s.body}>
         <View style={s.logoWrap}>
           <Image
@@ -129,7 +119,7 @@ export default function WelcomeScreen() {
             <AnimatedPressable
               style={s.ghostBtn}
               haptic="none"
-              onPress={() => router.replace("/handoff/create-account")}
+              onPress={() => router.push("/sign-up")}
               disabled={busy}
             >
               <Text style={s.ghostLabel}>Create creator account</Text>

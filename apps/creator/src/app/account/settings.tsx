@@ -1,5 +1,6 @@
 import { Alert, Switch, View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useState } from "react";
+import { router } from "expo-router";
 import { useAuth } from "@/features/auth/provider";
 import { useAccountPreferences } from "@/features/account/provider";
 import { deleteAccount } from "@/shared/api/creator-dashboard";
@@ -55,6 +56,10 @@ export default function SettingsScreen() {
     try {
       await deleteAccount();
       await signOut();
+      // Navigate to the root index so it resets the full navigation stack.
+      // router.replace("/welcome") from a nested screen leaves the tabs layout
+      // underneath still active; going through "/" lets index.tsx handle routing.
+      router.replace("/");
     } catch (err) {
       setDeleting(false);
       showToast({

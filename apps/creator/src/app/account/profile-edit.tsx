@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { updateUserProfile } from "@/shared/api/creator-dashboard";
@@ -12,6 +13,7 @@ export default function ProfileEditScreen() {
   const [bio, setBio] = useState("");
   const [website, setWebsite] = useState("");
   const [instagram, setInstagram] = useState("");
+  const [facebook, setFacebook] = useState("");
   const [twitter, setTwitter] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +23,7 @@ export default function ProfileEditScreen() {
     setBio(bootstrap.profile?.bio ?? "");
     setWebsite(bootstrap.profile?.links.website ?? "");
     setInstagram(bootstrap.profile?.links.instagram ?? "");
+    setFacebook(bootstrap.profile?.links.facebook ?? "");
     setTwitter(bootstrap.profile?.links.twitter ?? "");
   }, [bootstrap.profile]);
 
@@ -33,9 +36,11 @@ export default function ProfileEditScreen() {
         bio: bio.trim(),
         website: website.trim(),
         instagram: instagram.trim(),
+        facebook: facebook.trim(),
         twitter: twitter.trim(),
       });
       await bootstrap.refreshProfile();
+      router.back();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Profile update failed.");
     } finally {
@@ -60,6 +65,9 @@ export default function ProfileEditScreen() {
         </Field>
         <Field label="Instagram">
           <TextField value={instagram} onChangeText={setInstagram} />
+        </Field>
+        <Field label="Facebook">
+          <TextField value={facebook} onChangeText={setFacebook} />
         </Field>
         <Field label="Twitter / X">
           <TextField value={twitter} onChangeText={setTwitter} />

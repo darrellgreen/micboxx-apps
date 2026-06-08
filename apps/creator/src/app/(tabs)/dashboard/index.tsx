@@ -277,14 +277,6 @@ function ActivationHeroCard() {
           <Text style={s.heroPrimaryBtnText}>Create release</Text>
         </AnimatedPressable>
 
-        <AnimatedPressable
-          style={s.heroSecondaryBtn}
-          onPress={() => router.push("/create/upload-push" as never)}
-          haptic="selection"
-        >
-          <Text style={s.heroSecondaryBtnText}>Upload a track</Text>
-          <Ionicons name="chevron-forward" size={13} color={tokens.colors.accent} />
-        </AnimatedPressable>
       </View>
     </Animated.View>
   );
