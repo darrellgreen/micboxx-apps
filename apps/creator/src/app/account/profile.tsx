@@ -4,17 +4,21 @@
  * Mobile equivalent of the web artist page — shows the creator's public
  * appearance (cover, avatar, name, bio, links, counts) without tracks or
  * music sections. An "Edit profile" button routes to the edit form.
+ * Tapping the cover or avatar opens the image picker to replace them inline.
  */
 
+import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable, Avatar } from "@micboxx/ui";
 
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
+import { replaceUserAvatar, replaceUserCover } from "@/shared/api/creator-dashboard";
 import { useGetArtistPageQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
@@ -78,6 +82,10 @@ export default function ProfileScreen() {
 
   const { data: artistPage } = useGetArtistPageQuery(username, { skip: !username });
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const hasCover = !!profile?.coverUrl;
   const isVerified = profile?.flags.verifiedBadge ?? false;
   const counts = artistPage?.artist.counts ?? { followers: 0, following: 0, tracks: 0, albums: 0 };
@@ -97,6 +105,42 @@ export default function ProfileScreen() {
       : null,
   ].filter((l): l is NonNullable<typeof l> => l !== null);
 
+  async function handlePickImage(kind: "avatar" | "cover") {
+    setUploadError(null);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.9,
+      allowsEditing: true,
+      aspect: kind === "cover" ? [16, 7] : [1, 1],
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const asset = result.assets[0];
+    const formData = new FormData();
+    formData.append(kind, {
+      uri: asset.uri,
+      name: asset.fileName ?? `${kind}.jpg`,
+      type: asset.mimeType ?? "image/jpeg",
+    } as never);
+
+    try {
+      if (kind === "avatar") {
+        setUploadingAvatar(true);
+        await replaceUserAvatar(formData);
+      } else {
+        setUploadingCover(true);
+        await replaceUserCover(formData);
+      }
+      await bootstrap.refreshProfile();
+    } catch {
+      setUploadError(`Failed to update ${kind === "avatar" ? "profile photo" : "cover image"}. Please try again.`);
+    } finally {
+      setUploadingAvatar(false);
+      setUploadingCover(false);
+    }
+  }
+
   return (
     <SafeAreaView style={s.safe} edges={["top"]}>
       <ScreenHeader
@@ -108,7 +152,11 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
         {/* ── Cover hero ──────────────────────────────────────────── */}
-        <View style={s.heroWrap}>
+        <AnimatedPressable
+          style={s.heroWrap}
+          onPress={() => void handlePickImage("cover")}
+          haptic="light"
+        >
           {hasCover ? (
             <Image
               source={{ uri: profile.coverUrl! }}
@@ -120,17 +168,51 @@ export default function ProfileScreen() {
           )}
           <View style={s.gradient} pointerEvents="none" />
 
+          {/* Camera overlay on cover */}
+          <View style={s.coverCameraBtn}>
+            {uploadingCover ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="camera" size={18} color="#fff" />
+            )}
+          </View>
+
           {/* Avatar anchored to bottom-left of hero */}
           <View style={s.avatarAnchor}>
-            <View style={[s.avatarRing, hasCover && s.avatarRingOnCover]}>
-              <Avatar
-                uri={profile?.avatarUrl}
-                displayName={profile?.displayName ?? ""}
-                size={88}
-              />
-            </View>
+            <AnimatedPressable
+              style={[s.avatarRing, hasCover && s.avatarRingOnCover]}
+              onPress={(e) => {
+                e.stopPropagation?.();
+                void handlePickImage("avatar");
+              }}
+              haptic="light"
+            >
+              {uploadingAvatar ? (
+                <View style={s.avatarLoadingWrap}>
+                  <ActivityIndicator size="small" color={tokens.colors.accent} />
+                </View>
+              ) : (
+                <Avatar
+                  uri={profile?.avatarUrl}
+                  displayName={profile?.displayName ?? ""}
+                  size={88}
+                />
+              )}
+              {/* Camera badge on avatar */}
+              <View style={s.avatarCameraBtn}>
+                <Ionicons name="camera" size={11} color="#fff" />
+              </View>
+            </AnimatedPressable>
           </View>
-        </View>
+        </AnimatedPressable>
+
+        {/* ── Upload error ─────────────────────────────────────────── */}
+        {uploadError ? (
+          <View style={s.errorBanner}>
+            <Ionicons name="alert-circle-outline" size={14} color={tokens.colors.danger} />
+            <Text style={s.errorText}>{uploadError}</Text>
+          </View>
+        ) : null}
 
         {/* ── Identity ────────────────────────────────────────────── */}
         <View style={s.identity}>
@@ -188,7 +270,7 @@ export default function ProfileScreen() {
           style={s.editNudge}
         >
           <Ionicons name="pencil-outline" size={16} color={tokens.colors.textSecondary} />
-          <Text style={s.editNudgeLabel}>Edit your public profile</Text>
+          <Text style={s.editNudgeLabel}>Edit your profile information</Text>
           <Ionicons name="chevron-forward" size={14} color={tokens.colors.textSecondary} />
         </AnimatedPressable>
 
@@ -203,7 +285,6 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
   scroll: { paddingBottom: 60 },
 
-
   // Hero
   heroWrap: { height: COVER_HEIGHT, position: "relative" },
   cover: { width: "100%", height: "100%" },
@@ -212,13 +293,70 @@ const s = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
+
+  // Cover camera button (top-right of cover)
+  coverCameraBtn: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+
+  // Avatar
   avatarAnchor: { position: "absolute", bottom: -44, left: 20 },
   avatarRing: {
     borderRadius: 50, borderWidth: 3,
     borderColor: tokens.colors.bgApp,
     backgroundColor: tokens.colors.bgApp,
+    position: "relative",
   },
   avatarRingOnCover: { borderColor: "rgba(255,255,255,0.15)" },
+  avatarLoadingWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: tokens.colors.bgElevated,
+  },
+
+  // Avatar camera badge (bottom-right of avatar)
+  avatarCameraBtn: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: tokens.colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: tokens.colors.bgApp,
+  },
+
+  // Error banner
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 52,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "rgba(220,38,38,0.12)",
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: "rgba(220,38,38,0.25)",
+  },
+  errorText: { flex: 1, color: tokens.colors.danger, fontSize: 13, lineHeight: 18 },
 
   // Identity
   identity: { marginTop: 52, paddingHorizontal: 20, gap: 4 },

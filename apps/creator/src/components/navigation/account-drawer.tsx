@@ -326,7 +326,10 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
                             label={
                               session?.user.roles
                                 .filter((r) => r !== "authenticated")
-                                .map((r) => r.charAt(0).toUpperCase() + r.slice(1))[0] ?? "Creator"
+                                .map((r) => {
+                                  const stripped = r.startsWith("micboxx_") ? r.slice(8) : r;
+                                  return stripped.charAt(0).toUpperCase() + stripped.slice(1);
+                                })[0] ?? "Creator"
                             }
                             active
                             variant="accent"
