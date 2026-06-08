@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Animated, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef } from "react";
 
 import { AnimatedPressable } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
@@ -19,8 +20,39 @@ export function ChipTabs({
   value: string;
   onChange: (next: string) => void;
 }) {
+  const layouts = useRef<Record<string, { x: number; width: number }>>({});
+  const sliderX = useRef(new Animated.Value(0)).current;
+  const sliderW = useRef(new Animated.Value(0)).current;
+  const initialised = useRef(false);
+
+  const animateTo = (key: string, animate: boolean) => {
+    const layout = layouts.current[key];
+    if (!layout) return;
+    if (animate) {
+      Animated.parallel([
+        Animated.spring(sliderX, { toValue: layout.x, useNativeDriver: false, tension: 280, friction: 28 }),
+        Animated.spring(sliderW, { toValue: layout.width, useNativeDriver: false, tension: 280, friction: 28 }),
+      ]).start();
+    } else {
+      sliderX.setValue(layout.x);
+      sliderW.setValue(layout.width);
+    }
+  };
+
+  useEffect(() => {
+    animateTo(value, initialised.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
   return (
     <View style={styles.chipGroup}>
+      {/* Sliding active pill */}
+      <Animated.View
+        style={[
+          styles.chipSlider,
+          { transform: [{ translateX: sliderX }], width: sliderW },
+        ]}
+      />
       {options.map((option) => {
         const active = option.key === value;
         return (
@@ -28,12 +60,18 @@ export function ChipTabs({
             key={option.key}
             disabled={active}
             onPress={() => {
-              if (!active) {
-                onChange(option.key);
+              if (!active) onChange(option.key);
+            }}
+            onLayout={(e) => {
+              const { x, width } = e.nativeEvent.layout;
+              layouts.current[option.key] = { x, width };
+              if (option.key === value) {
+                animateTo(value, initialised.current);
+                initialised.current = true;
               }
             }}
             haptic="selection"
-            style={[styles.chip, active && styles.chipActive]}
+            style={styles.chip}
           >
             <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
               {option.label}
@@ -133,14 +171,21 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radiusSystem.section,
     backgroundColor: tokens.colors.bgElevated,
     padding: 3,
+    position: "relative",
+  },
+  chipSlider: {
+    position: "absolute",
+    top: 3,
+    bottom: 3,
+    left: 0,
+    borderRadius: tokens.radiusSystem.control,
+    backgroundColor: tokens.colors.accentDim,
   },
   chip: {
     borderRadius: tokens.radiusSystem.control,
     paddingHorizontal: 8,
     paddingVertical: 6,
-  },
-  chipActive: {
-    backgroundColor: tokens.colors.accentDim,
+    zIndex: 1,
   },
   chipLabel: {
     color: tokens.colors.textSecondary,

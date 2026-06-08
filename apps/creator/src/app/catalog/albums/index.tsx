@@ -8,6 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { DashboardAlbumSummary } from "@/contracts/creator";
 import { getMyAlbums } from "@/shared/api/creator-dashboard";
 import { ErrorState, Panel } from "@/shared/ui/layout";
+import { ChipTabs } from "@/shared/ui/dashboard-primitives";
 import { AnimatedPressable, AppBackdrop, Skeleton } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 import { UnreadBadge } from "@/features/social/components/UnreadBadge";
@@ -257,34 +258,16 @@ export default function AlbumsListScreen() {
           }
         >
           {/* Pill Filter Bar */}
-          <View style={styles.filterBarContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterScroll}
-            >
-              {[
-                { key: "all", label: "All", count: filterCounts.all },
-                { key: "draft", label: "Drafts", count: filterCounts.draft },
-                { key: "scheduled", label: "Scheduled", count: filterCounts.scheduled },
-                { key: "published", label: "Published", count: filterCounts.published },
-              ].map((opt) => {
-                const isActive = filter === opt.key;
-                return (
-                  <AnimatedPressable
-                    key={opt.key}
-                    disabled={isActive}
-                    style={[styles.filterChip, isActive && styles.filterChipActive]}
-                    onPress={() => handleFilterChange(opt.key as AlbumFilter)}
-                  >
-                    <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
-                      {opt.label} • {opt.count}
-                    </Text>
-                  </AnimatedPressable>
-                );
-              })}
-            </ScrollView>
-          </View>
+          <ChipTabs
+            value={filter}
+            onChange={(next) => handleFilterChange(next as AlbumFilter)}
+            options={[
+              { key: "all", label: "All", count: filterCounts.all },
+              { key: "draft", label: "Drafts", count: filterCounts.draft },
+              { key: "scheduled", label: "Scheduled", count: filterCounts.scheduled },
+              { key: "published", label: "Published", count: filterCounts.published },
+            ]}
+          />
 
           {error ? <ErrorState message={error} /> : null}
 
@@ -431,33 +414,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 160,
     gap: 16,
-  },
-  filterBarContainer: {
-    backgroundColor: "#131820",
-    borderRadius: 12,
-    padding: 4,
-  },
-  filterScroll: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  filterChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginHorizontal: 1,
-  },
-  filterChipActive: {
-    backgroundColor: "rgba(0, 179, 166, 0.15)",
-  },
-  filterChipText: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  filterChipTextActive: {
-    color: "#00B3A6",
-    fontWeight: "700",
   },
   albumsCard: {
     padding: 16,

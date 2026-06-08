@@ -844,29 +844,32 @@ export default function RoomManagementScreen() {
           void e;
         }}
       >
-        {/* Sliding active pill */}
-        <Animated.View
-          style={[
-            styles.controlSlider,
-            {
-              transform: [
-                {
-                  translateX: sliderAnim.interpolate({
-                    inputRange: [0, 1, 2, 3],
-                    outputRange: [0, 1, 2, 3].map((i) => {
-                      // Total strip width minus 2*8 padding, divided by 4, times index, plus gap offsets
-                      const stripWidth = windowWidth - 32; // 16px padding each side
-                      const tabWidth = (stripWidth - 18) / 4; // 3 gaps of 6px each
-                      return i * (tabWidth + 6);
-                    }),
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
+        {/* Sliding active pill — only rendered when sheet is open */}
+        {sheetOpen ? (
+          <Animated.View
+            style={[
+              styles.controlSlider,
+              (() => {
+                // strip padding: 5px each side, gap: 6px between 4 tabs
+                const stripWidth = windowWidth - 32; // screen minus screen padding
+                const tabWidth = (stripWidth - 10 - 18) / 4; // minus strip padding (10) and 3 gaps (18)
+                return {
+                  width: tabWidth,
+                  transform: [
+                    {
+                      translateX: sliderAnim.interpolate({
+                        inputRange: [0, 1, 2, 3],
+                        outputRange: [0, 1, 2, 3].map((i) => i * (tabWidth + 6)),
+                      }),
+                    },
+                  ],
+                };
+              })(),
+            ]}
+          />
+        ) : null}
         {controlTabs.map((tab) => {
-          const isActive = activeControl === tab.mode;
+          const isActive = sheetOpen && activeControl === tab.mode;
           return (
             <AnimatedPressable
               key={tab.mode}
@@ -1267,6 +1270,7 @@ export default function RoomManagementScreen() {
             ) : null}
           </>
         )}
+        <View style={{ height: 32 }} />
       </BottomSheetSurface>
 
       <View style={styles.audienceCard}>
@@ -1471,13 +1475,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.08)",
     padding: 5,
     position: "relative",
+    marginVertical: 12,
   },
   controlSlider: {
     position: "absolute",
     top: 5,
     left: 5,
-    // width is (100% - 10px padding - 18px gaps) / 4 — set dynamically but we use approximate
-    width: "23.5%" as any,
     bottom: 5,
     borderRadius: 13,
     backgroundColor: tokens.colors.accent,
@@ -1552,6 +1555,7 @@ const styles = StyleSheet.create({
   liveActions: {
     flexDirection: "row",
     gap: 10,
+    marginVertical: 12,
   },
 
   // ── CTA buttons ─────────────────────────────────────────────────────────
