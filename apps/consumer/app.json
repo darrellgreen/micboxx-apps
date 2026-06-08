@@ -71,6 +71,7 @@
       "@sentry/react-native",
       "expo-asset",
       "@react-native-firebase/app",
+      "./plugins/withFirebaseModularHeaders",
       "@livekit/react-native-expo-plugin",
       "@config-plugins/react-native-webrtc"
     ],
