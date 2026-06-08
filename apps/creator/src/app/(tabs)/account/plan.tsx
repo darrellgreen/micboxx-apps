@@ -1,6 +1,12 @@
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, StyleSheet, Text, View } from "react-native";
 
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
+import {
+  usePresentCustomerCenter,
+  usePresentPaywallIfNeeded,
+  useRestorePurchases,
+} from "@/features/subscription/hooks";
+import { useSubscription } from "@/features/subscription/provider";
 import { getCreatorUpgradeUrl } from "@/shared/api/external-links";
 import {
   ListHeader,
@@ -11,10 +17,20 @@ import {
 import { Panel, PillButton, SectionTitle } from "@/shared/ui/layout";
 import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
+import { useState } from "react";
 
 export default function PlanScreen() {
   const bootstrap = useCreatorBootstrap();
   const upgradeUrl = getCreatorUpgradeUrl();
+
+  // RevenueCat subscription state
+  const { isPro, isLoading: isSubscriptionLoading, customerInfo } = useSubscription();
+  const presentPaywallIfNeeded = usePresentPaywallIfNeeded();
+  const presentCustomerCenter = usePresentCustomerCenter();
+  const restorePurchases = useRestorePurchases();
+
+  const [isRestoring, setIsRestoring] = useState(false);
+
   const planLabel = bootstrap.analytics?.overview.planLabel ?? "Unknown";
   const uploadPolicy = bootstrap.uploadOptions?.uploadPolicy;
   const canSellCatalog = Boolean(bootstrap.analytics?.access.canSellCatalog);
@@ -23,21 +39,83 @@ export default function PlanScreen() {
   const tracksRemaining =
     trackLimit == null ? "Unlimited" : String(Math.max(0, trackLimit - tracksUsed));
 
+  // Subscription expiry — only present when the user is Pro
+  const proExpiry = customerInfo?.entitlements.active["MicBoxx Pro"]?.expirationDate;
+
+  async function handleUpgradeToPro() {
+    await presentPaywallIfNeeded();
+  }
+
+  async function handleManageSubscription() {
+    await presentCustomerCenter();
+  }
+
+  async function handleRestore() {
+    setIsRestoring(true);
+    await restorePurchases();
+    setIsRestoring(false);
+  }
+
   return (
     <Screen
       header={<AppHeader variant="detail" title="Plan" fallbackRoute="/(tabs)/dashboard" />}
       contentContainerStyle={styles.screenContent}
     >
+      {/* ── Subscription hero ── */}
       <View style={styles.heroRow}>
         <View style={styles.heroCard}>
           <Text style={styles.heroValue}>{planLabel}</Text>
           <Text style={styles.heroLabel}>Current plan</Text>
         </View>
-        <View style={styles.heroCard}>
-          <Text style={styles.heroValue}>{tracksRemaining}</Text>
-          <Text style={styles.heroLabel}>Tracks remaining</Text>
+
+        <View style={[styles.heroCard, isPro && styles.heroCardPro]}>
+          {isSubscriptionLoading ? (
+            <ActivityIndicator color={tokens.colors.accent} />
+          ) : (
+            <>
+              <Text style={[styles.heroValue, isPro && styles.heroValuePro]}>
+                {isPro ? "Active" : "Free"}
+              </Text>
+              <Text style={styles.heroLabel}>MicBoxx Pro</Text>
+            </>
+          )}
         </View>
       </View>
+
+      {/* ── Pro expiry ── */}
+      {isPro && proExpiry ? (
+        <Text style={styles.expiryHint}>
+          Pro renews {new Date(proExpiry).toLocaleDateString(undefined, {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </Text>
+      ) : null}
+
+      {/* ── Pro CTA / management buttons ── */}
+      {!isSubscriptionLoading ? (
+        <View style={styles.actionRow}>
+          {isPro ? (
+            <PillButton
+              label="Manage subscription"
+              tone="subtle"
+              onPress={() => void handleManageSubscription()}
+            />
+          ) : (
+            <PillButton
+              label="Upgrade to Pro"
+              tone="accent"
+              onPress={() => void handleUpgradeToPro()}
+            />
+          )}
+          <PillButton
+            label={isRestoring ? "Restoring…" : "Restore purchases"}
+            tone="subtle"
+            onPress={() => void handleRestore()}
+          />
+        </View>
+      ) : null}
 
       <SectionTitle title="Access capabilities" subtitle="Snapshot-only access checks in v1." />
       <ListShell>
@@ -93,13 +171,15 @@ export default function PlanScreen() {
             {uploadPolicy?.canMultiUpload ? "Enabled" : "Single upload only"}
           </Text>
         </View>
-        <Text style={styles.hint}>Upgrade and billing changes are web handoffs in v1.</Text>
-        {upgradeUrl ? (
-          <PillButton
-            label="Open upgrade flow"
-            tone="accent"
-            onPress={() => void Linking.openURL(upgradeUrl)}
-          />
+        {upgradeUrl && !isPro ? (
+          <>
+            <Text style={styles.hint}>Upgrade and billing changes are also available on the web.</Text>
+            <PillButton
+              label="Open upgrade flow"
+              tone="accent"
+              onPress={() => void Linking.openURL(upgradeUrl)}
+            />
+          </>
         ) : null}
       </Panel>
     </Screen>
@@ -120,8 +200,15 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.panelGlassStrong,
     borderRadius: tokens.radii.xl,
     borderColor: tokens.colors.borderAccent,
+    borderWidth: 1,
     padding: 16,
     gap: 6,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  heroCardPro: {
+    borderColor: tokens.colors.accent,
+    backgroundColor: "rgba(0,200,180,0.08)",
   },
   heroValue: {
     color: tokens.colors.textPrimary,
@@ -129,10 +216,22 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textTransform: "capitalize",
   },
+  heroValuePro: {
+    color: tokens.colors.accent,
+  },
   heroLabel: {
     color: tokens.colors.textSecondary,
     fontSize: 12,
     fontWeight: "600",
+  },
+  expiryHint: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: -4,
+  },
+  actionRow: {
+    gap: 8,
   },
   row: {
     flexDirection: "row",

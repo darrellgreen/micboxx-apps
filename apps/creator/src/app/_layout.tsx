@@ -22,6 +22,7 @@ import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
 import { ConsoleAnalyticsAdapter } from "@/features/analytics/adapter";
 import { AccountPreferencesProvider } from "@/features/account/provider";
+import { SubscriptionProvider } from "@/features/subscription/provider";
 
 Sentry.init({
   dsn: env.sentryDsn,
@@ -66,6 +67,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <AuthProvider>
+          <SubscriptionProvider>
           <AccountPreferencesProvider>
             <SocialAuthGate />
             <CreatorBootstrapProvider>
@@ -275,6 +277,7 @@ export default function RootLayout() {
               </ThemeProvider>
             </CreatorBootstrapProvider>
           </AccountPreferencesProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </Provider>
     </GestureHandlerRootView>
