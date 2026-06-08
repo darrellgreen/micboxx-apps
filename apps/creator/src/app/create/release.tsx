@@ -12,6 +12,7 @@ import {
   Pressable,
   ScrollView as RNScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   UIManager,
@@ -42,6 +43,7 @@ import {
   FormSelectorRow,
 } from "@/shared/ui/selector-row";
 import { AnimatedPressable, AppHeader, BottomActionSheet, BottomSheetSurface, Screen, useToast } from "@micboxx/ui";
+import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { tokens } from "@micboxx/theme";
 
 type ReleaseType = "single" | "ep" | "album";
@@ -152,6 +154,7 @@ export default function CreateReleaseScreen() {
   const [artworkDirty, setArtworkDirty] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [overflowSheetVisible, setOverflowSheetVisible] = useState(false);
+  const [enableRoom, setEnableRoom] = useState(true);
 
   const loadDraft = useCallback(async (albumId: string) => {
     setLoadingDraft(true);
@@ -885,6 +888,13 @@ export default function CreateReleaseScreen() {
                 ) : null}
               </SectionCard>
 
+              <ReleaseRoomCard
+                enabled={enableRoom}
+                onToggle={setEnableRoom}
+                isScheduled={isScheduledRelease}
+                releaseDate={releaseDate}
+              />
+
               {!canPublish ? (
                 <View style={styles.blockingNotice}>
                   <Ionicons name="lock-closed-outline" size={16} color={tokens.colors.textSecondary} />
@@ -1454,6 +1464,70 @@ function ReadinessRow({ ok, label, warn }: { ok: boolean; label: string; warn?: 
       <Text style={[styles.readinessLabel, { color: ok ? tokens.colors.textPrimary : tokens.colors.textSecondary }]}>
         {label}
       </Text>
+    </View>
+  );
+}
+
+function ReleaseRoomCard({
+  enabled,
+  onToggle,
+  isScheduled,
+  releaseDate,
+}: {
+  enabled: boolean;
+  onToggle: (value: boolean) => void;
+  isScheduled: boolean;
+  releaseDate: Date;
+}) {
+  const availabilityText = isScheduled
+    ? `Room will open when the release goes live on ${formatReleaseDateTime(releaseDate)}.`
+    : "Room will be available when this release is published.";
+
+  return (
+    <View style={[styles.card, enabled && styles.roomCardEnabled]}>
+      <View style={styles.roomCardHeader}>
+        <View style={styles.roomCardIconWrap}>
+          <SoundwaveTabIcon size={24} color={tokens.colors.accent} />
+        </View>
+        <View style={styles.roomCardTitleWrap}>
+          <Text style={styles.cardTitle}>Release Room</Text>
+          <Text style={styles.cardHelper}>Fan space for live moments, Q&A, and more.</Text>
+        </View>
+        <Switch
+          value={enabled}
+          onValueChange={onToggle}
+          trackColor={{ false: "#1E293B", true: tokens.colors.accent }}
+          thumbColor="#FFFFFF"
+        />
+      </View>
+
+      {enabled ? (
+        <View style={styles.roomCardBody}>
+          <Text style={styles.roomCardBodyText}>
+            Turn this release into a fan space with Live, Q&A, Polls, Support, and real-time audience activity.
+          </Text>
+          <View style={styles.roomAvailabilityRow}>
+            <Ionicons
+              name={isScheduled ? "calendar-outline" : "checkmark-circle-outline"}
+              size={18}
+              color={tokens.colors.accent}
+            />
+            <Text style={styles.roomAvailabilityText}>{availabilityText}</Text>
+          </View>
+
+          <View style={styles.roomFeaturePills}>
+            {["Live", "Q&A", "Polls", "Support"].map((f) => (
+              <View key={f} style={styles.roomFeaturePill}>
+                <Text style={styles.roomFeaturePillText}>{f}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : (
+        <Text style={styles.roomDisabledText}>
+          This release will publish without a Room. You can enable a Release Room later from the release details screen.
+        </Text>
+      )}
     </View>
   );
 }
@@ -2040,6 +2114,78 @@ const styles = StyleSheet.create({
   shapeFeatureMetaDisabled: {
     color: tokens.colors.textSecondary,
     fontSize: 12,
+  },
+
+  // Release Room card
+  roomCardEnabled: {
+    borderColor: tokens.colors.borderAccent,
+    backgroundColor: "rgba(0,179,166,0.04)",
+  },
+  roomCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  roomCardIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: tokens.colors.accentDim,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  roomCardTitleWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  roomCardBody: {
+    gap: 10,
+    marginTop: 4,
+  },
+  roomCardBodyText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  roomAvailabilityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(0,179,166,0.06)",
+    borderRadius: 8,
+    padding: 10,
+  },
+  roomAvailabilityText: {
+    flex: 1,
+    color: tokens.colors.accent,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
+  },
+  roomFeaturePills: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  roomFeaturePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    backgroundColor: "rgba(167,139,250,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(167,139,250,0.25)",
+  },
+  roomFeaturePillText: {
+    color: "#A78BFA",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  roomDisabledText: {
+    color: tokens.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
   },
   scheduleSummary: {
     flexDirection: "row",

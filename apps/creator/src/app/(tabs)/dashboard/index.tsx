@@ -557,21 +557,13 @@ export default function DashboardScreen() {
         {/* Hero activation card */}
         <ActivationHeroCard />
 
-        {/* Overview preview */}
-        <View style={s.overviewCard}>
-          <View style={s.overviewHeader}>
-            <Text style={s.sectionTitle}>Overview</Text>
-            <View style={s.overviewPeriod}>
-              <Text style={s.overviewPeriodText}>Last 7 Days</Text>
-              <Ionicons name="chevron-down" size={13} color={tokens.colors.accent} />
-            </View>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.metricsScroll}>
-            <NewUserMetricCard label="PLAYS"            unlockText="Starts after your first publish"  gradientId="nu_plays" />
-            <NewUserMetricCard label="LISTENERS"        unlockText="Fans appear here once they stream" gradientId="nu_listeners" />
-            <NewUserMetricCard label="PUBLISHED TRACKS" unlockText="Create your first release"         gradientId="nu_tracks" />
-            <NewUserMetricCard label="REVENUE"          unlockText="Unlocks with published content"    gradientId="nu_revenue" />
-          </ScrollView>
+        {/* Overview empty state */}
+        <View style={s.overviewEmptyCard}>
+          <Ionicons name="bar-chart-outline" size={28} color={tokens.colors.textSecondary} />
+          <Text style={s.overviewEmptyTitle}>Your insights will appear here</Text>
+          <Text style={s.overviewEmptyBody}>
+            Publish your first release to start seeing plays, listeners, and revenue in real time.
+          </Text>
         </View>
 
         {/* Launch checklist */}
@@ -999,6 +991,25 @@ const s = StyleSheet.create({
   overviewCard: {
     paddingTop: 4,
     gap: 12,
+  },
+  overviewEmptyCard: {
+    backgroundColor: "#131820",
+    borderRadius: 18,
+    padding: 24,
+    alignItems: "center",
+    gap: 10,
+  },
+  overviewEmptyTitle: {
+    color: tokens.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  overviewEmptyBody: {
+    color: tokens.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center",
   },
   overviewHeader: {
     flexDirection: "row",

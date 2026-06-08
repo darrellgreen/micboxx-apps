@@ -15,6 +15,7 @@ import {
 } from "@/shared/ui/dashboard-primitives";
 import { ErrorState } from "@/shared/ui/layout";
 import { AnimatedPressable, Screen } from "@micboxx/ui";
+import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { formatRelativeTime } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
@@ -47,7 +48,7 @@ function RoomsHeroEmpty() {
       {/* Hero card */}
       <View style={e.heroCard}>
         <View style={e.iconWrap}>
-          <Ionicons name="radio-outline" size={28} color={tokens.colors.accent} />
+          <SoundwaveTabIcon size={28} color={tokens.colors.accent} />
         </View>
         <Text style={e.heroTitle}>Turn your releases into live fan moments</Text>
         <Text style={e.heroBody}>
@@ -60,14 +61,6 @@ function RoomsHeroEmpty() {
         >
           <Ionicons name="add" size={16} color="#000" />
           <Text style={e.primaryBtnText}>Create release</Text>
-        </AnimatedPressable>
-        <AnimatedPressable
-          style={e.secondaryBtn}
-          onPress={() => router.push("/create/upload-push" as never)}
-          haptic="selection"
-        >
-          <Text style={e.secondaryBtnText}>Upload a track</Text>
-          <Ionicons name="chevron-forward" size={13} color={tokens.colors.accent} />
         </AnimatedPressable>
       </View>
 
@@ -154,18 +147,22 @@ export default function RoomsIndexScreen() {
     [filter, items],
   );
 
+  const showFilters = !loading && items.length > 0;
+
   return (
-    <Screen header={<ScreenHeader title="Release Rooms" />} contentContainerStyle={styles.screenContent}>
-      <ChipTabs
-        value={filter}
-        onChange={(next) => setFilter(next as RoomFilter)}
-        options={[
-          { key: "all", label: "All", count: counts.all },
-          { key: "active", label: "Active", count: counts.active },
-          { key: "unvisited", label: "Unvisited", count: counts.unvisited },
-          { key: "artist_live", label: "Artist live", count: counts.artist_live },
-        ]}
-      />
+    <Screen header={<ScreenHeader title="Release Rooms" subtitle="Live release spaces" />} contentContainerStyle={styles.screenContent}>
+      {showFilters && (
+        <ChipTabs
+          value={filter}
+          onChange={(next) => setFilter(next as RoomFilter)}
+          options={[
+            { key: "all", label: "All", count: counts.all },
+            { key: "active", label: "Active", count: counts.active },
+            { key: "unvisited", label: "Unvisited", count: counts.unvisited },
+            { key: "artist_live", label: "Artist live", count: counts.artist_live },
+          ]}
+        />
+      )}
 
       {error ? <ErrorState message={error} /> : null}
 

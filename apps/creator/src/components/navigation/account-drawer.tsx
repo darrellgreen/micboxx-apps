@@ -322,7 +322,16 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
                             : "Not Signed In"}
                         </Text>
 
-                        <Pill label="Creator" active variant="accent" style={styles.rolePill} />
+                        <Pill
+                            label={
+                              session?.user.roles
+                                .filter((r) => r !== "authenticated")
+                                .map((r) => r.charAt(0).toUpperCase() + r.slice(1))[0] ?? "Creator"
+                            }
+                            active
+                            variant="accent"
+                            style={styles.rolePill}
+                          />
                       </View>
 
                       <View style={styles.heroIdentityChevron}>
