@@ -35,7 +35,7 @@ export default function ProfileEditScreen() {
         instagram: instagram.trim(),
         twitter: twitter.trim(),
       });
-      await bootstrap.refetch();
+      await bootstrap.refreshProfile();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Profile update failed.");
     } finally {

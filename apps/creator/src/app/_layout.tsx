@@ -78,6 +78,7 @@ export default function RootLayout() {
                       <AppBackdrop />
                       <Stack
                         screenOptions={{
+                          headerShown: false,
                           headerTransparent: true,
                           headerShadowVisible: false,
                           headerTintColor: tokens.colors.textPrimary,

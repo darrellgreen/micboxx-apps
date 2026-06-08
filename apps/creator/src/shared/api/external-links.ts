@@ -24,6 +24,19 @@ export function getSupportUrl(): string | null {
   return joinWebPath("/contact");
 }
 
+export function getHelpCenterUrl(): string | null {
+  return joinWebPath("/help");
+}
+
+export function getPrivacyUrl(): string {
+  return "https://www.micboxx.com/privacy";
+}
+
+export function getTermsUrl(): string {
+  return "https://www.micboxx.com/terms";
+}
+
+/** @deprecated Use getPrivacyUrl / getTermsUrl directly */
 export function getLegalUrl(): string | null {
   return joinWebPath("/legal");
 }

@@ -178,6 +178,7 @@ export default function AccountScreen() {
         <ScreenHeader
           title="Account"
           subtitle="Profile, plan, and creator access"
+          showBackButton
         />
       }
       contentContainerStyle={s.scroll}
@@ -359,7 +360,7 @@ const s = StyleSheet.create({
   scroll: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 60,
+    paddingBottom: 160,
     gap: 10,
   },
 

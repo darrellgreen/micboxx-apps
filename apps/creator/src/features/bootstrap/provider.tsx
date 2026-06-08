@@ -468,6 +468,7 @@ interface CreatorBootstrapContextValue {
   markIntroSeen: () => Promise<void>;
   markOnboardingComplete: () => Promise<void>;
   refetch: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const CreatorBootstrapContext =
@@ -613,6 +614,18 @@ export function CreatorBootstrapProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     void refetch();
   }, [refetch]);
+
+  // Lightweight profile-only refresh — does NOT touch `loading` so the tabs
+  // layout guard never fires and the user stays on the current screen.
+  const refreshProfile = useCallback(async () => {
+    if (!session?.user) return;
+    try {
+      const updated = await getUserProfile(session.user);
+      setProfile(updated);
+    } catch {
+      // Silently ignore — stale profile data is better than a broken redirect.
+    }
+  }, [session]);
 
   const markIntroSeen = useCallback(async () => {
     if (!userUuid) {
@@ -816,6 +829,7 @@ export function CreatorBootstrapProvider({ children }: PropsWithChildren) {
       markIntroSeen,
       markOnboardingComplete,
       refetch,
+      refreshProfile,
     }),
     [
       accessState,
@@ -838,6 +852,7 @@ export function CreatorBootstrapProvider({ children }: PropsWithChildren) {
       onboardingState,
       profile,
       refetch,
+      refreshProfile,
       tracksSummary,
       uploadOptions,
     ],
