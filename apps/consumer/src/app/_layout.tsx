@@ -19,6 +19,8 @@ import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
 import { PlayerProvider } from "@/features/player/provider";
 import { registerMicboxxPlaybackService } from "@/features/player/registerPlaybackService";
 import { registerRoomLiveKitGlobals } from "@/features/rooms/live-video/registerLiveKitGlobals";
+import { PushProvider } from "@/features/push/PushProvider";
+import { registerPushBackgroundHandler } from "@/features/push/registerPushBackgroundHandler";
 import { SocialAuthGate } from "@/features/social/SocialAuthGate";
 import { store } from "@/store/store";
 import { tokens } from "@micboxx/theme";
@@ -58,6 +60,7 @@ configureMicboxxAnalytics({
 
 registerMicboxxPlaybackService();
 registerRoomLiveKitGlobals();
+registerPushBackgroundHandler();
 
 const navigationTheme = {
   ...DarkTheme,
@@ -148,6 +151,7 @@ function RootLayout() {
         <AuthProvider>
           <AccountPreferencesProvider>
             <SocialAuthGate />
+            <PushProvider />
             <PlayerProvider>
               <ThemeProvider value={navigationTheme}>
                 <AccountDrawerProvider>
