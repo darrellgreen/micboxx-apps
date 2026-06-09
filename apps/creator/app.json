@@ -45,6 +45,16 @@
     },
     "plugins": [
       "expo-dev-client",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "buildReactNativeFromSource": true
+          }
+        }
+      ],
+      "./plugins/withFirebaseModularHeaders",
       "expo-router",
       [
         "expo-splash-screen",
