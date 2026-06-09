@@ -316,6 +316,7 @@ export default function DashboardAnalyticsScreen() {
   const hasAdvanced = analytics.access.hasAdvancedAnalytics;
   const hasPremium = analytics.access.hasPremiumAnalytics;
   const planIsLocked = analytics.revenue?.sellingLocked ?? false;
+  const isNewUser = bootstrap.isNewUser;
 
   return (
     <Screen
@@ -330,13 +331,34 @@ export default function DashboardAnalyticsScreen() {
           <View style={styles.heroContent}>
             <View style={styles.heroBottomRow}>
               <View style={styles.heroCopy}>
-                <Text style={styles.heroTitle}>Unlock your first insights</Text>
-                <Text style={styles.heroSubtitle}>
-                  {analytics.overview.summary ??
-                    "Publish your first release to start seeing plays, listeners, traffic sources, and completion data."}
-                </Text>
+                {isNewUser ? (
+                  <>
+                    <Text style={styles.heroTitle}>Unlock your first insights</Text>
+                    <Text style={styles.heroSubtitle}>
+                      {analytics.overview.summary ??
+                        "Publish your first release to start seeing plays, listeners, traffic sources, and completion data."}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.heroTitle}>Overview</Text>
+                    <Text style={styles.heroSubtitle}>
+                      {analytics.overview.summary ??
+                        "Watch momentum, top releases, and what to do next from one creator home."}
+                    </Text>
+                  </>
+                )}
               </View>
-              <AnimatedPressable
+              {isNewUser ? (
+                <AnimatedPressable
+                  style={styles.heroPrimaryCta}
+                  onPress={() => router.push("/create/release" as never)}
+                >
+                  <Text style={styles.heroPrimaryCtaLabel}>Create first release</Text>
+                  <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+                </AnimatedPressable>
+              ) : analytics.overview.primaryCta ? (
+                <AnimatedPressable
                   style={styles.heroPrimaryCta}
                   onPress={() => {
                     const topTrack = topTracks[0];
@@ -344,14 +366,15 @@ export default function DashboardAnalyticsScreen() {
                       router.push(`/catalog/tracks/${topTrack.trackId}` as never);
                     } else if (analytics.overview.primaryCta?.href) {
                       router.push(analytics.overview.primaryCta.href as never);
-                    } else {
-                      router.push("/create/release" as never);
                     }
                   }}
                 >
-                  <Text style={styles.heroPrimaryCtaLabel}>Create first release</Text>
+                  <Text style={styles.heroPrimaryCtaLabel}>
+                    {analytics.overview.primaryCta.label}
+                  </Text>
                   <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
                 </AnimatedPressable>
+              ) : null}
             </View>
 
             <View style={styles.periodRow}>

@@ -194,6 +194,7 @@ export default function CatalogHomeScreen() {
           releaseState,
           artworkUrl: track.artworkUrl,
           timestamp: track.timestamps.updatedAt,
+          href: `/catalog/tracks/${track.id}`,
         })),
       ...albums
         .filter((a) => a.status.releaseState !== "draft")
@@ -203,6 +204,7 @@ export default function CatalogHomeScreen() {
           releaseState: a.status.releaseState,
           artworkUrl: a.artworkUrl,
           timestamp: a.timestamps.updatedAt,
+          href: `/catalog/albums/${a.id}`,
         })),
     ]
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -417,9 +419,11 @@ export default function CatalogHomeScreen() {
           </View>
 
           {recentActivity.map((item, index) => (
-            <View
+            <AnimatedPressable
               key={item.id}
               style={[s.activityRow, index < recentActivity.length - 1 && s.activityRowBorder]}
+              onPress={() => router.push(item.href as never)}
+              haptic="selection"
             >
               {/* artwork */}
               <View style={s.activityThumb}>
@@ -459,7 +463,9 @@ export default function CatalogHomeScreen() {
                   {item.releaseState.toUpperCase()}
                 </Text>
               </View>
-            </View>
+
+              <Ionicons name="chevron-forward" size={13} color={tokens.colors.textSecondary} />
+            </AnimatedPressable>
           ))}
         </View>
       ) : null}

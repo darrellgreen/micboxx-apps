@@ -482,10 +482,7 @@ export default function DashboardScreen() {
 
   const tracks = bootstrap.tracksSummary?.tracks ?? [];
   const albums = bootstrap.albumsSummary?.albums ?? [];
-  const bootstrapLoaded = bootstrap.tracksSummary !== null || bootstrap.albumsSummary !== null;
-
-  // New-user detection: confirmed no content once bootstrap has loaded
-  const isNewUser = bootstrapLoaded && tracks.length === 0 && albums.length === 0 && publishedTracks === 0 && totalPlays === 0;
+  const isNewUser = bootstrap.isNewUser;
 
   // Checklist state
   const hasAnyTrack       = tracks.length > 0;

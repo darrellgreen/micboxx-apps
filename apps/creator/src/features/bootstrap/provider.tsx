@@ -448,6 +448,8 @@ function buildActivityCards(input: {
 interface CreatorBootstrapContextValue {
   loading: boolean;
   error: string | null;
+  /** True until the user has created their first release (even a draft). False during load to avoid flash. */
+  isNewUser: boolean;
   eligibility: CreatorEligibilityGate;
   accessState: CreatorAccessState;
   onboardingState: CreatorOnboardingState;
@@ -807,6 +809,8 @@ export function CreatorBootstrapProvider({ children }: PropsWithChildren) {
   const value = useMemo<CreatorBootstrapContextValue>(
     () => ({
       loading: isHydrating || loading,
+      // albumsSummary null = still loading, so hold false to avoid a flash
+      isNewUser: albumsSummary !== null && !catalogReadiness.hasAlbums,
       error:
         error ??
         inbox.error ??
