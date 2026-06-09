@@ -188,7 +188,7 @@ function MetricCard({
         </View>
       )}
       <View style={s.metricSpark}>
-        <Sparkline data={sparkData} color={sparkColor} width={120} height={34} gradientId={gradientId} />
+        <Sparkline data={sparkData} color={sparkColor} width={128} height={34} gradientId={gradientId} />
       </View>
     </View>
   );
@@ -297,7 +297,7 @@ function NewUserMetricCard({
       <Text style={s.metricValue}>0</Text>
       <Text style={s.metricUnlock}>{unlockText}</Text>
       <View style={s.metricSpark}>
-        <GhostSparkline width={120} height={34} />
+        <GhostSparkline width={128} height={34} />
       </View>
     </View>
   );
@@ -1026,6 +1026,7 @@ const s = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     gap: 4,
+    overflow: "hidden",
   },
   metricLabel: {
     color: tokens.colors.textSecondary,
@@ -1057,6 +1058,7 @@ const s = StyleSheet.create({
   },
   metricSpark: {
     marginTop: 8,
+    marginHorizontal: -12,
   },
   topRow: {
     flexDirection: "row",
@@ -1069,6 +1071,7 @@ const s = StyleSheet.create({
     padding: 14,
     gap: 10,
     position: "relative",
+    overflow: "hidden",
   },
   topCardTitle: {
     color: tokens.colors.textPrimary,

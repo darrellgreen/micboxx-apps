@@ -7,16 +7,16 @@ interface AlbumTabsProps {
 }
 
 const TABS = [
-  { id: "overview", label: "Overview", disabled: false },
-  { id: "tracks", label: "Tracks", disabled: false },
-  { id: "details", label: "Details", disabled: true },
-  { id: "release", label: "Release", disabled: true },
-  { id: "stats", label: "Stats", disabled: true },
+  { id: "overview", label: "Overview", hidden: false },
+  { id: "tracks",   label: "Tracks",   hidden: false },
+  { id: "details",  label: "Details",  hidden: true  },
+  { id: "release",  label: "Release",  hidden: true  },
+  { id: "stats",    label: "Stats",    hidden: true  },
 ];
 
 export function AlbumTabs({ activeTab, onChangeTab }: AlbumTabsProps) {
   function handlePress(tab: (typeof TABS)[number]) {
-    if (tab.disabled || tab.id === activeTab) {
+    if (tab.id === activeTab) {
       return;
     }
 
@@ -30,24 +30,22 @@ export function AlbumTabs({ activeTab, onChangeTab }: AlbumTabsProps) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {TABS.map((tab) => {
+        {TABS.filter((tab) => !tab.hidden).map((tab) => {
           const isActive = tab.id === activeTab;
           return (
             <Pressable
               key={tab.id}
-              disabled={tab.disabled || isActive}
+              disabled={isActive}
               onPress={() => handlePress(tab)}
               style={[
                 styles.tab,
                 isActive && styles.activeTab,
-                tab.disabled && styles.disabledTab,
               ]}
             >
               <Text
                 style={[
                   styles.tabLabel,
                   isActive && styles.activeTabLabel,
-                  tab.disabled && styles.disabledTabLabel,
                 ]}
               >
                 {tab.label}
@@ -72,8 +70,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 0,
     gap: 18,
-    width: "100%",
-    justifyContent: "space-between",
   },
   tab: {
     paddingVertical: 10,
@@ -84,20 +80,14 @@ const styles = StyleSheet.create({
   activeTab: {
     // No background
   },
-  disabledTab: {
-    opacity: 0.6,
-  },
   tabLabel: {
     fontSize: 14,
     fontWeight: "600",
     color: tokens.colors.textSecondary,
   },
   activeTabLabel: {
-    color: "#00B3A6", // Teal active color
+    color: "#00B3A6",
     fontWeight: "700",
-  },
-  disabledTabLabel: {
-    color: tokens.colors.textSecondary,
   },
   underline: {
     position: "absolute",
