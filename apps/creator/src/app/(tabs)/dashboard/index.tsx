@@ -430,9 +430,6 @@ function NewUserTopCards() {
           <Ionicons name="people-outline" size={22} color="#a78bfa" />
         </View>
         <Text style={s.topCardNewBody}>Your most engaged fans appear as your audience grows.</Text>
-        <View style={s.topCardNewCta}>
-          <Text style={[s.topCardNewCtaText, { color: "#a78bfa" }]}>Coming soon</Text>
-        </View>
       </View>
     </View>
   );

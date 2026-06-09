@@ -28,12 +28,12 @@ import { TrackPromotionSheet } from "@/features/catalog/track-detail-components/
 import { TrackStatusPanel } from "@/features/catalog/track-detail-components/TrackStatusPanel";
 import { TrackTabs } from "@/features/catalog/track-detail-components/TrackTabs";
 
-function ComingSoonStub({ tab }: { tab: string }) {
+function UnavailableTab({ tab }: { tab: string }) {
   const title = tab.charAt(0).toUpperCase() + tab.slice(1);
   return (
     <Panel
       title={`${title} Management`}
-      description={`The ${tab} management panel is coming soon. Overview capabilities are fully active for this track.`}
+      description={`${title} management is not available for this track. Overview capabilities are fully active.`}
     />
   );
 }
@@ -308,7 +308,7 @@ export default function TrackDetailScreen() {
               <TrackStatusPanel track={track} />
             </>
           ) : (
-            <ComingSoonStub tab={activeTab} />
+            <UnavailableTab tab={activeTab} />
           )}
 
           {track.status.error ? (

@@ -411,6 +411,12 @@ export default function SignUpScreen() {
                 <Text style={s.termsLink}>Privacy Policy</Text>
               </Text>
             </Pressable>
+            <Text style={s.ugcNotice}>
+              By creating an account, you agree to MicBoxx's Terms and Privacy Policy. MicBoxx does
+              not tolerate objectionable content, abusive behavior, harassment, hate speech, threats,
+              or content that infringes on another person's rights. Users may report content or
+              accounts that violate these rules.
+            </Text>
 
             {/* Submit error */}
             {submitError ? (
@@ -515,6 +521,12 @@ const s = StyleSheet.create({
   termsLink: {
     color: tokens.colors.accent,
     fontWeight: "600",
+  },
+  ugcNotice: {
+    color: tokens.colors.textMuted,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 4,
   },
 
   errorBox: {

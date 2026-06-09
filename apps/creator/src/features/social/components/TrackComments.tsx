@@ -517,6 +517,7 @@ export function TrackComments({
 
       <SocialReportModal
         visible={reportTarget !== null}
+        title="Report comment"
         reasonKey={reportReasonKey}
         detail={reportDetail}
         submitting={Boolean(reportTarget && reportingCommentId === reportTarget.id)}

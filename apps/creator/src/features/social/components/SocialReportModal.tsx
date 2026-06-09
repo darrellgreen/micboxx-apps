@@ -8,6 +8,7 @@ import { tokens } from "@micboxx/theme";
 
 export function SocialReportModal({
   visible,
+  title = "Report",
   reasonKey,
   detail,
   submitting = false,
@@ -18,6 +19,7 @@ export function SocialReportModal({
   onSubmit,
 }: {
   visible: boolean;
+  title?: string;
   reasonKey: SocialReportReasonKey;
   detail: string;
   submitting?: boolean;
@@ -38,7 +40,7 @@ export function SocialReportModal({
         <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
 
         <View style={styles.sheet}>
-          <Text style={styles.title}>Report comment</Text>
+          <Text style={styles.title}>{title}</Text>
           <Text style={styles.body}>
             Choose the reason that best describes the issue. Add a note if the
             moderators need more context.

@@ -5,15 +5,20 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { addDoc } from "firebase/firestore";
 import { AppHeader, Screen, Skeleton, EmptyState, ErrorState, useToast } from "@micboxx/ui";
-import type { DirectMessage } from "@micboxx/contracts";
+import type { DirectMessage, SocialReportReasonKey } from "@micboxx/contracts";
 import { useAuth } from "@/features/auth/provider";
+import { getFirebaseClientDb } from "@/config/firebase";
 import { ComposeBar } from "@/features/social/components/ComposeBar";
 import { MessageBubble } from "@/features/social/components/MessageBubble";
+import { SocialReportModal } from "@/features/social/components/SocialReportModal";
+import { buildSocialReportPayload, getSocialReportsCollection } from "@/features/social/firestore";
 import { sendDirectMessage } from "@/features/social/dm-service";
 import { useConversation } from "@/features/social/hooks/useConversation";
 import { useInbox } from "@/features/social/hooks/useInbox";
@@ -99,6 +104,47 @@ export default function ConversationScreen() {
       });
     }
   }, [messages.length]);
+
+  const [reportVisible, setReportVisible] = useState(false);
+  const [reportReasonKey, setReportReasonKey] = useState<SocialReportReasonKey>("spam");
+  const [reportDetail, setReportDetail] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+
+  async function handleSubmitReport() {
+    if (!session?.user || !otherParticipant?.uuid) return;
+    setReportSubmitting(true);
+    setReportError(null);
+    try {
+      const db = getFirebaseClientDb();
+      await addDoc(
+        getSocialReportsCollection(db),
+        buildSocialReportPayload({
+          reporterUid: session.user.uuid,
+          reporterUsername: session.user.username ?? null,
+          reporterDisplayName: session.user.displayName ?? null,
+          targetType: "direct_message",
+          targetId: conversationId ?? "",
+          reportedUserUid: otherParticipant.uuid,
+          reasonKey: reportReasonKey,
+          detail: reportDetail.trim(),
+        }),
+      );
+      setReportVisible(false);
+      setReportDetail("");
+      showToast({
+        tone: "success",
+        title: "Report submitted",
+        message: "Thank you. Our moderation team will review this conversation.",
+      });
+    } catch (err) {
+      setReportError(
+        err instanceof Error ? err.message : "Unable to submit report. Please try again.",
+      );
+    } finally {
+      setReportSubmitting(false);
+    }
+  }
 
   async function handleSend() {
     if (!session?.user || !conversationId || sending) {
@@ -202,6 +248,7 @@ export default function ConversationScreen() {
                   role={role}
                   relationshipCue={relationshipCue}
                   contextItems={contextItems}
+                  onReport={() => setReportVisible(true)}
                 />
               }
             />
@@ -214,6 +261,22 @@ export default function ConversationScreen() {
           </>
         )}
       </KeyboardAvoidingView>
+
+      <SocialReportModal
+        visible={reportVisible}
+        title="Report conversation"
+        reasonKey={reportReasonKey}
+        detail={reportDetail}
+        submitting={reportSubmitting}
+        error={reportError}
+        onChangeReason={setReportReasonKey}
+        onChangeDetail={setReportDetail}
+        onClose={() => {
+          setReportVisible(false);
+          setReportError(null);
+        }}
+        onSubmit={() => void handleSubmitReport()}
+      />
     </Screen>
   );
 }
@@ -222,10 +285,12 @@ function ConversationContext({
   role,
   relationshipCue,
   contextItems,
+  onReport,
 }: {
   role: string;
   relationshipCue: string;
   contextItems: string[];
+  onReport: () => void;
 }) {
   return (
     <View style={styles.contextSection}>
@@ -240,14 +305,15 @@ function ConversationContext({
         title="Catalog context"
         lines={contextItems}
       />
-      <ContextCard
-        icon="shield-checkmark-outline"
-        title="Safety tools"
-        lines={[
-          "Block, report, and review conversation safety controls from this thread.",
-          "Blocked members and moderation tools will appear here once available.",
-        ]}
-      />
+      <Pressable
+        onPress={onReport}
+        style={({ pressed }) => [styles.reportButton, pressed && styles.reportButtonPressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Report this conversation"
+      >
+        <Ionicons name="flag-outline" size={16} color={tokens.colors.textMuted} />
+        <Text style={styles.reportButtonLabel}>Report conversation</Text>
+      </Pressable>
     </View>
   );
 }
@@ -345,6 +411,26 @@ const styles = StyleSheet.create({
     color: "rgba(247,250,252,0.58)",
     fontSize: 13,
     lineHeight: 19,
+  },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.025)",
+  },
+  reportButtonPressed: {
+    opacity: 0.7,
+  },
+  reportButtonLabel: {
+    color: tokens.colors.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
   },
   primaryButton: {
     minWidth: 132,

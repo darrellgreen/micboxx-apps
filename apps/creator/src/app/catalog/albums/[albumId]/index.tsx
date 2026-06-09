@@ -23,12 +23,12 @@ import { AlbumReleaseInfoPanel } from "@/features/catalog/album-detail-component
 import { AlbumTabs } from "@/features/catalog/album-detail-components/AlbumTabs";
 import { AlbumTrackPreview } from "@/features/catalog/album-detail-components/AlbumTrackPreview";
 
-function ComingSoonStub({ tab }: { tab: string }) {
+function UnavailableTab({ tab }: { tab: string }) {
   const title = tab.charAt(0).toUpperCase() + tab.slice(1);
   return (
     <Panel
       title={`${title} Management`}
-      description={`The ${tab} management panel is coming soon. Overview and Tracks capabilities are fully active for this album.`}
+      description={`${title} management is not available for this release. Overview and Tracks capabilities are fully active.`}
     />
   );
 }
@@ -258,7 +258,7 @@ export default function AlbumDetailScreen() {
               onAlbumUpdate={setAlbum}
             />
           ) : (
-            <ComingSoonStub tab={activeTab} />
+            <UnavailableTab tab={activeTab} />
           )}
 
           <BottomActionSheet

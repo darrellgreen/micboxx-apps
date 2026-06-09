@@ -16,6 +16,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "MicBoxx for Artists needs camera access so you can broadcast live video drop-ins to listeners.",
         "NSMicrophoneUsageDescription": "MicBoxx for Artists needs microphone access so listeners can hear your live drop-ins.",
+        "NSPhotoLibraryUsageDescription": "MicBoxx Creator needs photo library access so you can upload release artwork, artist images, and other creator media.",
         "UIBackgroundModes": [
           "audio"
         ],
