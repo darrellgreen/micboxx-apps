@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { tokens } from "@micboxx/theme";
 
 export function LoadingScreen({
-  label = "Loading MicBoxx Creators…",
+  label = "Loading MicBoxx Studio…",
 }: {
   label?: string;
 }) {

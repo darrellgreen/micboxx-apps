@@ -63,7 +63,7 @@ export default function LegalScreen() {
             <Ionicons name="information-circle-outline" size={20} color={tokens.colors.textPrimary} />
           </View>
           <View style={s.aboutCopy}>
-            <Text style={s.aboutTitle}>MicBoxx Creator</Text>
+            <Text style={s.aboutTitle}>MicBoxx Studio</Text>
             <Text style={s.aboutMeta}>
               Version {appVersion}{buildNumber ? ` (${buildNumber})` : ""}
             </Text>

@@ -24,27 +24,25 @@ function formatRelativeDate(value: string | null): string {
   const target = new Date(value);
   const now = new Date();
   const diffMs = target.getTime() - now.getTime();
+  const abs = Math.abs(diffMs);
   const minute = 60 * 1000;
   const hour = 60 * minute;
   const day = 24 * hour;
   const month = 30 * day;
   const year = 365 * day;
-  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
-  if (Math.abs(diffMs) >= year) {
-    return formatter.format(Math.round(diffMs / year), "year");
-  }
-  if (Math.abs(diffMs) >= month) {
-    return formatter.format(Math.round(diffMs / month), "month");
-  }
-  if (Math.abs(diffMs) >= day) {
-    return formatter.format(Math.round(diffMs / day), "day");
-  }
-  if (Math.abs(diffMs) >= hour) {
-    return formatter.format(Math.round(diffMs / hour), "hour");
+  // Intl.RelativeTimeFormat is not available in Hermes — format manually.
+  function rel(n: number, unit: string): string {
+    const rounded = Math.round(Math.abs(n));
+    const label = rounded === 1 ? unit : `${unit}s`;
+    return n < 0 ? `${rounded} ${label} ago` : `in ${rounded} ${label}`;
   }
 
-  return formatter.format(Math.round(diffMs / minute), "minute");
+  if (abs >= year) return rel(diffMs / year, "year");
+  if (abs >= month) return rel(diffMs / month, "month");
+  if (abs >= day) return rel(diffMs / day, "day");
+  if (abs >= hour) return rel(diffMs / hour, "hour");
+  return rel(diffMs / minute, "minute");
 }
 
 function commentAuthorLabel(comment: TrackComment) {

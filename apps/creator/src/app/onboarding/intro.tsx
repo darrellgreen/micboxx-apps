@@ -20,7 +20,7 @@ export default function OnboardingIntroScreen() {
 
   return (
     <ScreenShell
-      title="Welcome to MicBoxx Creators"
+      title="Welcome to MicBoxx Studio"
       subtitle="This app is designed for release management, audience activity, and creator account operations."
     >
       <Panel title="What happens here">
