@@ -422,7 +422,7 @@ export default function PlanScreen() {
         {/* ── Current plan perks ────────────────────────────────────────── */}
         {hasActivePlan && entitlement && (
           <View style={s.section}>
-            <Text style={s.sectionLabel}>What's included</Text>
+            <Text style={s.sectionLabel}>What&apos;s included</Text>
             <View style={s.capList}>
               {currentCapabilityDetails.length > 0 ? (
                 currentCapabilityDetails.map((cap) => (

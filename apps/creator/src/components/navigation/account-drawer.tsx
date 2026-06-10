@@ -27,11 +27,8 @@ import {
 } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 
-import { AnimatedPressable } from "@micboxx/ui";
-import { Avatar } from "@micboxx/ui";
-import { Pill } from "@micboxx/ui";
+import { AnimatedPressable , Avatar , Pill , hapticLight } from "@micboxx/ui";
 import { useAuth } from "@/features/auth/provider";
-import { hapticLight } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.84, 360);

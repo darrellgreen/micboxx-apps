@@ -7,8 +7,7 @@ import {
     type Firestore,
 } from "firebase/firestore";
 
-import type { MicboxxSessionUser } from "@micboxx/contracts";
-import type {
+import type { MicboxxSessionUser ,
     DirectConversation,
     DirectMessage,
     SocialReportReasonKey,

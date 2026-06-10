@@ -12,7 +12,11 @@ import { noopPlayerAnalyticsSink } from "@/features/player/analytics";
 import { PLAYER_ANALYTICS_EVENTS } from "@micboxx/analytics";
 import { noopDownloadPlaybackResolver } from "@/features/player/downloads";
 import { trackPlayerAdapter } from "@/features/player/engine/adapter";
-import type { EngineTrack } from "@micboxx/contracts";
+import type { EngineTrack , PlayerItem, PlayerQueueState ,
+  PlayerActionResult,
+  ReplaceQueuePayload,
+  StartPlaybackPayload,
+} from "@micboxx/contracts";
 import {
   resetPlayerState,
   setCurrentIndex,
@@ -38,12 +42,6 @@ import {
 import {
   emptyQueueState,
 } from "@/features/player/store";
-import type { PlayerItem, PlayerQueueState } from "@micboxx/contracts";
-import type {
-  PlayerActionResult,
-  ReplaceQueuePayload,
-  StartPlaybackPayload,
-} from "@micboxx/contracts";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 interface PlayerProviderActions {

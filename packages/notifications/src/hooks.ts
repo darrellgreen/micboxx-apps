@@ -158,6 +158,7 @@ export function useMicboxxNotifications({
     isReady,
     canRetry: hasDrupalSession || (firebaseConfigured && isReady),
     retry,
+    markRead: async (id: string) => {},
   };
 }
 

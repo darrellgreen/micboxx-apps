@@ -4,6 +4,8 @@ import { formatCurrency } from "@micboxx/api";
 
 import type { AccessCtaModel } from "./detail-models";
 
+import { joinBaseUrl } from "@micboxx/media";
+
 export interface TrackAccessContext {
   isSignedIn: boolean;
   hasSubscription?: boolean;
@@ -79,8 +81,6 @@ export function buildTrackAccessContext(
     purchasedAlbumIds: normalizeIds(entitlements?.purchasedAlbumIds),
   };
 }
-
-import { joinBaseUrl } from "@micboxx/media";
 
 export function resolveTrackPlaybackState(
   track: PublicTrack,

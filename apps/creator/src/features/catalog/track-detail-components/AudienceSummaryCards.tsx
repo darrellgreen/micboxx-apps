@@ -93,7 +93,7 @@ export function AudienceSummaryCards({ trackId }: AudienceSummaryCardsProps) {
     const topItems = sorted.slice(0, 3);
     const otherItems = sorted.slice(3);
 
-    const mappedSources: Array<{ sourceType: string; sharePercent: number; color: string }> = [];
+    const mappedSources: { sourceType: string; sharePercent: number; color: string }[] = [];
     topItems.forEach((item, index) => {
       mappedSources.push({
         sourceType: item.sourceType,

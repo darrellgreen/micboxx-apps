@@ -412,9 +412,9 @@ export default function SignUpScreen() {
               </Text>
             </Pressable>
             <Text style={s.ugcNotice}>
-              By creating an account, you agree to MicBoxx's Terms and Privacy Policy. MicBoxx does
+              By creating an account, you agree to MicBoxx&apos;s Terms and Privacy Policy. MicBoxx does
               not tolerate objectionable content, abusive behavior, harassment, hate speech, threats,
-              or content that infringes on another person's rights. Users may report content or
+              or content that infringes on another person&apos;s rights. Users may report content or
               accounts that violate these rules.
             </Text>
 

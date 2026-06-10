@@ -526,12 +526,12 @@ export interface PlayTimeseriesData {
   days: number;
   totalPlays: number;
   uniqueListeners?: number;
-  series: Array<{
+  series: {
     date: string;
     label: string;
     plays: number;
     listeners?: number;
-  }>;
+  }[];
 }
 
 export async function getTrackPlays(
@@ -558,7 +558,7 @@ export async function deleteAccount(): Promise<void> {
 
 export async function reorderAlbumTracks(
   albumId: string | number,
-  tracks: Array<{ trackId: number; position: number }>,
+  tracks: { trackId: number; position: number }[],
 ): Promise<DashboardAlbum> {
   const response = await creatorFetch<{ album: DashboardAlbum }>(
     `/v1/dashboard/albums/${albumId}/tracks/order`,

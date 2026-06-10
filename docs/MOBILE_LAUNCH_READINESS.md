@@ -11,7 +11,7 @@
 
 - **Consumer app:** launchable after four items — telemetry (🟥), store-policy decision (⬜→🟥), iOS mic-permission string (🟧, cheap), signup repair confirmation (🟥, in flight as MCBM-83). Everything else is store-metadata work.
 - **Creator app:** beta/TestFlight-ready now; public launch blocked by push notifications (🟥) and the RevenueCat identity-binding fix (🟥 — newly found, see §3.2). 
-- **New findings from this audit:** RevenueCat runs on **anonymous app-user IDs** (`Purchases.configure({ apiKey })` with no `appUserID`/`logIn` — `apps/creator/src/features/subscription/provider.tsx:106`), and the consumer app ships WebRTC without an iOS microphone usage description.
+- **New findings from this audit:** (Resolved) RevenueCat runs on anonymous app-user IDs, and the consumer app ships WebRTC without an iOS microphone usage description. Both fixed.
 
 ## 2. Consumer App Checklist
 
@@ -19,7 +19,7 @@
 |---|---|---|---|---|
 | C1 | Product telemetry | 🟥 | `src/features/analytics/adapter.ts` = console stub; Release Night metrics unmeasurable (Atlas Gap 4). Wire real adapter behind existing `@micboxx/analytics` interface; events already defined (`PLAYER_ANALYTICS_EVENTS`). | E |
 | C2 | App Store digital-content policy decision | ⬜→🟥 | App surfaces purchasable/subscriber-gated tracks with **no IAP**. Options: (a) hide all purchase/upsell UI on iOS (reader-style), (b) add IAP for listener sub, (c) external-purchase-link entitlement where available. Must be decided before submission; rejection risk otherwise (Atlas Gap 9). | F+P |
-| C3 | iOS `NSMicrophoneUsageDescription` missing | 🟧 | `app.json` infoPlist has only `UIBackgroundModes`, `ITSAppUsesNonExemptEncryption` — yet bundles `@livekit/react-native-expo-plugin` + `@config-plugins/react-native-webrtc` and Android `RECORD_AUDIO`. Even listen-only WebRTC frequently trips static analysis. Add the string (and decide if consumers ever publish audio). | E |
+| C3 | iOS `NSMicrophoneUsageDescription` missing | 🟩 | Fixed in app.json. | E |
 | C4 | Signup flow repair | 🟥 | MCBM-83 "Mobile signup flow repair" In Progress per server readiness snapshot — confirm closed before launch. | E |
 | C5 | Push notifications | 🟩 | FCM end-to-end: permission, token register (`/v1/devices/token`), foreground/background handlers, deep links (`src/features/push/`). | — |
 | C6 | Deep links | 🟩 | `micboxx://` scheme + notification routing; verify a link matrix (track/album/artist/room/DM) as a test pass. | E (test) |
@@ -37,7 +37,7 @@
 | # | Item | Status | Evidence / detail | Owner |
 |---|---|---|---|---|
 | S1 | Push notifications | 🟥 | No `@react-native-firebase/messaging` dependency at all; Android perms lack `POST_NOTIFICATIONS`. Artists can't hear support/follows/room events. Port consumer `features/push/` (server side already done). Blocks public launch; OK to TestFlight without. | E |
-| S2 | RevenueCat identity binding | 🟥 (new) | `Purchases.configure({ apiKey: REVENUECAT_API_KEY })` with **no `appUserID`** → anonymous IDs. Consequences: Pro entitlement not tied to MicBoxx account (restore relies on store-account restore only; cross-device/web invisible), and server reconciliation (MONEY_FLOW_AUDIT F2/B2) is impossible without it. Fix: `Purchases.logIn(<drupal uuid>)` after auth, `logOut()` on signout. Do **before** real subscribers exist — retrofitting anonymous purchasers is painful. | E |
+| S2 | RevenueCat identity binding | 🟩 | Fixed in provider.tsx to log in via RevenueCat on auth change. | E |
 | S3 | Product telemetry | 🟥 | Same console stub as consumer. | E |
 | S4 | IAP compliance | 🟩 | Creator sub correctly uses store IAP via RevenueCat (+ paywall UI). Confirm price points/offerings configured in RC dashboard + both stores. | P |
 | S5 | Permission strings | 🟩 | Camera/mic/photo iOS strings present (video drop-ins, uploads). | — |
@@ -51,7 +51,7 @@
 
 | # | Item | Status | Detail | Owner |
 |---|---|---|---|---|
-| P1 | No CI on micboxx-apps | 🟧 | Add minimal GH Actions: typecheck + lint on PR (mirrors `npm run typecheck/lint`); gitleaks workflow already added 2026-06-09. | E |
+| P1 | No CI on micboxx-apps | 🟩 | Added ci.yml running typecheck and lint. | E |
 | P2 | Apple `.p8` key location | 🟩 (contained) | Gitignored, never committed (`SECURITY_SECRETS_AUDIT.md` §2); relocation is P2 hygiene. | F |
 | P3 | Social-bridge dependency | 🟧 | All mobile social/rooms realtime depends on web's `POST /api/social/auth/token` (Atlas Gap 13). Acceptable for launch; document the outage blast radius in runbooks. | E |
 | P4 | Store assets pipeline | 🟧 | Screenshots, descriptions, keywords, support URL, marketing URL — none in repo; needs an owner and a checklist of its own. | P/F |

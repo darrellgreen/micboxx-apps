@@ -1,6 +1,5 @@
-import type { PublicTrack, PublicTrackSummary } from "@micboxx/contracts";
+import type { PublicTrack, PublicTrackSummary , PlayerItem } from "@micboxx/contracts";
 import { resolvePlaybackAuthorization } from "@/features/player/mapper/playbackSourceResolver";
-import type { PlayerItem } from "@micboxx/contracts";
 
 type MappableTrack = PublicTrackSummary | PublicTrack;
 

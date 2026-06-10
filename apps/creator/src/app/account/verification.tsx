@@ -205,7 +205,7 @@ export default function VerificationScreen() {
             <PendingBadge />
             <Text style={s.heroTitle}>Verification in review</Text>
             <Text style={s.heroBody}>
-              We're reviewing your creator badge request. You'll be notified when your status changes.
+              We&apos;re reviewing your creator badge request. You&apos;ll be notified when your status changes.
             </Text>
           </Card>
 

@@ -10,12 +10,11 @@ import {
   withTiming,
 } from "react-native-reanimated";
 
-import { AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable , hapticLight, hapticSelection } from "@micboxx/ui";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
 import { usePlayerState } from "@/features/player/hooks/usePlayerState";
 import { selectHasNext, selectHasPrevious } from "@/features/player/selectors";
-import { hapticLight, hapticSelection } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export function PlayerControls({ compact = false }: { compact?: boolean }) {

@@ -1,12 +1,11 @@
 import { router } from "expo-router";
 import { Text, StyleSheet } from "react-native";
 
-import { AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable , AppHeader, Screen } from "@micboxx/ui";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { buildPayoutReadinessSummary } from "@/features/revenue/insights";
 import { getCreatorUpgradeUrl } from "@/shared/api/external-links";
 import { KeyValueRow, Panel } from "@/shared/ui/layout";
-import { AppHeader, Screen } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function MonetizationScreen() {

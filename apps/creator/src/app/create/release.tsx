@@ -50,17 +50,17 @@ type ReleaseType = "single" | "ep" | "album";
 type WizardStep = 1 | 2 | 3 | 4;
 type PickerMode = "date" | "time";
 
-const RELEASE_TYPES: Array<{
+const RELEASE_TYPES: {
   key: ReleaseType;
   title: string;
   helper: string;
-}> = [
+}[] = [
   { key: "single", title: "Single", helper: "1 track" },
   { key: "ep", title: "EP", helper: "2 - 6 tracks" },
   { key: "album", title: "Album", helper: "7+ tracks" },
 ];
 
-const STEPS: Array<{ step: WizardStep; label: string }> = [
+const STEPS: { step: WizardStep; label: string }[] = [
   { step: 1, label: "Details" },
   { step: 2, label: "Tracks" },
   { step: 3, label: "Schedule" },

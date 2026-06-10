@@ -13,8 +13,7 @@ import type {
   DashboardUploadOptions,
   DashboardUserProfile,
 } from "@/contracts/creator";
-import type { MicboxxSession, MicboxxSessionUser } from "@micboxx/contracts";
-import type {
+import type { MicboxxSession, MicboxxSessionUser ,
   DirectConversation,
   DirectMessage,
   SocialNotification,
