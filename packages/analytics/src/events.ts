@@ -8,4 +8,6 @@ export const PLAYER_ANALYTICS_EVENTS = {
 } as const;
 
 export type AnalyticsEventName =
-  (typeof PLAYER_ANALYTICS_EVENTS)[keyof typeof PLAYER_ANALYTICS_EVENTS];
+  | (typeof PLAYER_ANALYTICS_EVENTS)[keyof typeof PLAYER_ANALYTICS_EVENTS]
+  | "room_entry"
+  | "support_send";

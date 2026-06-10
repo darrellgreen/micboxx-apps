@@ -383,6 +383,7 @@ const s = StyleSheet.create({
     backgroundColor: tokens.colors.accentDim,
     alignItems: "center", justifyContent: "center",
   },
+  milestoneCopy: { flex: 1, gap: 4 },
   milestoneTitle: { color: tokens.colors.textPrimary, fontSize: 15, fontWeight: "700" },
   milestoneBody: { color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 21 },
 
