@@ -6,7 +6,7 @@
  */
 
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -29,10 +29,12 @@ import {
   useRestorePurchases,
 } from "@/features/subscription/hooks";
 import {
+  apiFetch,
   useGetCurrentEntitlementsQuery,
   useGetPublicSubscriptionPlansQuery,
   formatCurrency,
 } from "@micboxx/api";
+import { ensureFreshSession } from "@/features/auth/api";
 import type {
   EntitlementCapabilityDetail,
   EntitlementState,
@@ -298,6 +300,32 @@ export default function PlanScreen() {
   const presentPaywallIfNeeded = usePresentPaywallIfNeeded();
   const presentCustomerCenter = usePresentCustomerCenter();
   const restorePurchases = useRestorePurchases();
+
+  const paywallSessionIdRef = useRef(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `paywall-${Date.now()}`,
+  );
+
+  useEffect(() => {
+    void ensureFreshSession()
+      .then((fresh) => {
+        void apiFetch("/v1/public/events", {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "application/json" },
+          body: JSON.stringify({
+            eventType: "paywall_view",
+            subjectType: "micboxx.platform",
+            subjectId: "creator_paywall",
+            sessionId: paywallSessionIdRef.current,
+            sourceType: "creator_app",
+            metadata: { surface: "account_plan" },
+          }),
+          accessToken: fresh?.accessToken ?? null,
+        }).catch(() => undefined);
+      })
+      .catch(() => undefined);
+  }, []);
 
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
   const [isRestoring, setIsRestoring] = useState(false);
