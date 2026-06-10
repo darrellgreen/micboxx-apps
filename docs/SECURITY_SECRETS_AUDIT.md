@@ -61,18 +61,11 @@ In the AWS console (us-west-2): IAM → Users → locate the SES SMTP user whose
 
 **Step 2 — Confirm mail still sends** from each environment that uses SES (check `MAILER`/SMTP env wiring per environment; DDEV local falls back per README).
 
-**Step 3 — Move config to environment (matches the platform's existing pattern).**
-`micboxx-server/web/sites/default/micboxx.settings.php` already env-drives Stripe (`FEVER_STRIPE_SECRET_KEY`, lines ~114–118) and S3 (`MICBOXX_S3_*`, lines ~76–96) via its `$micboxx_string_env()` helper. Add the same for the mailer:
+**Step 3 — Move config to environment. ✅ Done.**
+`micboxx.settings.php` now env-drives SMTP via `MICBOXX_SMTP_USER`/`MICBOXX_SMTP_PASS` using the same `$micboxx_string_env()` pattern as Stripe and S3. Fail-fast guard added: `MICBOXX_ENV=production` throws on unset secrets.
 
-```php
-// SES SMTP credentials — never store in config/sync.
-$config['symfony_mailer.mailer_transport.smtp']['configuration']['user']
-  = $micboxx_string_env('MICBOXX_SMTP_USER', '');
-$config['symfony_mailer.mailer_transport.smtp']['configuration']['pass']
-  = $micboxx_string_env('MICBOXX_SMTP_PASS', '');
-```
-
-**Step 4 — Neutralize the tracked file.** Re-export config with blank `user`/`pass` values (the overlay now supplies them) and commit. CI gitleaks goes green at HEAD.
+**Step 4 — Neutralize the tracked file. ✅ Done.**
+`config/sync/symfony_mailer.mailer_transport.smtp.yml` committed with blank `user`/`pass`. CI gitleaks green at HEAD.
 
 **Step 5 (optional) — History purge.** Only one commit touches the file, so `git filter-repo --path config/sync/symfony_mailer.mailer_transport.smtp.yml --invert-paths` (or BFG) is cheap — but **rotation in step 1 already removes the risk**; purge is cosmetic and requires coordinating force-push with all clones. Recommended: do it opportunistically, not urgently.
 
@@ -86,11 +79,11 @@ $config['symfony_mailer.mailer_transport.smtp']['configuration']['pass']
 
 - **Good:** partner keys (`mb_live_<key_id>.<secret>`) are stored as HMAC-SHA256 hashes, not plaintext (`hashSecret()`, line ~370); validation compares hashes; rotation/revocation endpoints exist.
 - **Finding:** `hashSecret()` reads `getenv('MICBOXX_KEY_SECRET')` and **silently falls back** to the constant `micboxx-default-local-secret-change-in-production` (line 41, used at line 372). If production ever runs without that env var, every partner-key hash is computed with a publicly known (committed) HMAC secret, materially weakening key storage — and nothing alerts.
-- **Recommendation:** in production environments, throw/fail-fast when `MICBOXX_KEY_SECRET` is unset (the settings overlay can assert this), or log a critical on boot. Also note: rotating `MICBOXX_KEY_SECRET` invalidates all stored hashes — document that operational coupling before changing it.
+- **Resolved:** fail-fast guard added in `micboxx.settings.php` — when `MICBOXX_ENV=production`, throws `\RuntimeException` if `MICBOXX_KEY_SECRET` is unset. Operational coupling note: rotating this secret invalidates all stored partner-key hashes.
 
 ### 5.2 Session secret default (Medium, P1)
 
-`micboxx.settings.php:57` uses `$micboxx_string_env('MICBOXX_SESSION_SECRET', 'micboxx-local-session-secret-please-change')` — same silent-fallback pattern. Same recommendation: fail fast outside local/DDEV.
+`micboxx.settings.php:57` uses `$micboxx_string_env('MICBOXX_SESSION_SECRET', 'micboxx-local-session-secret-please-change')` — same silent-fallback pattern. **Resolved:** covered by the same production fail-fast guard (`MICBOXX_ENV=production` throws on unset `MICBOXX_SESSION_SECRET`).
 
 ### 5.3 Stripe webhook handling: correct (verified)
 

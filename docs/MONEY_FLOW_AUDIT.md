@@ -21,7 +21,7 @@ The platform runs **five revenue rails** on a **two-layer money architecture**: 
 **Top findings:**
 - **F1 — (Resolved)** Support money now reaches the payout spine. `RoomSupportPayoutRecorder` emits payout events when `room_support_ledger` rows complete.
 - **F2 — RevenueCat is invisible to the server.** `grep -rli revenuecat` across all custom modules and `composer.json` returns nothing. "MicBoxx Pro" entitlement lives only in the mobile app + RevenueCat's dashboard; no webhook reconciles it into `fever_core_entitlements`.
-- **F3 — Payout-event ingestion goes through a Fever Core adapter layer**, not direct calls: `PayoutEventManager` has **no callers outside `micboxx_payouts`**; the module ships `FeverCorePayoutEventAdapter` plus seven `FeverCorePayout*Client` services, implying events arrive via the Fever Core mirror (`$FEVERCORE_API_URL`). The operational dependency and its failure modes are undocumented. (Medium — inferred from structure.)
+- **F3 — (Resolved)** The Fever Core adapter layer is confirmed dead. All `FeverCorePayout*Client` services are null stubs (FCMO-39); `FeverCorePayoutEventAdapter` logs a no-op debug message and returns. Fever Core no longer exists as a running system. All parity Drush commands removed; container verified clean in production 2026-06-10. Payout events now enter the spine exclusively via `RoomSupportPayoutRecorder` (support rail) and future direct callers.
 - **Positive findings:** webhook signature validation is correct everywhere checked; idempotency is real (checkout handlers persist `idempotency_key = provider_event_id`; support handler guards on ledger status; `PayoutEventManager` uses UUID-as-idempotency-key); a **support wallet** (`user_support_balance`) and **commerce integrity tooling** (`EntitlementGapAuditService`, `EntitlementFactBackfillService`, `CommerceAuthorityReadinessGate`) already exist.
 
 ---
@@ -74,7 +74,7 @@ Mobile-only: `react-native-purchases` in `micboxx-apps/apps/creator`, entitlemen
 
 `micboxx_payouts` services (all High, names read from `src/Service/`): `PayoutEventManager` (UUID idempotency, generic `sourceSystem/sourceType/sourceId` schema), `PayoutBalanceManager`, `PayoutEligibilityEvaluator` + `ProfileInspector`, `PayoutSettlementManager` + `PostingManager`, `PayoutBatchManager`, `PayoutStatementManager`, `PayoutReconciliationManager` + `ReportService`, `PayoutAdjustmentManager`, `SubscriptionRevenueAllocator`, `SubscriptionPayoutReadModelService`. Admin reports at `/admin/reports/micboxx-payouts/*`; creator read at `GET /v1/creator/earnings`; manual ops via `fever_intervention_ledger`.
 
-**The structural question (F3):** nothing outside the module calls `PayoutEventManager`, and the module ships `FeverCorePayout*Client` adapters — so payout events appear to be **ingested from the Fever Core side** rather than emitted at transaction time by commerce/support handlers. That makes the Atlas's "payouts implemented, not launched" more precise: *the engine is built; its fuel line runs through an external mirror whose contract, latency, and failure handling are undocumented in this repo.* (Medium.)
+**F3 resolved:** The Fever Core adapter layer was confirmed as dead stubs and fully removed in production 2026-06-10. `PayoutEventManager` is now called directly by `RoomSupportPayoutRecorder` at support completion (both Stripe and wallet paths). The payout engine's fuel line is now local and direct.
 
 **Also missing (Atlas Gap 16, confirmed):** no payout *onboarding* (KYC/bank linking, e.g. Stripe Connect) found anywhere — settlement can compute what's owed, but there is no rail to pay creators out self-serve.
 
@@ -85,7 +85,7 @@ Mobile-only: `react-native-purchases` in `micboxx-apps/apps/creator`, entitlemen
 | B1 | Support ledger → payout events bridge unproven/absent (F1, F3) | **Resolved** | Resolved by emitting a payout event at support completion via `RoomSupportPayoutRecorder` |
 | B2 | RevenueCat ↔ server reconciliation absent (F2) | **High** | RC webhook → entitlement facts; declare source of truth meanwhile |
 | B3 | Payout onboarding (KYC/bank) missing | **High** (pre-payout-launch) | Stripe Connect Express evaluation — separate decision doc |
-| B4 | Platform fee policy not found in code for support rail | Medium — fee may be 0% by accident, not decision | Locate/define fee config before marketing support economics (**Unknown** — no fee/share/rate logic found in payout services or support handler) |
+| B4 | Platform fee policy not found in code for support rail | **Resolved** | Fee is explicitly 0%: `platform_fee_cents = 0` with policy marker `launch_support_100_percent_artist_v1` hardcoded at both support call sites. This is a decision, not an accident. |
 | B5 | Wallet (`user_support_balance`) funding & liability model untraced | Medium | Trace top-up flow; assess stored-value implications |
 | B6 | Subscription lifecycle completion | Medium (known: MCBM-90–97) | Execute existing Jira range |
 | B7 | Ads → earnings linkage untraced in this audit | Low (web-only rail today) | Extend audit when ads become material |
@@ -95,7 +95,7 @@ Mobile-only: `react-native-purchases` in `micboxx-apps/apps/creator`, entitlemen
 1. **End-to-end support test:** send support in a test room (both payment methods) → assert `room_support_ledger` completion → assert a payout event exists for the artist → assert balance/statement reflects it. (Extend the existing `verify-micboxx-*` script pattern; none currently covers support→payout.)
 2. **Duplicate-webhook replay test:** re-deliver the same Stripe event id to checkout + support webhooks; assert single entitlement/ledger effect (idempotency keys exist — prove they're enforced at the storage layer).
 3. **Entitlement gap audit run:** execute `EntitlementGapAuditService` against production-like data; publish results.
-4. **Fever Core mirror failure drill:** if B1 resolves via the mirror path, kill the mirror and verify events queue/replay rather than drop.
+4. ~~**Fever Core mirror failure drill**~~ — No longer applicable. Fever Core is removed; mirror is a confirmed no-op stub deleted in production.
 
 ---
 

@@ -9,15 +9,15 @@
 
 ## 1. Summary Verdict
 
-- **Consumer app:** launchable after four items — telemetry (🟥), store-policy decision (⬜→🟥), iOS mic-permission string (🟧, cheap), signup repair confirmation (🟥, in flight as MCBM-83). Everything else is store-metadata work.
-- **Creator app:** beta/TestFlight-ready now; public launch blocked by push notifications (🟥) and the RevenueCat identity-binding fix (🟥 — newly found, see §3.2). 
-- **New findings from this audit:** (Resolved) RevenueCat runs on anonymous app-user IDs, and the consumer app ships WebRTC without an iOS microphone usage description. Both fixed.
+- **Consumer app:** launchable after three items — store-policy decision (⬜→🟥), signup repair confirmation (🟥, in flight as MCBM-83), telemetry audit (🟧). Telemetry is substantially wired; mic string fixed; CI added.
+- **Creator app:** **submitted for App Store review 2026-06-10.** Public launch still blocked by push notifications (🟥) once live. RevenueCat identity binding fixed.
+- **New findings from this audit:** (Resolved) RevenueCat runs on anonymous app-user IDs, and the consumer app ships WebRTC without an iOS microphone usage description. Both fixed. PostHog removed — first-party analytics wired in its place.
 
 ## 2. Consumer App Checklist
 
 | # | Item | Status | Evidence / detail | Owner |
 |---|---|---|---|---|
-| C1 | Product telemetry | 🟥 | `src/features/analytics/adapter.ts` = console stub; Release Night metrics unmeasurable (Atlas Gap 4). Wire real adapter behind existing `@micboxx/analytics` interface; events already defined (`PLAYER_ANALYTICS_EVENTS`). | E |
+| C1 | Product telemetry | 🟧 | First-party analytics wired: `PlayerAnalyticsSink` sends `media_session.*` events to Drupal; `room_entry` and `support_send` POST to `/v1/public/events`. PostHog removed — MicBoxx Analytics Suite is source of truth. Remaining: audit `fever_analytics_event` to confirm events are landing. | E |
 | C2 | App Store digital-content policy decision | ⬜→🟥 | App surfaces purchasable/subscriber-gated tracks with **no IAP**. Options: (a) hide all purchase/upsell UI on iOS (reader-style), (b) add IAP for listener sub, (c) external-purchase-link entitlement where available. Must be decided before submission; rejection risk otherwise (Atlas Gap 9). | F+P |
 | C3 | iOS `NSMicrophoneUsageDescription` missing | 🟩 | Fixed in app.json. | E |
 | C4 | Signup flow repair | 🟥 | MCBM-83 "Mobile signup flow repair" In Progress per server readiness snapshot — confirm closed before launch. | E |
@@ -38,7 +38,7 @@
 |---|---|---|---|---|
 | S1 | Push notifications | 🟥 | No `@react-native-firebase/messaging` dependency at all; Android perms lack `POST_NOTIFICATIONS`. Artists can't hear support/follows/room events. Port consumer `features/push/` (server side already done). Blocks public launch; OK to TestFlight without. | E |
 | S2 | RevenueCat identity binding | 🟩 | Fixed in provider.tsx to log in via RevenueCat on auth change. | E |
-| S3 | Product telemetry | 🟥 | Same console stub as consumer. | E |
+| S3 | Product telemetry | 🟧 | `room_entry` wired to first-party analytics. PostHog removed. Remaining: `paywall_view` (PostHog call removed but not re-wired to first-party analytics). | E |
 | S4 | IAP compliance | 🟩 | Creator sub correctly uses store IAP via RevenueCat (+ paywall UI). Confirm price points/offerings configured in RC dashboard + both stores. | P |
 | S5 | Permission strings | 🟩 | Camera/mic/photo iOS strings present (video drop-ins, uploads). | — |
 | S6 | Versioning / EAS | 🟧 | Same as C7. | E |
@@ -58,11 +58,12 @@
 
 ## 5. Recommended Launch Sequence
 
-1. **Now (parallel):** C1/S3 telemetry adapter · S2 RevenueCat `logIn` · C3 mic string · C7/S6 versioning · C14 land pending changes.
-2. **Decision week:** C2 store-policy (founder decision, then UI work sized accordingly) · C8/C9 privacy + age-rating drafts.
-3. **Consumer submission:** after C1–C4 close → TestFlight → staged App Store release. Creator app to **TestFlight only** at the same time (S4/S8 ready).
-4. **Creator public launch:** after S1 push + S2 binding verified with real test purchases.
-5. **Post-launch:** P1 CI, P3 runbook, deep-link test matrices as regression suites.
+1. **Done:** C1/S3 telemetry (first-party) · S2 RevenueCat identity binding · C3 mic string · P1 CI. Creator app submitted for App Store review 2026-06-10.
+2. **Next creator app update (post-approval):** S1 push notifications · S3 `paywall_view` wiring.
+3. **Decision week:** C2 store-policy (founder decision, then UI work sized accordingly) · C8/C9 privacy + age-rating drafts.
+4. **Consumer submission:** after C2/C4 close → TestFlight → staged App Store release.
+5. **Creator public launch:** after S1 push ships in an approved update.
+6. **Post-launch:** P3 runbook, deep-link test matrices as regression suites.
 
 ---
 
