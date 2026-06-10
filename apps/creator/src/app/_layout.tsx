@@ -23,6 +23,8 @@ import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/a
 import { PlatformAnalyticsAdapter } from "@/features/analytics/adapter";
 import { AccountPreferencesProvider } from "@/features/account/provider";
 import { SubscriptionProvider } from "@/features/subscription/provider";
+import { PushProvider } from "@/features/push/PushProvider";
+import { registerPushBackgroundHandler } from "@/features/push/registerPushBackgroundHandler";
 
 Sentry.init({
   dsn: env.sentryDsn,
@@ -61,12 +63,14 @@ const navigationTheme = {
 };
 
 registerRoomLiveKitGlobals();
+registerPushBackgroundHandler();
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <AuthProvider>
+          <PushProvider />
           <SubscriptionProvider>
           <AccountPreferencesProvider>
             <SocialAuthGate />
