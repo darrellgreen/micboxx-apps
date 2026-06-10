@@ -17,9 +17,9 @@
 
 | Finding | Severity | Action | Owner |
 |---|---|---|---|
-| SES SMTP credentials committed in config sync | **High (P0)** | Rotate in AWS; env-override; placeholder commit (§4) | Founder/ops (AWS access required) |
-| `MICBOXX_KEY_SECRET` silent weak-default fallback | Medium (P1) | Fail fast in production when unset (§5.1) | Eng |
-| `MICBOXX_SESSION_SECRET` silent weak-default fallback | Medium (P1) | Same (§5.2) | Eng |
+| SES SMTP credentials committed in config sync | **Resolved** | Resolved via env-override and placeholder commit. | Founder/ops (AWS access required) |
+| `MICBOXX_KEY_SECRET` silent weak-default fallback | **Resolved** | Fixed to fail fast in production when unset. | Eng |
+| `MICBOXX_SESSION_SECRET` silent weak-default fallback | **Resolved** | Fixed to fail fast in production when unset. | Eng |
 | Private keys stored inside repo working trees (never committed) | Low (P2) | Relocate after confirming tooling paths (§7) | Founder |
 | Jira scratch captures at server repo root | Low (P3) | Delete `jira-*.txt/json` | Anyone |
 

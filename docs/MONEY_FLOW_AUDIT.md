@@ -14,12 +14,12 @@ The platform runs **five revenue rails** on a **two-layer money architecture**: 
 |---|---|---|---|---|
 | Track/album purchase | ✅ Stripe checkout + idempotent webhook | ✅ purchase-access managers | ⚠️ via adapter layer, not directly proven | **Mostly complete** |
 | Listener subscription ("Go Pro") | ✅ Stripe subscription checkout | ✅ entitlements resolver | ⚠️ `SubscriptionRevenueAllocator` exists; period reports exist | **Mostly complete** (lifecycle gaps MCBM-90–97) |
-| Room support (tips) | ✅ Stripe + wallet, idempotent ledger | ✅ room totals/goal | **❌ no payout event created by the support handler** | **Broken bridge (finding F1)** |
+| Room support (tips) | ✅ Stripe + wallet, idempotent ledger | ✅ room totals/goal | ✅ payout event created by the support handler | **Complete** |
 | Music ads (preroll) | ✅ ad events, web playback | n/a | "earnings foundation" per readiness snapshot; not traced here | **Partial** |
 | Creator subscription (RevenueCat) | ✅ in-app (mobile) | ⚠️ RC entitlement only | **❌ zero server-side presence (finding F2)** | **Disconnected system** |
 
 **Top findings:**
-- **F1 — Support money reaches a ledger, not the payout spine.** `RoomSupportStripeWebhookHandler` completes `room_support_ledger` rows and logs events, but contains **no reference to payouts** (verified by read). If Release Night's promise is "the listening funds you," this bridge must be proven or built.
+- **F1 — (Resolved)** Support money now reaches the payout spine. `RoomSupportPayoutRecorder` emits payout events when `room_support_ledger` rows complete.
 - **F2 — RevenueCat is invisible to the server.** `grep -rli revenuecat` across all custom modules and `composer.json` returns nothing. "MicBoxx Pro" entitlement lives only in the mobile app + RevenueCat's dashboard; no webhook reconciles it into `fever_core_entitlements`.
 - **F3 — Payout-event ingestion goes through a Fever Core adapter layer**, not direct calls: `PayoutEventManager` has **no callers outside `micboxx_payouts`**; the module ships `FeverCorePayoutEventAdapter` plus seven `FeverCorePayout*Client` services, implying events arrive via the Fever Core mirror (`$FEVERCORE_API_URL`). The operational dependency and its failure modes are undocumented. (Medium — inferred from structure.)
 - **Positive findings:** webhook signature validation is correct everywhere checked; idempotency is real (checkout handlers persist `idempotency_key = provider_event_id`; support handler guards on ledger status; `PayoutEventManager` uses UUID-as-idempotency-key); a **support wallet** (`user_support_balance`) and **commerce integrity tooling** (`EntitlementGapAuditService`, `EntitlementFactBackfillService`, `CommerceAuthorityReadinessGate`) already exist.
@@ -82,7 +82,7 @@ Mobile-only: `react-native-purchases` in `micboxx-apps/apps/creator`, entitlemen
 
 | # | Break | Severity | Fix direction |
 |---|---|---|---|
-| B1 | Support ledger → payout events bridge unproven/absent (F1, F3) | **High** — blocks "listening funds you" claim of Release Night | Either emit a payout event at support completion (`sourceSystem=micboxx`, `sourceType=room_support`, `sourceId=ledger uuid` — idempotent by design) or document+test the Fever Core ingestion path end-to-end |
+| B1 | Support ledger → payout events bridge unproven/absent (F1, F3) | **Resolved** | Resolved by emitting a payout event at support completion via `RoomSupportPayoutRecorder` |
 | B2 | RevenueCat ↔ server reconciliation absent (F2) | **High** | RC webhook → entitlement facts; declare source of truth meanwhile |
 | B3 | Payout onboarding (KYC/bank) missing | **High** (pre-payout-launch) | Stripe Connect Express evaluation — separate decision doc |
 | B4 | Platform fee policy not found in code for support rail | Medium — fee may be 0% by accident, not decision | Locate/define fee config before marketing support economics (**Unknown** — no fee/share/rate logic found in payout services or support handler) |

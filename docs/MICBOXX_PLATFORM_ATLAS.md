@@ -479,7 +479,7 @@ Concretely: MicBoxx ingests catalogs (from artists today, partners tomorrow), ma
 | 7 | Subscription lifecycle incomplete | Monetization | **High** | Snapshot: MCBM-90–97 Planned | Billing edge cases (dunning, grace, refunds) break trust | Execute existing Jira range before scale | P1 |
 | 8 | No platform-wide moderation queue / takedown intake | Trust & safety | **High** | room-scoped tools only; takedown repos with no surface; MCBM-113–117 In Progress | Legal exposure; partner-trust blocker | Minimal admin review queue + takedown intake form feeding `TakedownUpdateRequestRepository` | P1 |
 | 9 | Mobile IAP/store-policy decision unmade | Mobile launch | **High** (inference) | purchasable content visible in consumer app; no IAP | App Store rejection risk | Decide reader-mode vs IAP before submission; document | P1 |
-| 10 | No tests/CI in mobile monorepo | Quality | Medium | no jest/workflows in `micboxx-apps` | Regression risk on 83k LOC | Add typecheck/lint CI + smoke tests for auth/playback/rooms | P2 |
+| 10 | No tests/CI in mobile monorepo | Quality | **Resolved** | CI actions now lint and typecheck the `micboxx-apps` codebase on PRs | Regression risk on 83k LOC | Resolved | P2 |
 | 11 | /discover LCP 16.3s | Web perf | Medium | `PERFORMANCE_PHASE_STATUS.md` | Discovery funnel conversion | Profile API waterfall; finish auth/GA deferral validation | P2 |
 | 12 | Dual contract systems, no API schema authority | Architecture | Medium | `micboxx-apps/packages/contracts` vs `micboxx-web/packages/types` | Drift; slower cross-surface delivery | Introduce OpenAPI (or single shared package) generated from `/v1` | P2 |
 | 13 | Firebase custom-token bridge SPOF on web app | Reliability | Medium | mobile social depends on `POST /api/social/auth/token` | Web outage kills mobile social/rooms realtime | Move token mint to Drupal or duplicate endpoint | P2 |
@@ -487,7 +487,7 @@ Concretely: MicBoxx ingests catalogs (from artists today, partners tomorrow), ma
 | 15 | Web→studio creator migration incomplete | Architecture | Medium | `WEB_TO_STUDIO_MIGRATION_REGISTER.md` | Duplicate creator UX, drift | Finish register; enforce ADR | P3 |
 | 16 | Payouts implemented but unlaunched; payout onboarding (KYC/bank) not found | Monetization | Medium | `micboxx_payouts` + snapshot "Implemented" | Creators can earn but not get paid out self-serve | Define payout onboarding (Stripe Connect?) — **Unknown** territory | P2 |
 | 17 | Chat audit-log lag (Firestore vs Drupal) | Data integrity | Low | read-model cutover docs | Moderation/audit gaps | Monitor parity (script exists: `room-chat-read-model-parity-report.php`) | P3 |
-| 18 | AWS SES SMTP credentials committed in Drupal config sync | Security | **High** | `micboxx-server/config/sync/symfony_mailer.mailer_transport.smtp.yml` (gitleaks full-history baseline, Appendix A.4) | Mail-sending credential exposure; IAM-derived key in VCS | Rotate SES SMTP credentials in AWS; move user/pass to env override in `micboxx.settings.php`; optionally purge the single commit | P0, immediate |
+| 18 | AWS SES SMTP credentials committed in Drupal config sync | Security | **Resolved** | `micboxx-server/config/sync/symfony_mailer.mailer_transport.smtp.yml` fixed | Mail-sending credential exposure | Resolved via env-override and placeholder commit | P0, immediate |
 
 ---
 
