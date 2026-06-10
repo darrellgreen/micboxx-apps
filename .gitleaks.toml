@@ -1,0 +1,13 @@
+# Gitleaks config — extends default rules, allowlists verified false positives.
+# Triage record: MICBOXX_PLATFORM_ATLAS.md, Appendix A (2026-06-09).
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Verified false positives"
+paths = [
+  # Firebase Android client config — API keys here are client identifiers, public by design
+  '''apps/consumer/google-services\.json''',
+  '''apps/creator/google-services\.json''',
+]

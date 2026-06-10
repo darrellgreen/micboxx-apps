@@ -1,3 +1,7 @@
+// Must be first: patches console.warn before any lazy screen load triggers
+// react-native's deprecated-API getters via Expo's importAll.
+import "@/config/suppress-deprecation-warnings";
+
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import * as Sentry from "@sentry/react-native";
 import { Stack, usePathname } from "expo-router";
