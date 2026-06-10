@@ -17,6 +17,7 @@
         "UIBackgroundModes": [
           "audio"
         ],
+        "NSMicrophoneUsageDescription": "MicBoxx uses the microphone only if you join live audio moments in a Release Room. Listening to music never uses the microphone.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },

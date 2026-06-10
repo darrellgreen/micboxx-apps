@@ -5,7 +5,9 @@ import type { AnalyticsProvider } from "@micboxx/analytics";
  * In the future, this can be swapped with Firebase Analytics, PostHog, or Segment
  * without changing the @micboxx/analytics core orchestration.
  */
-export const ConsoleAnalyticsAdapter: AnalyticsProvider = {
+import { createPostHogAdapter } from "@micboxx/analytics";
+
+const ConsoleAnalyticsAdapter: AnalyticsProvider = {
   trackEvent(eventName: string, properties?: Record<string, unknown>): void {
     if (__DEV__) {
       console.log(`[Analytics:Event] ${eventName}`, properties ?? "");
@@ -34,3 +36,10 @@ export const ConsoleAnalyticsAdapter: AnalyticsProvider = {
     // TODO: inject native SDK screen track here
   },
 };
+
+export const PlatformAnalyticsAdapter: AnalyticsProvider = process.env.EXPO_PUBLIC_POSTHOG_API_KEY
+  ? createPostHogAdapter({
+      apiKey: process.env.EXPO_PUBLIC_POSTHOG_API_KEY,
+      host: process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+    })
+  : ConsoleAnalyticsAdapter;

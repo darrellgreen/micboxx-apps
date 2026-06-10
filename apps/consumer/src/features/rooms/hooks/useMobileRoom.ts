@@ -45,6 +45,7 @@ import {
     subscribeToMobileRoomState,
 } from "@/features/rooms/firebase/roomListeners";
 import { useAppSelector } from "@/store/hooks";
+import { trackEvent } from "@micboxx/analytics";
 
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 25_000;
 const PRESENCE_HEARTBEAT_BACKOFF_STEPS_MS = [5_000, 10_000, 20_000, 40_000] as const;
@@ -380,6 +381,7 @@ export function useMobileRoom(input: {
       });
       setRoomEntry(entry);
       setClockState(entry.clock);
+      trackEvent("room_entry", { roomId: entry.room.id, releaseIdentifier: input.releaseIdentifier });
       if (entry.capabilities.can_enter_room === false) {
         setError("This Room is not currently available.");
       }
@@ -648,7 +650,7 @@ export function useMobileRoom(input: {
       throw new Error("Support is not available in this Room.");
     }
     try {
-      return await sendRoomSupport({
+      const result = await sendRoomSupport({
         roomId: room.id,
         amountCents,
         paymentMethod: "user_support_balance",
@@ -656,6 +658,8 @@ export function useMobileRoom(input: {
         showAmount: true,
         accessToken,
       });
+      trackEvent("support_send", { roomId: room.id, amountCents, paymentMethod: "user_support_balance" });
+      return result;
     } catch (supportError) {
       const message = normalizeRoomErrorMessage(supportError, "Unable to send Room support.");
       setInteractionError(message);

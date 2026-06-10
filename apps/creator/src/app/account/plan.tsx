@@ -6,7 +6,8 @@
  */
 
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { trackEvent } from "@micboxx/analytics";
 import {
   ActivityIndicator,
   ScrollView,
@@ -292,6 +293,10 @@ function PlanCard({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function PlanScreen() {
+  useEffect(() => {
+    trackEvent("paywall_view" as any);
+  }, []);
+
   const { session } = useAuth();
   const { isPro, customerInfo } = useSubscription();
   const presentPaywallIfNeeded = usePresentPaywallIfNeeded();

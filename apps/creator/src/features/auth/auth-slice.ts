@@ -3,6 +3,7 @@ import {
     createSlice,
     type PayloadAction,
 } from "@reduxjs/toolkit";
+import { identifyUser, resetUser } from "@micboxx/analytics";
 
 import type { MicboxxSession } from "@micboxx/contracts";
 import {
@@ -35,7 +36,11 @@ const initialState: AuthState = {
 export const hydrateAuthSession = createAsyncThunk<MicboxxSession | null>(
   "auth/hydrateAuthSession",
   async () => {
-    return readStoredSession();
+    const session = await readStoredSession();
+    if (session?.user.uuid) {
+      identifyUser(session.user.uuid);
+    }
+    return session;
   },
 );
 
@@ -47,6 +52,7 @@ export const signIn = createAsyncThunk<
   try {
     const nextSession = await signInWithDrupal();
     await writeStoredSession(nextSession);
+    identifyUser(nextSession.user.uuid);
     return nextSession;
   } catch (error) {
     if (isAuthCancelledError(error)) {
@@ -66,6 +72,7 @@ export const signOut = createAsyncThunk<
 >("auth/signOut", async (_input, thunkApi) => {
   const currentSession = thunkApi.getState().auth.session;
   await clearStoredSession();
+  resetUser();
   await revokeDrupalSession(currentSession);
 });
 

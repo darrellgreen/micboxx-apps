@@ -96,7 +96,7 @@ function Input({
   keyboardType?: "default" | "email-address";
   returnKeyType?: "next" | "done" | "go";
   onSubmitEditing?: () => void;
-  inputRef?: React.RefObject<TextInput>;
+  inputRef?: React.Ref<TextInput>;
   autoCorrect?: boolean;
 }) {
   return (

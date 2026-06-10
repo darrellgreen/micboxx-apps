@@ -20,7 +20,7 @@ import {
 } from "@micboxx/api";
 import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
-import { ConsoleAnalyticsAdapter } from "@/features/analytics/adapter";
+import { PlatformAnalyticsAdapter } from "@/features/analytics/adapter";
 import { AccountPreferencesProvider } from "@/features/account/provider";
 import { SubscriptionProvider } from "@/features/subscription/provider";
 
@@ -45,7 +45,7 @@ configureMicboxxApi({
 });
 
 configureMicboxxAnalytics({
-  provider: ConsoleAnalyticsAdapter,
+  provider: PlatformAnalyticsAdapter,
 });
 
 const navigationTheme = {

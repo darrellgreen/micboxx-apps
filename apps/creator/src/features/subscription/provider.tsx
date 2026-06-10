@@ -25,6 +25,8 @@ import {
 } from "react";
 import { Platform } from "react-native";
 
+import { useAuth } from "../auth/provider";
+
 // ─── constants ───────────────────────────────────────────────────────────────
 
 /**
@@ -86,8 +88,13 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [currentOffering, setCurrentOffering] =
     useState<PurchasesOffering | null>(null);
+  const [isSdkReady, setIsSdkReady] = useState(false);
 
   const isConfigured = useRef(false);
+  const boundUserUuid = useRef<string | null>(null);
+
+  const { session } = useAuth();
+  const sessionUserUuid = session?.user.uuid ?? null;
 
   // Configure the SDK once on mount.
   useEffect(() => {
@@ -119,6 +126,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
         }
       } finally {
         setIsLoading(false);
+        setIsSdkReady(true);
       }
     }
 
@@ -185,6 +193,22 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
       }
     }
   }, []);
+
+  // Bind the RevenueCat identity to the MicBoxx account. Purchases made while
+  // bound restore across devices and stay attributable to the Drupal user UUID
+  // (required for server-side entitlement reconciliation). Runs only after
+  // `configure` settles so logIn never races SDK initialisation.
+  useEffect(() => {
+    if (!isSdkReady) return;
+
+    if (sessionUserUuid && boundUserUuid.current !== sessionUserUuid) {
+      boundUserUuid.current = sessionUserUuid;
+      void loginUser(sessionUserUuid);
+    } else if (!sessionUserUuid && boundUserUuid.current) {
+      boundUserUuid.current = null;
+      void logoutUser();
+    }
+  }, [isSdkReady, sessionUserUuid, loginUser, logoutUser]);
 
   const isPro = customerInfo ? deriveIsPro(customerInfo) : false;
 
