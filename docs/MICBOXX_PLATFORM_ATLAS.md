@@ -562,6 +562,20 @@ Concretely: MicBoxx ingests catalogs (from artists today, partners tomorrow), ma
 
 ---
 
+## Addendum (2026-06-09): Refinements from the Discovery Document Campaign
+
+Five follow-up documents were produced from this Atlas (`SECURITY_SECRETS_AUDIT.md`, `RIGHTS_LIGHT_ELIGIBILITY_DESIGN.md`, `RELEASE_NIGHT_PRODUCT_SPEC.md`, `MONEY_FLOW_AUDIT.md`, `MOBILE_LAUNCH_READINESS.md`). Their deeper reads refine the following Atlas statements (none reverse a conclusion):
+
+1. **Room lifecycle (§5):** rooms use a **dormant→awakened** model — a Room implicitly exists per release (unique on `release_ref_type, release_ref_id`) and is awakened transactionally on first entry (`RoomAwakener.php`). "Created→active" understated this; every release already *is* a room.
+2. **Support goals (§4D/§10):** goals are not merely a hook — `support_goal_cents` is settable (`RoomSupportController::activate`), reported in status, and backed by a Stripe webhook handler plus a user support wallet (`user_support_balance`). Only the goal **UI** is missing.
+3. **Fan memories (§10):** `RoomRewardsTrigger` already awards account-level achievements from room events — the memories foundation is live code.
+4. **Gap 6 (RevenueCat), sharpened:** the creator app configures RevenueCat with **anonymous app-user IDs** (no `logIn`), so Pro entitlements aren't bound to MicBoxx accounts at all (`MOBILE_LAUNCH_READINESS.md` S2).
+5. **Money flow (§4F):** purchase rails are idempotent and signature-verified, but **room support completes a ledger without creating payout events**, and payout-event ingestion runs through Fever Core adapter clients — the commerce→payout bridge is the weakest link (`MONEY_FLOW_AUDIT.md` F1/F3).
+6. **Rights (§4G), better than reported:** `ReleaseReadinessProfileBuilder` already composes all three rights checkers; only the publish gate, attestation capture, and creator-facing surfaces are missing (`RIGHTS_LIGHT_ELIGIBILITY_DESIGN.md` §1).
+7. **New mobile finding:** consumer iOS config lacks `NSMicrophoneUsageDescription` despite bundling WebRTC (`MOBILE_LAUNCH_READINESS.md` C3).
+
+---
+
 ## Appendix A. Security Verification — On-Disk Keys (2026-06-09)
 
 An earlier draft of this atlas flagged two "committed secret" findings based on automated discovery. Both were re-verified directly against git state and **disproven**: the files exist on disk but are gitignored and have never been committed. Severity was downgraded from Critical (incident) to Medium (hygiene) — see Gap 1.
