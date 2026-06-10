@@ -8,7 +8,7 @@ import {
     type PropsWithChildren,
 } from "react";
 
-import { noopPlayerAnalyticsSink } from "@/features/player/analytics";
+import { createServerPlayerAnalyticsSink } from "@/features/player/analytics";
 import { PLAYER_ANALYTICS_EVENTS } from "@micboxx/analytics";
 import { noopDownloadPlaybackResolver } from "@/features/player/downloads";
 import { trackPlayerAdapter } from "@/features/player/engine/adapter";
@@ -260,6 +260,13 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     [reportPlayEvent],
   );
 
+  const playerAnalyticsSinkRef = useRef(
+    createServerPlayerAnalyticsSink(
+      () => stateRef.current ? session?.accessToken ?? null : null,
+      () => analyticsSessionIdRef.current ?? "unknown",
+    ),
+  );
+
   const emitAnalytics = useCallback(
     (
       event: keyof typeof PLAYER_ANALYTICS_EVENTS,
@@ -269,7 +276,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         currentPositionSec?: number;
       },
     ) => {
-      noopPlayerAnalyticsSink.emit(PLAYER_ANALYTICS_EVENTS[event], {
+      playerAnalyticsSinkRef.current.emit(PLAYER_ANALYTICS_EVENTS[event], {
         trackId: payload.trackId,
         sourceKind: payload.sourceKind ?? null,
         currentPositionSec: payload.currentPositionSec,

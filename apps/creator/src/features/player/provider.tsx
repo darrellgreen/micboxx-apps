@@ -8,7 +8,7 @@ import {
   type PropsWithChildren,
 } from "react";
 
-import { noopPlayerAnalyticsSink } from "@/features/player/analytics";
+import { noopPlayerAnalyticsSink } from "@/features/player/analytics"; // creator has no listener session; consumer wires the concrete sink
 import { PLAYER_ANALYTICS_EVENTS } from "@micboxx/analytics";
 import { noopDownloadPlaybackResolver } from "@/features/player/downloads";
 import { trackPlayerAdapter } from "@/features/player/engine/adapter";

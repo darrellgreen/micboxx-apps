@@ -39,13 +39,13 @@ import {
     voteRoomPoll,
     voteRoomQuestion,
     ApiError,
+    apiFetch,
 } from "@micboxx/api";
 import {
     isRoomMuteActive,
     subscribeToMobileRoomState,
 } from "@/features/rooms/firebase/roomListeners";
 import { useAppSelector } from "@/store/hooks";
-import { trackEvent } from "@micboxx/analytics";
 
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 25_000;
 const PRESENCE_HEARTBEAT_BACKOFF_STEPS_MS = [5_000, 10_000, 20_000, 40_000] as const;
@@ -381,7 +381,19 @@ export function useMobileRoom(input: {
       });
       setRoomEntry(entry);
       setClockState(entry.clock);
-      trackEvent("room_entry", { roomId: entry.room.id, releaseIdentifier: input.releaseIdentifier });
+      void apiFetch("/v1/public/events", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({
+          eventType: "room_entry",
+          subjectType: "micboxx.room",
+          subjectId: entry.room.id,
+          sessionId: sessionIdRef.current,
+          sourceType: "release_room",
+          metadata: { release_identifier: input.releaseIdentifier },
+        }),
+        accessToken,
+      }).catch(() => undefined);
       if (entry.capabilities.can_enter_room === false) {
         setError("This Room is not currently available.");
       }
@@ -658,7 +670,19 @@ export function useMobileRoom(input: {
         showAmount: true,
         accessToken,
       });
-      trackEvent("support_send", { roomId: room.id, amountCents, paymentMethod: "user_support_balance" });
+      void apiFetch("/v1/public/events", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({
+          eventType: "support_send",
+          subjectType: "micboxx.room",
+          subjectId: room.id,
+          sessionId: sessionIdRef.current,
+          sourceType: "release_room",
+          metadata: { amount_cents: amountCents, payment_method: "user_support_balance" },
+        }),
+        accessToken,
+      }).catch(() => undefined);
       return result;
     } catch (supportError) {
       const message = normalizeRoomErrorMessage(supportError, "Unable to send Room support.");
