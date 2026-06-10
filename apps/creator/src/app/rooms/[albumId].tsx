@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { apiFetch } from "@micboxx/api";
 import { AnimatedPressable , AppHeader, BottomSheetSurface } from "@micboxx/ui";
 import {
     activateRoomQna,
@@ -27,11 +28,13 @@ import {
     endActiveRoomMoment,
     enterCreatorRoom,
     getCreatorRoomDetail,
+    getCreatorRoomSessionId,
     getRoomPollSnapshot,
     getRoomQnaSnapshot,
     getRoomSupportSnapshot,
     startLiveVideoDropInMoment,
 } from "@/features/rooms/api";
+import { ensureFreshSession } from "@/features/auth/api";
 import {
     emptyCreatorRoomRuntimeState,
     subscribeToCreatorRoomRuntime,
@@ -229,6 +232,21 @@ export default function RoomManagementScreen() {
       const nextEntry = await enterCreatorRoom(nextDetail.releaseIdentifier);
       setDetail(nextDetail);
       setEntry(nextEntry);
+
+      const session = await ensureFreshSession().catch(() => null);
+      void apiFetch("/v1/public/events", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({
+          eventType: "room_entry",
+          subjectType: "micboxx.room",
+          subjectId: String(nextEntry.room.id),
+          sessionId: getCreatorRoomSessionId(),
+          sourceType: "release_room",
+          metadata: { release_identifier: nextDetail.releaseIdentifier },
+        }),
+        accessToken: session?.accessToken ?? null,
+      }).catch(() => undefined);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Unable to load Room.");
     } finally {

@@ -25,7 +25,7 @@ const CREATOR_ROOM_SESSION_PREFIX = "creator-room";
 
 let creatorRoomSessionId: string | null = null;
 
-function getCreatorRoomSessionId() {
+export function getCreatorRoomSessionId() {
   if (creatorRoomSessionId) {
     return creatorRoomSessionId;
   }
