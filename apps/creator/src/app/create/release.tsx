@@ -507,47 +507,56 @@ export default function CreateReleaseScreen() {
       setValidationError("An album requires at least 1 ready track.");
       return;
     }
-    if (!canPublish) {
-      setValidationError("This release isn't ready to publish yet.");
-      return;
-    }
+    const confirmTitle = isScheduledRelease ? "Schedule this release?" : "Publish this release?";
+    const confirmBody = isScheduledRelease
+      ? "By scheduling, you confirm that you own or control the rights to distribute every track in this release and that none infringe on any third-party copyright. This statement is recorded with your account and applies when the release goes live."
+      : "By publishing, you confirm that you own or control the rights to distribute every track in this release and that none infringe on any third-party copyright. This statement is recorded with your account.";
+    const confirmLabel = isScheduledRelease ? "Schedule" : "Publish";
 
-    setPublishing(true);
-    try {
-      if (isScheduledRelease) {
-        const publishAt = Math.floor(releaseDate.getTime() / 1000);
-        const nextRelease = await scheduleAlbum(savedRelease.id, publishAt);
-        setSavedRelease(nextRelease);
-        setHasUnsavedChanges(false);
-        await bootstrap.refetch();
-        showToast({
-          tone: "success",
-          title: "Release scheduled",
-          message: `${nextRelease.title} is scheduled for ${formatReleaseDateTime(releaseDate)}.`,
-        });
-        router.dismissAll();
-        router.replace("/(tabs)/catalog" as never);
-      } else {
-        const nextRelease = await publishAlbum(savedRelease.id);
-        setSavedRelease(nextRelease);
-        setHasUnsavedChanges(false);
-        await bootstrap.refetch();
-        showToast({
-          tone: "success",
-          title: "Release published",
-          message: `${nextRelease.title} is now live.`,
-        });
-        router.dismissAll();
-        router.replace(`/catalog/albums/${nextRelease.id}` as never);
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unable to publish release.";
-      setValidationError(message);
-      showToast({ tone: "error", title: "Publish failed", message });
-    } finally {
-      setPublishing(false);
-    }
+    Alert.alert(confirmTitle, confirmBody, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: confirmLabel,
+        onPress: async () => {
+          setPublishing(true);
+          try {
+            if (isScheduledRelease) {
+              const publishAt = Math.floor(releaseDate.getTime() / 1000);
+              const nextRelease = await scheduleAlbum(savedRelease.id, publishAt, true);
+              setSavedRelease(nextRelease);
+              setHasUnsavedChanges(false);
+              await bootstrap.refetch();
+              showToast({
+                tone: "success",
+                title: "Release scheduled",
+                message: `${nextRelease.title} is scheduled for ${formatReleaseDateTime(releaseDate)}.`,
+              });
+              router.dismissAll();
+              router.replace("/(tabs)/catalog" as never);
+            } else {
+              const nextRelease = await publishAlbum(savedRelease.id, true);
+              setSavedRelease(nextRelease);
+              setHasUnsavedChanges(false);
+              await bootstrap.refetch();
+              showToast({
+                tone: "success",
+                title: "Release published",
+                message: `${nextRelease.title} is now live.`,
+              });
+              router.dismissAll();
+              router.replace(`/catalog/albums/${nextRelease.id}` as never);
+            }
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : "Unable to publish release.";
+            setValidationError(message);
+            showToast({ tone: "error", title: isScheduledRelease ? "Schedule failed" : "Publish failed", message });
+          } finally {
+            setPublishing(false);
+          }
+        },
+      },
+    ]);
   }
 
   async function handleAddTrack() {

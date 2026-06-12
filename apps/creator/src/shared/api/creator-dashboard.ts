@@ -272,6 +272,15 @@ export async function publishTrack(
   return response.track;
 }
 
+export async function attestTrackRights(
+  trackId: string | number,
+): Promise<{ rights_attested: boolean }> {
+  return creatorFetch<{ rights_attested: boolean }>(
+    `/v1/dashboard/tracks/${trackId}/attestation`,
+    { method: "POST" },
+  );
+}
+
 export async function unpublishTrack(
   trackId: string | number,
 ): Promise<DashboardTrack> {
@@ -457,10 +466,14 @@ export async function replaceAlbumArtwork(
 
 export async function publishAlbum(
   albumId: string | number,
+  attest = false,
 ): Promise<DashboardAlbum> {
   const response = await creatorFetch<{ album: DashboardAlbum }>(
     `/v1/dashboard/albums/${albumId}/publish`,
-    { method: "POST" },
+    {
+      method: "POST",
+      body: JSON.stringify({ attest }),
+    },
   );
 
   return response.album;
@@ -480,12 +493,13 @@ export async function unpublishAlbum(
 export async function scheduleAlbum(
   albumId: string | number,
   publishAt: number,
+  attest = false,
 ): Promise<DashboardAlbum> {
   const response = await creatorFetch<{ album: DashboardAlbum }>(
     `/v1/dashboard/albums/${albumId}/schedule`,
     {
       method: "POST",
-      body: JSON.stringify({ publish_at: publishAt }),
+      body: JSON.stringify({ publish_at: publishAt, attest }),
     },
   );
 

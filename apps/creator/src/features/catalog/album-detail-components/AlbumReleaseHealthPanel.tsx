@@ -70,6 +70,16 @@ function booleanStatus(value: boolean): HealthStatus {
   return value ? "complete" : "missing";
 }
 
+function resolveRightsStatus(album: DashboardAlbum): HealthStatus {
+  if (album.readiness !== undefined) {
+    const hasRightsBlocker = album.readiness.blockers.some(
+      (b) => b.code === "track_rights_not_attested",
+    );
+    return hasRightsBlocker ? "missing" : "complete";
+  }
+  return booleanStatus(album.status.canPublish || album.status.published);
+}
+
 function resolveCommerceRow(album: DashboardAlbum): HealthRowProps {
   if (hasValue(album.commerce.price)) {
     return { label: "Commerce", status: "complete", value: "Yes" };
@@ -95,15 +105,15 @@ export function AlbumReleaseHealthPanel({ album }: { album: DashboardAlbum }) {
     { label: "Artwork", status: booleanStatus(Boolean(album.artworkUrl)) },
     { label: "Tracks", status: booleanStatus(album.counts.tracks > 0) },
     { label: "Metadata", status: resolveMetadataStatus(album) },
+    { label: "Rights", status: resolveRightsStatus(album) },
     resolveCommerceRow(album),
     resolveReleaseStateRow(album),
-    { label: "Rights", status: booleanStatus(album.status.canPublish || album.status.published) },
   ];
 
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Release Health</Text>
-      
+
       <View style={styles.rowsContainer}>
         {rows.map((row) => (
           <HealthRow key={row.label} label={row.label} status={row.status} value={row.value} />

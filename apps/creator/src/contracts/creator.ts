@@ -186,6 +186,7 @@ export interface DashboardTrack {
     id: number;
     title: string;
   } | null;
+  rightsAttested: boolean;
   status: DashboardTrackStatus;
   assets: {
     artworkUrl: string | null;
@@ -479,6 +480,7 @@ export interface DashboardAlbumTrack {
   } | null;
   artworkUrl: string | null;
   status: DashboardAlbumTrackOption["status"];
+  rightsAttested: boolean;
   publicHref: string | null;
 }
 
@@ -539,6 +541,24 @@ export interface DashboardAlbum {
   };
   href: string;
   publicHref: string;
+  readiness?: {
+    stage: "needs_attention" | "ready" | "unknown";
+    blockers: Array<{
+      area: string;
+      code: string;
+      guidance: string;
+      affected_item: string | null;
+    }>;
+    warnings: Array<{
+      area: string;
+      code: string;
+      guidance: string;
+      affected_item: string | null;
+    }>;
+    nextMilestone: string | null;
+    blockerCount: number;
+    warningCount: number;
+  };
 }
 
 export interface DashboardAlbumSummary {

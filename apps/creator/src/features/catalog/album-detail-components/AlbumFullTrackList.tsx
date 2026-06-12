@@ -44,6 +44,7 @@ function mapTrackToAlbumRow(track: DashboardTrack): DashboardAlbumTrack {
       ready: track.status.ready,
       publicReady: Boolean(track.publicHref && track.status.ready),
     },
+    rightsAttested: track.rightsAttested ?? false,
     publicHref: track.publicHref,
   };
 }

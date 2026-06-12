@@ -232,6 +232,7 @@ function buildTrack(input: {
       currency: input.isPurchasable ? "USD" : null,
       isSubscriberOnly: input.isSubscriberOnly ?? false,
     },
+    rightsAttested: true,
     permissions: {
       canEdit: true,
       canPublish: true,
@@ -305,6 +306,7 @@ function buildAlbum(input: {
         ready: track.status.ready,
         publicReady: track.status.ready && track.status.published,
       },
+      rightsAttested: true,
       publicHref: track.publicHref,
     })),
     timestamps: {
