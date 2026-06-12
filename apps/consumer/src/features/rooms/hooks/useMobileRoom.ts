@@ -400,7 +400,14 @@ export function useMobileRoom(input: {
       await syncPlaybackToClock(entry.clock, entry);
     } catch (entryError) {
       enteredRoomKeyRef.current = null;
-      setError(normalizeRoomErrorMessage(entryError, "Unable to enter Room."));
+      const status = entryError instanceof ApiError ? entryError.status : null;
+      if (status === 403) {
+        setError("You cannot enter this room.");
+      } else if (status === 404) {
+        setError("This room is no longer available.");
+      } else {
+        setError(normalizeRoomErrorMessage(entryError, "Unable to enter Room."));
+      }
     } finally {
       setIsLoading(false);
     }
