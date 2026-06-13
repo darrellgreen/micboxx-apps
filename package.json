@@ -22,13 +22,13 @@
     "reset": "npm run clean && npm install"
   },
   "overrides": {
-    "@types/react": "~19.1.0"
+    "@types/react": "~19.1.0",
+    "react-native-worklets": "0.8.3"
   },
   "engines": {
     "node": ">=24 <25"
   },
   "dependencies": {
-    "@expo/metro-runtime": "^56.0.15",
     "@react-native/virtualized-lists": "0.81.5",
     "expo-application": "^56.0.3",
     "expo-crypto": "~13.0.2",

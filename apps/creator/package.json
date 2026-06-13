@@ -92,7 +92,6 @@
     "react-native-svg": "15.12.1",
     "react-native-track-player": "^4.1.2",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.5.1",
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
@@ -106,6 +105,15 @@
   "expo": {
     "autolinking": {
       "nativeModulesDir": "../../node_modules"
+    },
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-track-player",
+          "@livekit/react-native-expo-plugin",
+          "expo-modules-jsi"
+        ]
+      }
     }
   }
 }
