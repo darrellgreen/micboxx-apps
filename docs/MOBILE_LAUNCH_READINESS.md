@@ -29,7 +29,7 @@
 | C10 | Store metadata/screenshots | 🟧 | Not in repo (expected); needs producing. Icons/splash ✓. | P |
 | C11 | Crash reporting | 🟩 | Sentry RN configured via plugin. | — |
 | C12 | Account deletion (Apple requirement) | 🟩 | `DELETE /v1/dashboard/user/account` + cancel/activate flows exist server-side; **verify in-app entry point is reachable**. | E (verify) |
-| C13 | Background audio entitlement | 🟩 | `UIBackgroundModes: ["audio"]`. | — |
+| C13 | Background audio entitlement | 🟩 | Consumer only: `UIBackgroundModes: ["audio"]` remains in `apps/consumer/app.json`. Creator/Studio intentionally does not declare background audio. | — |
 | C14 | Uncommitted workspace changes | 🟧 | `metro.config.js`, `_layout.tsx`, `stubs/`, suppress-deprecation file still uncommitted — land or drop before release branch. | E |
 
 ## 3. Creator App Checklist

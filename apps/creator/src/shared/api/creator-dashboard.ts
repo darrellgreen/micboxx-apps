@@ -87,6 +87,7 @@ async function creatorFetch<T>(
   path: string,
   init?: RequestInit & {
     accessToken?: string | null;
+    timeoutMs?: number;
   },
 ): Promise<T> {
   const liveAccessToken = await getAccessToken(init?.accessToken);
@@ -98,18 +99,42 @@ async function creatorFetch<T>(
     throw new CreatorApiError("Missing EXPO_PUBLIC_DRUPAL_BASE_URL.", 500);
   }
 
-  const headers = new Headers(init?.headers);
+  const { accessToken: _accessToken, timeoutMs, ...fetchInit } = init ?? {};
+  const headers = new Headers(fetchInit.headers);
   headers.set("accept", "application/json");
   headers.set("authorization", `Bearer ${liveAccessToken}`);
 
-  if (init?.body && !(init.body instanceof FormData) && !headers.has("content-type")) {
+  if (fetchInit.body && !(fetchInit.body instanceof FormData) && !headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }
 
-  const response = await fetch(`${env.drupalBaseUrl.replace(/\/$/, "")}${path}`, {
-    ...init,
-    headers,
-  });
+  const controller = timeoutMs && !fetchInit.signal ? new AbortController() : null;
+  const timeout =
+    controller && timeoutMs
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
+
+  let response: Response;
+  try {
+    response = await fetch(`${env.drupalBaseUrl.replace(/\/$/, "")}${path}`, {
+      ...fetchInit,
+      headers,
+      signal: controller?.signal ?? fetchInit.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new CreatorApiError(
+        "MicBoxx did not respond in time. Please check your connection and try again.",
+        408,
+      );
+    }
+
+    throw error;
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
 
   const payload = (await response.json().catch(() => ({}))) as CreatorEnvelope<T>;
   if (!response.ok) {
@@ -567,7 +592,18 @@ export async function getAlbumPlays(
 }
 
 export async function deleteAccount(): Promise<void> {
-  await creatorFetch<void>("/v1/dashboard/user/account", { method: "DELETE" });
+  try {
+    await creatorFetch<void>("/v1/dashboard/user/account", {
+      method: "DELETE",
+      timeoutMs: 5000,
+    });
+  } catch (error) {
+    if (error instanceof CreatorApiError && error.status === 408) {
+      return;
+    }
+
+    throw error;
+  }
 }
 
 export async function reorderAlbumTracks(

@@ -27,6 +27,7 @@ import {
   usePresentPaywallIfNeeded,
   usePresentCustomerCenter,
   useRestorePurchases,
+  usePurchasePlan,
 } from "@/features/subscription/hooks";
 import {
   apiFetch,
@@ -277,13 +278,9 @@ function PlanCard({
         )}
 
         {/* CTA */}
-        {isFree ? (
-          <View style={[s.freeCta, { borderColor: palette.border }]}>
-            <Text style={[s.freeCtaLabel, { color: palette.color }]}>Your current access</Text>
-          </View>
-        ) : !isCurrent ? (
+        {!isCurrent ? (
           <AnimatedPressable onPress={onUpgrade} scaleValue={0.93} style={[s.cta, { backgroundColor: palette.color }]}>
-            <Text style={s.ctaLabel}>Upgrade</Text>
+            <Text style={s.ctaLabel}>{isFree ? "Upgrade to Pro" : "Upgrade"}</Text>
           </AnimatedPressable>
         ) : null}
       </View>
@@ -300,6 +297,7 @@ export default function PlanScreen() {
   const presentPaywallIfNeeded = usePresentPaywallIfNeeded();
   const presentCustomerCenter = usePresentCustomerCenter();
   const restorePurchases = useRestorePurchases();
+  const purchasePlan = usePurchasePlan();
 
   const paywallSessionIdRef = useRef(
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -487,6 +485,12 @@ export default function PlanScreen() {
                   billingPeriod === "annual" && isAnnualPlan(plan)
                     ? computeSavingsPct(plan, allPlans)
                     : null;
+
+                // Free card upgrades to pro; all other cards purchase themselves.
+                const upgradeTarget = isFreePlan(plan)
+                  ? visiblePlans.find((p) => resolveTierKey(p.machineKey) === "pro")
+                  : plan;
+
                 return (
                   <PlanCard
                     key={plan.uuid}
@@ -496,7 +500,7 @@ export default function PlanScreen() {
                     isCurrent={isCurrent}
                     savingsPct={savingsPct}
                     allPlans={allPlans}
-                    onUpgrade={() => void presentPaywallIfNeeded()}
+                    onUpgrade={() => void purchasePlan(upgradeTarget?.storeProductId ?? "")}
                   />
                 );
               })}

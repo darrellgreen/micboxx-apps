@@ -90,6 +90,42 @@ export function usePresentPaywallIfNeeded() {
   }, [refreshCustomerInfo]);
 }
 
+/**
+ * Returns a function that purchases a specific plan by its App Store product ID.
+ * Falls back to the generic paywall if the product is not found in the current offering.
+ *
+ * Usage:
+ *   const purchasePlan = usePurchasePlan();
+ *   const result = await purchasePlan("monthly");
+ */
+export function usePurchasePlan() {
+  const { currentOffering, refreshCustomerInfo } = useSubscription();
+
+  return useCallback(async (storeProductId: string): Promise<PresentPaywallResult> => {
+    try {
+      const pkg = currentOffering?.availablePackages.find(
+        (p) => p.product.identifier === storeProductId,
+      );
+
+      if (!pkg) {
+        if (__DEV__) {
+          console.error("[RevenueCat] package not found for storeProductId:", storeProductId, "— check Drupal plan configuration");
+        }
+        return { purchased: false, customerInfo: null };
+      }
+
+      const { customerInfo: info } = await Purchases.purchasePackage(pkg);
+      await refreshCustomerInfo();
+      return { purchased: true, customerInfo: info };
+    } catch (err) {
+      if (__DEV__) {
+        console.warn("[RevenueCat] purchasePlan error:", err);
+      }
+      return { purchased: false, customerInfo: null };
+    }
+  }, [currentOffering, refreshCustomerInfo]);
+}
+
 // ─── customer center ──────────────────────────────────────────────────────────
 
 /**

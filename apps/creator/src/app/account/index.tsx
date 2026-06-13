@@ -162,6 +162,7 @@ export default function AccountScreen() {
     try {
       await deleteAccount();
       await signOut();
+      router.replace("/");
     } catch (err) {
       setDeleting(false);
       showToast({

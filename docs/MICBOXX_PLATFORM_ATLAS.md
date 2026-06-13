@@ -199,7 +199,7 @@ Statuses below are cross-checked against the team's own `micboxx-server/docs/Mic
 ### C. Playback & Player System
 
 - **Web:** `MicboxxPlayerProvider` + `GlobalPlayerBar` with **completed deferred-loading extraction** — heavy vendor chunks removed from public route manifests, player initializes on idle/interaction (`PLAYER_PROVIDER_EXTRACTION_REPORT.md`, High). Queue persisted in session storage (`mbx-player-state`). Media Session API integration; 12s heartbeat; events `play_started`, `play_qualified`, `play_completed` — **qualified-play logic exists** (High).
-- **Mobile:** react-native-track-player with background audio (`UIBackgroundModes: ["audio"]`), queue/session persistence (`queueStorage.ts`, `playbackSessionStorage.ts`), waveform UI, playback source resolver mapping entitlements → full/premium/demo audio (High).
+- **Mobile:** Consumer uses react-native-track-player with background audio (`UIBackgroundModes: ["audio"]`), queue/session persistence (`queueStorage.ts`, `playbackSessionStorage.ts`), waveform UI, playback source resolver mapping entitlements → full/premium/demo audio (High). Creator/Studio does not declare background audio because persistent music playback is not a Creator app feature.
 - **Anonymous playback:** Supported on web public routes with anonymous listener ID in analytics (`mbx-analytics-sid` + persistent anonymous ID, High).
 - **Entitlement gating:** subscriber-only/purchasable/demo modes enforced in source resolution on both platforms (High).
 - **Known issues:** `/discover` LCP 16.3s regression (root cause open); auth-provider deferral unvalidated — public-route contamination risk remains until manifest re-validation (`PERFORMANCE_PHASE_STATUS.md`, High).
@@ -318,7 +318,7 @@ This is the platform's hidden strategic asset (all High, verified in `micboxx_ds
 ### O. Mobile App Store / Release Readiness
 
 - **Consumer (High):** bundle IDs aligned (`com.micboxx.mobile`), EAS projects + production profiles, icons/splash present, iOS background-audio mode, Android `POST_NOTIFICATIONS`, `ITSAppUsesNonExemptEncryption: false`, Firebase plist/json committed, Sentry wired, deep-link scheme registered. Build wrapper `scripts/eas-production-build.mjs` typechecks before building. **Missing:** App Store metadata/screenshots in repo, privacy-manifest/data-safety docs, age-rating analysis. Signup-flow repair In Progress (MCBM-83).
-- **Creator (High):** same scaffolding + RevenueCat key env, camera/mic/photo permission strings for video drop-ins. **Missing:** push notifications (release blocker for engagement loops), real analytics.
+- **Creator (High):** same scaffolding + RevenueCat key env, camera/mic/photo permission strings for video drop-ins; no iOS background-audio entitlement. **Missing:** push notifications (release blocker for engagement loops), real analytics.
 - **Store-compliance question (inference, Medium):** consumer app surfaces purchasable/subscriber-gated content but has no IAP; Apple's rules around digital-content purchase routing need an explicit decision (reader-app vs IAP) before App Store submission.
 
 ### P. Shared Packages, Contracts & Monorepo Health
@@ -638,7 +638,6 @@ Gitleaks 8.24.3 was run over the complete git history of all three repos (`gitle
 2. Move the credential out of `config/sync` — override `$config['symfony_mailer.mailer_transport.smtp']['configuration']` (`user`/`pass`) from environment variables in the existing `micboxx.settings.php` overlay, and commit the config file with blank/placeholder values.
 3. Optional after rotation: purge the file's history (single commit touches it, so the purge is simple) — rotation alone removes the actual risk.
 4. Housekeeping: delete the `jira-*.txt/json` scratch captures at the server repo root.
-
 
 
 

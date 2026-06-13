@@ -103,13 +103,16 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
 
     async function configure() {
       try {
+        if (!REVENUECAT_API_KEY) {
+          throw new Error(
+            "EXPO_PUBLIC_REVENUECAT_IOS_KEY is not set. Add it to .env before building."
+          );
+        }
+
         if (__DEV__) {
           Purchases.setLogLevel(LOG_LEVEL.DEBUG);
         }
 
-        // `configure` is the recommended entry point for React Native.
-        // It works for both iOS and Android with the same API key in
-        // sandbox mode (test_ prefix).
         Purchases.configure({ apiKey: REVENUECAT_API_KEY });
 
         // Load current customer info and offerings in parallel.

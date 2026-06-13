@@ -157,6 +157,7 @@ export interface PublicSubscriptionPlan {
   trialPeriodDays: number;
   capabilities: string[];
   capabilityDetails?: EntitlementCapabilityDetail[];
+  storeProductId: string | null;
 }
 
 export interface EntitlementPlanState {
