@@ -107,7 +107,7 @@ export function usePurchasePlan() {
         (p) => p.product.identifier === storeProductId,
       );
 
-      if (!pkg) {
+if (!pkg) {
         if (__DEV__) {
           console.error("[RevenueCat] package not found for storeProductId:", storeProductId, "— check Drupal plan configuration");
         }

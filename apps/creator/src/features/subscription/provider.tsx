@@ -116,13 +116,14 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
         Purchases.configure({ apiKey: REVENUECAT_API_KEY });
 
         // Load current customer info and offerings in parallel.
-        const [info, offerings] = await Promise.all([
+        // Offerings can fail when products are pending App Store review — handle independently.
+        const [info, offeringsResult] = await Promise.all([
           Purchases.getCustomerInfo(),
-          Purchases.getOfferings(),
+          Purchases.getOfferings().catch(() => null),
         ]);
 
         setCustomerInfo(info);
-        setCurrentOffering(offerings.current);
+        setCurrentOffering(offeringsResult?.current ?? null);
       } catch (err) {
         if (__DEV__) {
           console.warn("[RevenueCat] configure failed:", err);

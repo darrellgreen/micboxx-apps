@@ -336,10 +336,6 @@ export default function PlanScreen() {
 
   const loading = plansLoading || (!!session && entitlementLoading);
 
-  if (__DEV__) {
-    console.log("[Plans] allPlans:", allPlans.length, "plansLoading:", plansLoading, "plansError:", plansError);
-    if (allPlans.length > 0) console.log("[Plans] machineKeys:", allPlans.map((p) => p.machineKey).join(", "));
-  }
   const entitlementStatus = resolveEntitlementStatus(entitlement);
   const hasActivePlan = entitlementStatus === "active" || entitlementStatus === "grace";
   const hasAnnualPlans = allPlans.some((p) => !isFreePlan(p) && isAnnualPlan(p));
