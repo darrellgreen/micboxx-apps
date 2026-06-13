@@ -8,7 +8,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useRef } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,10 +18,6 @@ import { AnimatedPressable, Skeleton } from "@micboxx/ui";
 
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useAuth } from "@/features/auth/provider";
-import {
-  ENTITLEMENT_PRO,
-  useSubscription,
-} from "@/features/subscription/provider";
 import {
   usePresentPaywallIfNeeded,
   usePresentCustomerCenter,
@@ -293,7 +288,6 @@ function PlanCard({
 export default function PlanScreen() {
 
   const { session } = useAuth();
-  const { isPro, customerInfo } = useSubscription();
   const presentPaywallIfNeeded = usePresentPaywallIfNeeded();
   const presentCustomerCenter = usePresentCustomerCenter();
   const restorePurchases = useRestorePurchases();
@@ -354,8 +348,6 @@ export default function PlanScreen() {
     if (billingPeriod === "annual") return isAnnualPlan(p);
     return !isAnnualPlan(p);
   });
-
-  const proExpiry = customerInfo?.entitlements.active[ENTITLEMENT_PRO]?.expirationDate;
 
   async function handleRestore() {
     setIsRestoring(true);
@@ -514,7 +506,14 @@ export default function PlanScreen() {
                     isCurrent={isCurrent}
                     savingsPct={savingsPct}
                     allPlans={allPlans}
-                    onUpgrade={() => void purchasePlan(upgradeTarget?.storeProductId ?? "")}
+                    onUpgrade={() => {
+                      const productId = upgradeTarget?.storeProductId;
+                      if (productId) {
+                        void purchasePlan(productId);
+                      } else {
+                        void presentPaywallIfNeeded();
+                      }
+                    }}
                   />
                 );
               })}

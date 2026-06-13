@@ -104,12 +104,12 @@ export function usePurchasePlan() {
   return useCallback(async (storeProductId: string): Promise<PresentPaywallResult> => {
     try {
       const pkg = currentOffering?.availablePackages.find(
-        (p) => p.product.identifier === storeProductId,
+        (p) => p.product?.identifier === storeProductId,
       );
 
-if (!pkg) {
+      if (!pkg) {
         if (__DEV__) {
-          console.error("[RevenueCat] package not found for storeProductId:", storeProductId, "— check Drupal plan configuration");
+          console.warn("[RevenueCat] package not found for storeProductId:", storeProductId);
         }
         return { purchased: false, customerInfo: null };
       }
