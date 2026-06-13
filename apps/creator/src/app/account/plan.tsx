@@ -8,6 +8,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useRef } from "react";
 import {
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -521,11 +522,30 @@ export default function PlanScreen() {
           </View>
         )}
 
-        {/* ── Restore ───────────────────────────────────────────────────── */}
-        <View style={s.restoreWrap}>
-          <Text style={s.restoreLink} onPress={() => void handleRestore()}>
-            {isRestoring ? "Restoring…" : "Restore purchases"}
+        {/* ── Footer ────────────────────────────────────────────────────── */}
+        <View style={s.footer}>
+          <Text style={s.footerDisclaimer}>
+            Auto-renewable subscription. Payment will be charged to your Apple ID at confirmation of purchase and will automatically renew unless canceled at least 24 hours before the end of the current period. Manage or cancel in your Apple ID Account Settings.
           </Text>
+          <View style={s.footerLinks}>
+            <Text
+              style={s.footerLink}
+              onPress={() => void Linking.openURL("https://micboxx.com/terms")}
+            >
+              Terms of Use
+            </Text>
+            <Text style={s.footerDot}>·</Text>
+            <Text
+              style={s.footerLink}
+              onPress={() => void Linking.openURL("https://micboxx.com/privacy")}
+            >
+              Privacy Policy
+            </Text>
+            <Text style={s.footerDot}>·</Text>
+            <Text style={s.footerLink} onPress={() => void handleRestore()}>
+              {isRestoring ? "Restoring…" : "Restore Purchases"}
+            </Text>
+          </View>
         </View>
 
       </ScrollView>
@@ -613,6 +633,9 @@ const s = StyleSheet.create({
   freeCta: { alignItems: "center", paddingVertical: 13, borderRadius: tokens.radii.pill, borderWidth: 1 },
   freeCtaLabel: { fontSize: 13, fontWeight: "600" },
 
-  restoreWrap: { alignItems: "center" },
-  restoreLink: { color: tokens.colors.textSecondary, fontSize: 13, fontWeight: "500", textDecorationLine: "underline" },
+  footer: { gap: 12, paddingTop: 8 },
+  footerDisclaimer: { color: tokens.colors.textSecondary, fontSize: 11, lineHeight: 16, textAlign: "center", opacity: 0.7 },
+  footerLinks: { flexDirection: "row", alignItems: "center", justifyContent: "center", flexWrap: "wrap", gap: 6 },
+  footerLink: { color: tokens.colors.textSecondary, fontSize: 12, fontWeight: "500", textDecorationLine: "underline" },
+  footerDot: { color: tokens.colors.textSecondary, fontSize: 12 },
 });
