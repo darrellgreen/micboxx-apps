@@ -328,13 +328,18 @@ export default function PlanScreen() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
   const [isRestoring, setIsRestoring] = useState(false);
 
-  const { data: allPlans = [], isLoading: plansLoading } = useGetPublicSubscriptionPlansQuery();
+  const { data: allPlans = [], isLoading: plansLoading, isError: plansError } = useGetPublicSubscriptionPlansQuery();
   const { data: entitlement, isLoading: entitlementLoading } = useGetCurrentEntitlementsQuery(
     { accessToken: session?.accessToken },
     { skip: !session },
   );
 
   const loading = plansLoading || (!!session && entitlementLoading);
+
+  if (__DEV__) {
+    console.log("[Plans] allPlans:", allPlans.length, "plansLoading:", plansLoading, "plansError:", plansError);
+    if (allPlans.length > 0) console.log("[Plans] machineKeys:", allPlans.map((p) => p.machineKey).join(", "));
+  }
   const entitlementStatus = resolveEntitlementStatus(entitlement);
   const hasActivePlan = entitlementStatus === "active" || entitlementStatus === "grace";
   const hasAnnualPlans = allPlans.some((p) => !isFreePlan(p) && isAnnualPlan(p));
@@ -360,6 +365,19 @@ export default function PlanScreen() {
     setIsRestoring(true);
     await restorePurchases();
     setIsRestoring(false);
+  }
+
+  if (plansError && !plansLoading) {
+    return (
+      <SafeAreaView style={s.safe} edges={["top"]}>
+        <ScreenHeader title="Plans" subtitle="Subscription and access" showBackButton />
+        <View style={s.loadingWrap}>
+          <Text style={{ color: tokens.colors.textSecondary, fontSize: 14, textAlign: "center" }}>
+            Unable to load plans. Check your connection and try again.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   if (loading) {

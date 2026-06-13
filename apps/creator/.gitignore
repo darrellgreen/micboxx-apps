@@ -41,6 +41,9 @@ app-example
 # generated native folders
 /ios
 /android
+
+# StoreKit local testing config (Xcode-only, not for CI or production)
+*.storekit
 .codex/
 
 .env.local

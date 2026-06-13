@@ -91,9 +91,9 @@ export async function getOrderHistory(
 export async function getPublicSubscriptionPlans(): Promise<
   PublicSubscriptionPlan[]
 > {
-  const response = await apiFetch<{ data: { plans: PublicSubscriptionPlan[] } }>(
+  const response = await apiFetch<{ plans: PublicSubscriptionPlan[] }>(
     `/v1/public/commerce/subscription-plans`,
   );
 
-  return response.data?.plans ?? [];
+  return response.plans ?? [];
 }
