@@ -28,6 +28,7 @@
     "node": ">=24 <25"
   },
   "dependencies": {
+    "@expo/metro-runtime": "^56.0.15",
     "@react-native/virtualized-lists": "0.81.5",
     "expo-application": "^56.0.3",
     "expo-crypto": "~13.0.2",
