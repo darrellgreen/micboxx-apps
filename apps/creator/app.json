@@ -81,8 +81,7 @@
           "organization": "fever-llc"
         }
       ],
-      "@react-native-community/datetimepicker",
-      "react-native-purchases"
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
