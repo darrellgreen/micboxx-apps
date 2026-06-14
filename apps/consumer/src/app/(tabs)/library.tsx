@@ -1,7 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,8 +9,13 @@ import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useAuth } from "@/features/auth/provider";
 import { useLibraryDomains } from "@/features/library/useLibraryDomains";
 import type { LibraryTab } from "@/features/library/libraryTypes";
-import { formatRelativeTime } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
+import { InfoCard } from "@/features/library/components/library-shared";
+import { PurchasedSection } from "@/features/library/components/PurchasedSection";
+import { SavedSection } from "@/features/library/components/SavedSection";
+import { RecentlyPlayedSection } from "@/features/library/components/RecentlyPlayedSection";
+import { ArtistsSection } from "@/features/library/components/ArtistsSection";
+import { PlaylistsSection } from "@/features/library/components/PlaylistsSection";
 
 const tabs: { key: LibraryTab; label: string }[] = [
   { key: "all", label: "All" },
@@ -47,11 +50,7 @@ export default function LibraryScreen() {
   if (!session) {
     return (
       <Screen scroll={false}>
-        <ScreenHeader
-          title="Library"
-          subtitle="Saved music and purchases"
-          leftIcon="menu"
-        />
+        <ScreenHeader title="Library" subtitle="Saved music and purchases" leftIcon="menu" />
         <View style={styles.gate}>
           <Ionicons name="library-outline" size={44} color={tokens.colors.accent} />
           <Text style={styles.gateTitle}>Your library lives here</Text>
@@ -69,11 +68,7 @@ export default function LibraryScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScreenHeader
-        title="Library"
-        subtitle="Saved music and purchases"
-        leftIcon="menu"
-      />
+      <ScreenHeader title="Library" subtitle="Saved music and purchases" leftIcon="menu" />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -101,189 +96,26 @@ export default function LibraryScreen() {
         {state.error ? <InfoCard title="Unable to load library" body={state.error} /> : null}
 
         {(activeTab === "all" || activeTab === "purchased") ? (
-          <Section title="Purchased">
-            {state.ownedAlbums.map((album) => (
-              <LibraryRow
-                key={`owned-album-${album.uuid}`}
-                title={album.title}
-                subtitle={album.artistName || "Purchased album"}
-                meta="Purchased album"
-                artwork={album.artwork}
-              />
-            ))}
-            {state.ownedTracks.map((track) => (
-              <LibraryRow
-                key={`owned-track-${track.uuid}`}
-                title={track.title}
-                subtitle={track.artistName || "Purchased track"}
-                meta="Purchased track"
-                artwork={track.artwork}
-              />
-            ))}
-            {state.ownedAlbums.length + state.ownedTracks.length === 0 ? (
-              <EmptyLine text="No purchased music yet." />
-            ) : null}
-          </Section>
+          <PurchasedSection ownedAlbums={state.ownedAlbums} ownedTracks={state.ownedTracks} />
         ) : null}
 
         {(activeTab === "all" || activeTab === "saved") ? (
-          <Section title="Saved">
-            {state.savedTracks.map((track) => (
-              <LibraryRow
-                key={`saved-track-${track.uuid}`}
-                title={track.title}
-                subtitle={track.artistName}
-                meta="Saved track"
-                artwork={track.artwork}
-                onPress={() => router.push(`/track/${encodeURIComponent(track.uuid)}` as never)}
-              />
-            ))}
-            {state.savedTracks.length === 0 ? (
-              <EmptyLine text={
-                state.unavailableDomains.includes("Saved albums")
-                  ? "No saved tracks yet. Saved albums are not available from a verified backend route."
-                  : "No saved items yet."
-              } />
-            ) : null}
-          </Section>
+          <SavedSection savedTracks={state.savedTracks} unavailableDomains={state.unavailableDomains} />
         ) : null}
 
         {(activeTab === "all" || activeTab === "recent") ? (
-          <Section title="Recently Played">
-            {state.recentlyPlayedTracks.map((track) => (
-              <LibraryRow
-                key={`recent-${track.uuid}`}
-                title={track.title}
-                subtitle={track.artistName}
-                meta="Recent play"
-                artwork={track.artwork}
-                onPress={() => router.push(`/track/${encodeURIComponent(track.uuid)}` as never)}
-              />
-            ))}
-            {state.recentlyPlayedTracks.length === 0 ? <EmptyLine text="No recent plays yet." /> : null}
-          </Section>
+          <RecentlyPlayedSection tracks={state.recentlyPlayedTracks} />
         ) : null}
 
         {(activeTab === "all" || activeTab === "artists") ? (
-          <Section title="Followed Artists">
-            {state.followedArtists.map((artist) => (
-              <LibraryRow
-                key={`artist-${artist.id}`}
-                title={artist.displayName}
-                subtitle={`@${artist.username}`}
-                meta="Followed artist"
-                artwork={artist.avatar}
-                roundArtwork
-                onPress={() => router.push(`/user/${encodeURIComponent(artist.username)}` as never)}
-              />
-            ))}
-            {state.followedArtists.length === 0 ? <EmptyLine text="No followed artists yet." /> : null}
-          </Section>
+          <ArtistsSection followedArtists={state.followedArtists} />
         ) : null}
 
         {(activeTab === "all" || activeTab === "playlists") ? (
-          <Section
-            title="Playlists"
-            action={
-              <Pressable
-                onPress={() => router.push("/playlist/create")}
-                style={({ pressed }) => [styles.headerAction, pressed && { opacity: 0.7 }]}
-              >
-                <Ionicons name="add-circle-outline" size={16} color={tokens.colors.accent} />
-                <Text style={styles.headerActionText}>Create</Text>
-              </Pressable>
-            }
-          >
-            {state.playlists.map((playlist) => (
-              <LibraryRow
-                key={`playlist-${playlist.uuid}`}
-                title={playlist.title}
-                subtitle={playlist.isPublic ? "Public playlist" : "Private playlist"}
-                meta={`${playlist.trackCount} tracks · Updated ${formatRelativeTime(new Date(playlist.updatedAt * 1000).toISOString())}`}
-                artwork={playlist.artwork}
-                onPress={() =>
-                  router.push({
-                    pathname: "/playlist/[slug]",
-                    params: { slug: playlist.slug, playlistId: playlist.id },
-                  } as never)
-                }
-              />
-            ))}
-            {state.playlists.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No playlists yet.</Text>
-                <Pressable
-                  onPress={() => router.push("/playlist/create")}
-                  style={({ pressed }) => [styles.emptyAction, pressed && { opacity: 0.8 }]}
-                >
-                  <Ionicons name="add" size={14} color={tokens.colors.accent} />
-                  <Text style={styles.emptyActionText}>Create Playlist</Text>
-                </Pressable>
-              </View>
-            ) : null}
-          </Section>
+          <PlaylistsSection playlists={state.playlists} />
         ) : null}
-        </ScrollView>
+      </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function Section({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {action}
-      </View>
-      <View style={styles.sectionBody}>{children}</View>
-    </View>
-  );
-}
-
-function InfoCard({ title, body }: { title: string; body: string }) {
-  return (
-    <View style={styles.infoCard}>
-      <Text style={styles.infoTitle}>{title}</Text>
-      <Text style={styles.infoBody}>{body}</Text>
-    </View>
-  );
-}
-
-function EmptyLine({ text }: { text: string }) {
-  return <Text style={styles.empty}>{text}</Text>;
-}
-
-function LibraryRow({
-  title,
-  subtitle,
-  meta,
-  artwork,
-  roundArtwork = false,
-  onPress,
-}: {
-  title: string;
-  subtitle: string;
-  meta: string;
-  artwork: string | null;
-  roundArtwork?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <Pressable disabled={!onPress} onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <View style={[styles.artwork, roundArtwork && styles.roundArtwork]}>
-        {artwork ? (
-          <Image source={{ uri: artwork }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
-        ) : (
-          <Text style={styles.artworkText}>{title.slice(0, 1).toUpperCase()}</Text>
-        )}
-      </View>
-      <View style={styles.rowCopy}>
-        <Text numberOfLines={1} style={styles.rowTitle}>{title}</Text>
-        <Text numberOfLines={1} style={styles.rowSubtitle}>{subtitle}</Text>
-        <Text numberOfLines={1} style={styles.rowMeta}>{meta}</Text>
-      </View>
-      {onPress ? <Ionicons name="chevron-forward" size={18} color={tokens.colors.textSecondary} /> : null}
-    </Pressable>
   );
 }
 
@@ -302,27 +134,4 @@ const styles = StyleSheet.create({
   tabText: { color: tokens.colors.textSecondary, fontSize: 13, fontWeight: "800" },
   tabTextSelected: { color: "#fff" },
   tabCount: { color: tokens.colors.textSecondary, fontSize: 12, fontWeight: "800" },
-  section: { gap: 10 },
-  sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  sectionTitle: { color: tokens.colors.textPrimary, fontSize: 18, fontWeight: "900" },
-  sectionBody: { borderRadius: 8, overflow: "hidden", backgroundColor: tokens.colors.bgSurface, borderWidth: 1, borderColor: tokens.colors.borderSubtle },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tokens.colors.borderSubtle },
-  pressed: { opacity: 0.76 },
-  artwork: { width: 54, height: 54, borderRadius: 8, alignItems: "center", justifyContent: "center", overflow: "hidden", backgroundColor: "rgba(255,255,255,0.08)" },
-  roundArtwork: { borderRadius: 27 },
-  artworkText: { color: tokens.colors.textPrimary, fontSize: 18, fontWeight: "900" },
-  rowCopy: { flex: 1, minWidth: 0 },
-  rowTitle: { color: tokens.colors.textPrimary, fontSize: 15, fontWeight: "800" },
-  rowSubtitle: { color: tokens.colors.textSecondary, fontSize: 13, marginTop: 2 },
-  rowMeta: { color: tokens.colors.textSecondary, fontSize: 11, marginTop: 4 },
-  empty: { color: tokens.colors.textSecondary, padding: 14, fontSize: 13 },
-  infoCard: { borderRadius: 8, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: tokens.colors.borderSubtle, padding: 14, gap: 4 },
-  infoTitle: { color: tokens.colors.textPrimary, fontSize: 15, fontWeight: "800" },
-  infoBody: { color: tokens.colors.textSecondary, fontSize: 13 },
-  headerAction: { flexDirection: "row", alignItems: "center", gap: 4 },
-  headerActionText: { color: tokens.colors.accent, fontSize: 13, fontWeight: "700" },
-  emptyContainer: { alignItems: "center", paddingVertical: 24, gap: 12 },
-  emptyText: { color: tokens.colors.textSecondary, fontSize: 13 },
-  emptyAction: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: tokens.colors.accent },
-  emptyActionText: { color: tokens.colors.accent, fontSize: 13, fontWeight: "700" },
 });

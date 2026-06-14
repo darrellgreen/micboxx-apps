@@ -54,6 +54,7 @@ export type LibrarySavedItem = LibrarySavedAlbum | LibrarySavedTrack;
 export interface LibraryRecentlyPlayedTrack {
   id: string;
   uuid: string;
+  slug: string;
   type: "track";
   title: string;
   artistName: string;

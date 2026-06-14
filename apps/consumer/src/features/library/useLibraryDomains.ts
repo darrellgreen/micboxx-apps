@@ -132,6 +132,7 @@ function trackToRecent(track: PublicTrackSummary): LibraryRecentlyPlayedTrack {
   return {
     id: String(track.id),
     uuid: track.uuid,
+    slug: track.slug,
     type: "track",
     title: track.title,
     artistName: track.artist?.displayName ?? "Unknown artist",

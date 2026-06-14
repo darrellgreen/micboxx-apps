@@ -119,7 +119,7 @@ function ActionButton({
 }) {
   const isPrimary = emphasis === "primary";
   const isDanger = emphasis === "danger";
-  const iconColor = isPrimary ? tokens.colors.bgApp : isDanger ? tokens.colors.danger : tokens.colors.textPrimary;
+  const iconColor = isPrimary ? "#ffffff" : isDanger ? tokens.colors.danger : tokens.colors.textPrimary;
 
   const iconNode = item.customIcon === "soundwave" ? (
     <SoundwaveTabIcon size={15} color={iconColor} />

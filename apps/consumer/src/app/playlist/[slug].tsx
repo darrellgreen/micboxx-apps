@@ -68,8 +68,8 @@ function mapDashboardTrackToSummary(
         }
       : null,
     artworkUrl: track.artworkUrl,
-    audioUrl: null,
-    demoAudioUrl: null,
+    audioUrl: track.audioUrl,
+    demoAudioUrl: track.demoAudioUrl,
     locked: !track.isPublicReady,
     isSubscriberOnly: false,
     href: track.publicHref ?? resolveTrackRoute(track),
@@ -297,13 +297,6 @@ export default function PlaylistDetailScreen() {
             ].filter(Boolean) as any}
           />
         </DetailHeroCard>
-
-        {isPrivateLibraryPlaylist ? (
-          <DetailStatusPanel
-            title="This playlist is in your library"
-            body="It is not published to the public catalog yet, so mobile is loading it from your signed-in playlist dashboard instead."
-          />
-        ) : null}
 
         {hasBlockedTracks ? (
           <DetailStatusPanel

@@ -471,6 +471,8 @@ export interface DashboardPlaylistTrack {
     title: string;
   } | null;
   artworkUrl: string | null;
+  audioUrl: string | null;
+  demoAudioUrl: string | null;
   status: {
     published: boolean;
     processing: DashboardProcessingStatus;
