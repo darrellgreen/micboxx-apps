@@ -146,19 +146,7 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
     [openRoute],
   );
 
-  const accountItems = useMemo<DrawerItem[]>(() => {
-    const items: DrawerItem[] = [];
 
-    items.push({
-      key: "subscription",
-      label: "Subscriptions",
-      icon: "card-outline",
-      onPress: () => openAccountDestination("subscription"),
-      requiresAuth: true,
-    });
-
-    return items;
-  }, [openAccountDestination]);
 
   const supportItems = useMemo<DrawerItem[]>(() => {
     return [
@@ -167,17 +155,10 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
         label: "Settings",
         subtitle: "Playback, privacy, and preferences",
         icon: "settings-outline",
-        onPress: () => openAccountDestination("settings", false),
-      },
-      {
-        key: "help",
-        label: "Help",
-        subtitle: "Support and troubleshooting",
-        icon: "help-circle-outline",
-        onPress: () => openAccountDestination("help", false),
+        onPress: () => openRoute("/settings", false),
       },
     ];
-  }, [openAccountDestination]);
+  }, [openRoute]);
 
   const overlayOpacity = progress.interpolate({
     inputRange: [0, 1],
@@ -313,19 +294,6 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
                     ))}
                   </DrawerSection>
 
-                  <DrawerSection
-                    title="Account"
-                    variant="plain"
-                  >
-                    {accountItems.map((item) => (
-                      <DrawerItemRow
-                        key={item.key}
-                        item={item}
-                        locked={Boolean(!session && item.requiresAuth)}
-                        variant="plain"
-                      />
-                    ))}
-                  </DrawerSection>
 
                   <DrawerSection title="Support" variant="plain">
                     {supportItems.map((item) => (

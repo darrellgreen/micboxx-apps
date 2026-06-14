@@ -261,6 +261,26 @@ function RootLayout() {
                             },
                           }}
                         />
+                        <Stack.Screen
+                          name="settings"
+                          options={{
+                            headerShown: false,
+                            contentStyle: {
+                              backgroundColor: tokens.colors.bgApp,
+                            },
+                          }}
+                        />
+                        <Stack.Screen
+                          name="playlist/create"
+                          options={{
+                            headerShown: false,
+                            presentation: "modal",
+                            animation: "slide_from_bottom",
+                            contentStyle: {
+                              backgroundColor: tokens.colors.bgApp,
+                            },
+                          }}
+                        />
                         </Stack>
                         <MiniPlayerGate />
                         <StatusBar style="light" />

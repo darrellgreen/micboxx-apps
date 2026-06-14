@@ -16,7 +16,9 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedPressable } from "@micboxx/ui";
+import { SearchTabIcon } from "@/components/icons/SearchTabIcon";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
+import { VideoLibraryIcon } from "@/components/icons/VideoLibraryIcon";
 import { tokens } from "@micboxx/theme";
 
 const LABEL_MAP: Record<string, string> = {
@@ -24,7 +26,7 @@ const LABEL_MAP: Record<string, string> = {
   search: "Search",
   rooms: "Rooms",
   premium: "Premium",
-  account: "Account",
+  library: "Library",
 };
 const TAB_ICON_SIZE = 28;
 const TAB_BAR_HEIGHT = 60;
@@ -118,7 +120,7 @@ function TabIcon({
   const color = focused ? "#F5F8FF" : "rgba(216, 223, 238, 0.52)";
 
   if (routeName === "search") {
-    return <Ionicons name="search-outline" size={TAB_ICON_SIZE} color={color} />;
+    return <SearchTabIcon size={TAB_ICON_SIZE} color={color} />;
   }
   if (routeName === "rooms") {
     return <SoundwaveTabIcon size={TAB_ICON_SIZE} color={color} />;
@@ -126,8 +128,8 @@ function TabIcon({
   if (routeName === "premium") {
     return <Ionicons name="diamond-outline" size={TAB_ICON_SIZE} color={color} />;
   }
-  if (routeName === "account") {
-    return <Ionicons name="person-circle-outline" size={TAB_ICON_SIZE} color={color} />;
+  if (routeName === "library") {
+    return <VideoLibraryIcon size={TAB_ICON_SIZE} color={color} />;
   }
 
   return <Ionicons name="compass-outline" size={TAB_ICON_SIZE} color={color} />;

@@ -3,11 +3,12 @@ import { hapticSelection, hapticSuccess } from "@micboxx/ui";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import type { PublicArtistSummary } from "@micboxx/contracts";
 import { resolveUserRoute } from "@micboxx/utils";
 import { tokens } from "@micboxx/theme";
+import { useUserFollowState } from "@/features/social/hooks/useUserFollowState";
 
 function resolveArtistImageUri(artist: PublicArtistSummary): string | null {
   const avatarUrl =
@@ -52,15 +53,7 @@ function resolveArtistMeta(artist: PublicArtistSummary): string | null {
   return null;
 }
 
-export function TrendingArtists({
-  artists,
-  followed,
-  onToggleFollow,
-}: {
-  artists: PublicArtistSummary[];
-  followed: Set<number>;
-  onToggleFollow: (id: number) => void;
-}) {
+export function TrendingArtists({ artists }: { artists: PublicArtistSummary[] }) {
   const router = useRouter();
 
   if (!artists.length) return null;
@@ -104,36 +97,42 @@ export function TrendingArtists({
       </View>
 
       <View style={s.followRow}>
-        {artists.map((a) => {
-          const isFollowed = followed.has(a.id);
-          return (
-            <AnimatedPressable
-              key={a.id}
-              onPress={() => {
-                if (isFollowed) hapticSelection();
-                else hapticSuccess();
-                onToggleFollow(a.id);
-              }}
-              style={[
-                s.followPill,
-                isFollowed ? s.followPillActive : s.followPillIdle,
-              ]}
-            >
-              {isFollowed ? (
-                <Ionicons
-                  name="checkmark"
-                  size={15}
-                  color={tokens.colors.accent}
-                />
-              ) : null}
-              <Text style={[s.followLabel, isFollowed && s.followLabelActive]}>
-                {isFollowed ? "Following" : "Follow"}
-              </Text>
-            </AnimatedPressable>
-          );
-        })}
+        {artists.map((a) => (
+          <ArtistFollowPill key={a.id} artist={a} />
+        ))}
       </View>
     </>
+  );
+}
+
+function ArtistFollowPill({ artist }: { artist: PublicArtistSummary }) {
+  const { following, followPending, toggleFollow } = useUserFollowState({
+    profileUid: artist.uuid,
+    profileUsername: artist.username,
+    initialFollowerCount: artist.counts?.followers ?? 0,
+    initialFollowingCount: artist.counts?.following ?? 0,
+  });
+
+  return (
+    <AnimatedPressable
+      onPress={() => {
+        if (following) hapticSelection();
+        else hapticSuccess();
+        void toggleFollow();
+      }}
+      style={[s.followPill, following ? s.followPillActive : s.followPillIdle]}
+    >
+      {followPending ? (
+        <ActivityIndicator size="small" color={tokens.colors.accent} />
+      ) : (
+        <>
+          {following ? <Ionicons name="checkmark" size={15} color={tokens.colors.accent} /> : null}
+          <Text style={[s.followLabel, following && s.followLabelActive]}>
+            {following ? "Following" : "Follow"}
+          </Text>
+        </>
+      )}
+    </AnimatedPressable>
   );
 }
 

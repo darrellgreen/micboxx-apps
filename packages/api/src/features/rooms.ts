@@ -140,6 +140,25 @@ export async function getPublicRooms(options?: {
   return apiFetch<PublicRoomList>(`/v1/public/rooms?${params.toString()}`);
 }
 
+export type RoomHistoryEntry = PublicRoomSummary & { joined_at: number };
+
+export type RoomHistoryResponse = {
+  rooms: RoomHistoryEntry[];
+  meta: { total: number };
+};
+
+export async function getMyRoomHistory(options?: {
+  limit?: number;
+  accessToken?: string | null;
+}): Promise<RoomHistoryResponse> {
+  const params = new URLSearchParams();
+  params.set("limit", String(options?.limit ?? 20));
+  return apiFetch<RoomHistoryResponse>(
+    `/v1/dashboard/room-history?${params.toString()}`,
+    { accessToken: await getAccessToken(options?.accessToken) },
+  );
+}
+
 export async function sendRoomReaction(input: {
   roomId: number | string;
   reactionId: string;

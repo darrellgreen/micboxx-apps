@@ -10,7 +10,9 @@ export type AccountDestinationSlug =
   | "purchases"
   | "subscription"
   | "help"
-  | "settings";
+  | "settings"
+  | "settings-notifications"
+  | "settings-playback";
 
 type DrawerIconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -88,6 +90,24 @@ export const ACCOUNT_DESTINATIONS: Record<
       "Use settings for active preferences, account controls, and quick links into related account routes.",
     guestDescription:
       "Settings remains the right place for app preferences even when you are browsing as a guest.",
+  },
+  "settings-notifications": {
+    title: "Notification Settings",
+    subtitle: "Control push notification delivery preferences",
+    icon: "notifications-outline",
+    signedInDescription:
+      "Configure push notifications for likes, follows, and other account activity.",
+    guestDescription:
+      "Sign in to manage push notification delivery settings for your account.",
+  },
+  "settings-playback": {
+    title: "Playback Settings",
+    subtitle: "Autoplay previews and explicit content filtering",
+    icon: "musical-notes-outline",
+    signedInDescription:
+      "Configure your autoplay preferences and content filters for this device.",
+    guestDescription:
+      "Configure autoplay and content filters saved locally on this device.",
   },
 };
 

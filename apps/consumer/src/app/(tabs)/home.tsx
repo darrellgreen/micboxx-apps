@@ -476,17 +476,6 @@ export default function HomeScreen() {
     );
   }, [lanes]);
 
-  const [followed, setFollowed] = useState<Set<number>>(() => new Set());
-
-  const toggleFollow = useCallback((id: number) => {
-    setFollowed((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
   /* player */
   const { activeId, playing, progressValue, handleAction } =
     useDiscoverPlayer();
@@ -574,14 +563,12 @@ export default function HomeScreen() {
               <SectionHeader bold="Trending" light="Artists" />
               <TrendingArtists
                 artists={item.artists}
-                followed={followed}
-                onToggleFollow={toggleFollow}
               />
             </View>
           );
       }
     },
-    [activeId, playing, progressValue, handleAction, followed, toggleFollow, router],
+    [activeId, playing, progressValue, handleAction, router],
   );
 
   const extractKey = useCallback((item: HomeSection) => item.key, []);

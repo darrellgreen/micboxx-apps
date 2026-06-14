@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import {
+  useEffect,
   useMemo,
   useState,
   type ComponentProps,
@@ -11,6 +12,7 @@ import {
 } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,7 +20,15 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+
+import {
+  fetchUserProfile,
+  uploadUserAvatar,
+  uploadUserCover,
+  type DashboardUserProfile,
+} from "@/features/account/api";
+import { UserProfileView } from "@/features/account/components/UserProfileView";
 
 import { TrackRow } from "@/components/discover";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
@@ -33,6 +43,7 @@ import {
   type AccountDestinationSlug,
 } from "@/features/account/destinations";
 import { useAccountPreferences } from "@/features/account/provider";
+import { ensureFreshSession } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/provider";
 import type {
   LibraryOwnedAlbum,
@@ -424,6 +435,55 @@ export default function AccountDestinationScreen() {
   const player = useDiscoverPlayer();
 
   const accessToken = session?.accessToken ?? null;
+  const insets = useSafeAreaInsets();
+  const [profile, setProfile] = useState<DashboardUserProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  useEffect(() => {
+    if (slug !== "profile" || !session) {
+      return;
+    }
+
+    let isCancelled = false;
+    async function load() {
+      setLoadingProfile(true);
+      try {
+        const fresh = await ensureFreshSession(session);
+        if (!fresh?.accessToken) return;
+        const data = await fetchUserProfile(fresh.accessToken);
+        if (!isCancelled) {
+          setProfile(data);
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          Alert.alert("Error", err instanceof Error ? err.message : "Unable to load profile.");
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingProfile(false);
+        }
+      }
+    }
+
+    void load();
+    return () => {
+      isCancelled = true;
+    };
+  }, [slug, session]);
+
+  const handleUploadAvatar = async (fileUri: string, filename: string) => {
+    const fresh = await ensureFreshSession(session);
+    if (!fresh?.accessToken) return;
+    const updated = await uploadUserAvatar(fresh.accessToken, fileUri, filename);
+    setProfile(updated);
+  };
+
+  const handleUploadCover = async (fileUri: string, filename: string) => {
+    const fresh = await ensureFreshSession(session);
+    if (!fresh?.accessToken) return;
+    const updated = await uploadUserCover(fresh.accessToken, fileUri, filename);
+    setProfile(updated);
+  };
   const { state: libraryState, summary: librarySummary } = useLibraryDomains(
     slug === "purchases" ? accessToken : null,
     slug === "purchases" ? (session?.user.uuid ?? null) : null,
@@ -465,6 +525,33 @@ export default function AccountDestinationScreen() {
           >
             <Text style={styles.primaryButtonLabel}>Back to Home</Text>
           </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Profile: edge-to-edge layout with cover behind header ─────────────────
+  if (slug === "profile") {
+    return (
+      <SafeAreaView style={styles.safe} edges={["left", "right"]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.profileScroll}>
+          {loadingProfile && !profile && (
+            <ActivityIndicator style={{ marginTop: 160 }} color={tokens.colors.brandPrimary} />
+          )}
+          {profile && session && (
+            <UserProfileView
+              profile={profile}
+              accessToken={session.accessToken}
+              coverTopInset={insets.top}
+              onUpdateProfile={(updated) => setProfile(updated as DashboardUserProfile)}
+              onUploadAvatar={handleUploadAvatar}
+              onUploadCover={handleUploadCover}
+            />
+          )}
+        </ScrollView>
+        <View style={[styles.profileFloatingHeader, { top: insets.top }]}>
+          <DetailRouteHeader title="" fallbackRoute="/(tabs)/home" />
         </View>
       </SafeAreaView>
     );
@@ -624,13 +711,34 @@ export default function AccountDestinationScreen() {
 
   switch (slug) {
     case "profile":
-      content = (
-        <>
-          {!session ? <GuestState /> : null}
-
-          <ActionPanel title="Account routes" items={profileActions} />
-        </>
-      );
+      if (!session) {
+        content = <GuestState />;
+      } else if (loadingProfile && !profile) {
+        content = (
+          <ActivityIndicator
+            style={{ marginVertical: 40 }}
+            color={tokens.colors.brandPrimary}
+          />
+        );
+      } else if (profile) {
+        content = (
+          <UserProfileView
+            profile={profile}
+            accessToken={session.accessToken}
+            onUpdateProfile={(updated) => setProfile(updated as DashboardUserProfile)}
+            onUploadAvatar={handleUploadAvatar}
+            onUploadCover={handleUploadCover}
+          />
+        );
+      } else {
+        content = (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Text style={{ color: tokens.colors.textSecondary }}>
+              Unable to load profile. Please try again later.
+            </Text>
+          </View>
+        );
+      }
       break;
 
     case "notifications":
@@ -733,14 +841,13 @@ export default function AccountDestinationScreen() {
       );
       break;
 
-    case "settings":
+    case "settings-notifications":
       content = (
         <>
           <View style={styles.panel}>
-            <Text style={styles.sectionTitle}>Saved preferences</Text>
+            <Text style={styles.sectionTitle}>Push notifications</Text>
             <Text style={styles.description}>
-              Push notifications are account-scoped. Playback and filtering stay
-              local to this device.
+              Control how and when you receive push notifications on your MicBoxx account.
             </Text>
             <Text style={styles.preferenceStatus}>{settingsStatus}</Text>
 
@@ -757,6 +864,20 @@ export default function AccountDestinationScreen() {
               }
               disabled={!canManagePushNotifications || preferencesHydrating}
             />
+          </View>
+        </>
+      );
+      break;
+
+    case "settings-playback":
+      content = (
+        <>
+          <View style={styles.panel}>
+            <Text style={styles.sectionTitle}>Audio & Content Preferences</Text>
+            <Text style={styles.description}>
+              Playback preferences and explicit filters are saved locally on this device.
+            </Text>
+
             <PreferenceRow
               label="Autoplay previews"
               subtitle="Saved on this device for preview and browsing behavior."
@@ -775,25 +896,19 @@ export default function AccountDestinationScreen() {
               }
               disabled={preferencesHydrating}
             />
-
-            <View style={{ marginTop: 20 }}>
-              <Button
-                label={session ? "Log out" : "Sign in"}
-                tone={session ? "secondary" : "primary"}
-                onPress={() => void handleAuthAction()}
-              />
-            </View>
           </View>
         </>
       );
       break;
   }
 
+  const fallbackRoute = slug === "profile" ? "/(tabs)/home" : "/settings";
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <DetailRouteHeader title={meta.title} fallbackRoute="/(tabs)/account" />
+      <DetailRouteHeader title={meta.title} fallbackRoute={fallbackRoute} />
 
       <ScrollView
         contentContainerStyle={[
@@ -802,9 +917,9 @@ export default function AccountDestinationScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {slug !== "notifications" && (
+        {slug !== "notifications" && slug !== "profile" && slug !== "settings-notifications" && slug !== "settings-playback" && slug !== "subscription" && slug !== "help" && (
           <View style={styles.heroCard}>
-            {slug !== "settings" && slug !== "profile" && (
+            {slug !== "settings" && (
               <View style={styles.heroIconWrap}>
                 <Ionicons
                   name={meta.icon}
@@ -1821,6 +1936,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: tokens.colors.bgApp,
   },
+  profileScroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 120,
+  },
+  profileFloatingHeader: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",

@@ -130,6 +130,7 @@ export function useUserFollowState({
     following,
     isOwnProfile,
     profileUid,
+    profileUsername,
     requireSocialSession,
     session?.user.displayName,
     session?.user.username,

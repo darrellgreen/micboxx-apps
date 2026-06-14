@@ -44,8 +44,11 @@ export default function TabsLayout() {
           if (route.name === "premium") {
             return <Ionicons name="diamond-outline" size={size} color={color} />;
           }
-          if (route.name === "account") {
-            return <Ionicons name="person-circle-outline" size={size} color={color} />;
+          if (route.name === "library") {
+            return <Ionicons name="library-outline" size={size} color={color} />;
+          }
+          if (route.name === "profile") {
+            return <Ionicons name="person-outline" size={size} color={color} />;
           }
           return <Ionicons name="ellipse-outline" size={size} color={color} />;
         },
@@ -53,8 +56,8 @@ export default function TabsLayout() {
     >
       {/* Hidden redirect — sends "/" to home */}
       <Tabs.Screen name="index" options={{ href: null }} />
-      {/* Library — account menu destination, hidden from bottom tabs */}
-      <Tabs.Screen name="library" options={{ title: "Library", href: null }} />
+      {/* Profile — user's own profile, hidden from bottom tabs */}
+      <Tabs.Screen name="profile" options={{ title: "Profile", href: null }} />
       {/* Discover — personalised "For You" tab */}
       <Tabs.Screen name="home" options={{ title: "Discover" }} />
       {/* Search — Solr-backed catalog search with autocomplete */}
@@ -63,8 +66,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="rooms" options={{ title: "Rooms" }} />
       {/* Premium — membership hub, plan browsing, tier status */}
       <Tabs.Screen name="premium" options={{ title: "Premium" }} />
-      {/* Account — profile, purchases, settings */}
-      <Tabs.Screen name="account" options={{ title: "Account" }} />
+      {/* Library — user's music library */}
+      <Tabs.Screen name="library" options={{ title: "Library" }} />
     </Tabs>
   );
 }

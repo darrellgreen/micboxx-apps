@@ -182,7 +182,18 @@ export default function LibraryScreen() {
         ) : null}
 
         {(activeTab === "all" || activeTab === "playlists") ? (
-          <Section title="Playlists">
+          <Section
+            title="Playlists"
+            action={
+              <Pressable
+                onPress={() => router.push("/playlist/create")}
+                style={({ pressed }) => [styles.headerAction, pressed && { opacity: 0.7 }]}
+              >
+                <Ionicons name="add-circle-outline" size={16} color={tokens.colors.accent} />
+                <Text style={styles.headerActionText}>Create</Text>
+              </Pressable>
+            }
+          >
             {state.playlists.map((playlist) => (
               <LibraryRow
                 key={`playlist-${playlist.uuid}`}
@@ -198,7 +209,18 @@ export default function LibraryScreen() {
                 }
               />
             ))}
-            {state.playlists.length === 0 ? <EmptyLine text="No playlists yet." /> : null}
+            {state.playlists.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No playlists yet.</Text>
+                <Pressable
+                  onPress={() => router.push("/playlist/create")}
+                  style={({ pressed }) => [styles.emptyAction, pressed && { opacity: 0.8 }]}
+                >
+                  <Ionicons name="add" size={14} color={tokens.colors.accent} />
+                  <Text style={styles.emptyActionText}>Create Playlist</Text>
+                </Pressable>
+              </View>
+            ) : null}
           </Section>
         ) : null}
         </ScrollView>
@@ -206,10 +228,13 @@ export default function LibraryScreen() {
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {action}
+      </View>
       <View style={styles.sectionBody}>{children}</View>
     </View>
   );
@@ -278,6 +303,7 @@ const styles = StyleSheet.create({
   tabTextSelected: { color: "#fff" },
   tabCount: { color: tokens.colors.textSecondary, fontSize: 12, fontWeight: "800" },
   section: { gap: 10 },
+  sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   sectionTitle: { color: tokens.colors.textPrimary, fontSize: 18, fontWeight: "900" },
   sectionBody: { borderRadius: 8, overflow: "hidden", backgroundColor: tokens.colors.bgSurface, borderWidth: 1, borderColor: tokens.colors.borderSubtle },
   row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tokens.colors.borderSubtle },
@@ -293,4 +319,10 @@ const styles = StyleSheet.create({
   infoCard: { borderRadius: 8, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: tokens.colors.borderSubtle, padding: 14, gap: 4 },
   infoTitle: { color: tokens.colors.textPrimary, fontSize: 15, fontWeight: "800" },
   infoBody: { color: tokens.colors.textSecondary, fontSize: 13 },
+  headerAction: { flexDirection: "row", alignItems: "center", gap: 4 },
+  headerActionText: { color: tokens.colors.accent, fontSize: 13, fontWeight: "700" },
+  emptyContainer: { alignItems: "center", paddingVertical: 24, gap: 12 },
+  emptyText: { color: tokens.colors.textSecondary, fontSize: 13 },
+  emptyAction: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: tokens.colors.accent },
+  emptyActionText: { color: tokens.colors.accent, fontSize: 13, fontWeight: "700" },
 });

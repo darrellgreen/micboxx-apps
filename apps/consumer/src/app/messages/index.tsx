@@ -33,7 +33,7 @@ export default function MessagesInboxScreen() {
     <Screen
       scroll={false}
       noPaddingHorizontal={true}
-      header={<AppHeader variant="detail" title="Messages" fallbackRoute="/(tabs)/account" rightContent={composeButton} />}
+      header={<AppHeader variant="detail" title="Messages" fallbackRoute="/settings" rightContent={composeButton} />}
     >
       <Stack.Screen options={{ headerShown: false }} />
 

@@ -2,14 +2,13 @@ import * as AuthSession from "expo-auth-session";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 
-import { env, hasLiveDrupalConfig } from "@/config/env";
+import { env } from "@/config/env";
 import type { MicboxxSession, MicboxxSessionUser } from "@micboxx/contracts";
 import {
     clearStoredSession,
     readStoredSession,
     writeStoredSession,
 } from "@/features/auth/storage";
-import { mockSession } from "@micboxx/api";
 
 export class AuthCancelledError extends Error {
   constructor(message = "Sign-in was cancelled.") {
@@ -187,7 +186,7 @@ export async function ensureFreshSession(
       ? storedSession
       : (session ?? null);
 
-  if (!candidate || !hasLiveDrupalConfig() || isSessionStillFresh(candidate)) {
+  if (!candidate || isSessionStillFresh(candidate)) {
     return candidate;
   }
 
@@ -282,9 +281,6 @@ async function getDashboardBootstrapUser(
 }
 
 export async function signInWithDrupal(): Promise<MicboxxSession> {
-  if (!hasLiveDrupalConfig()) {
-    return mockSession;
-  }
 
   const expoGo = isExpoGo();
   const appReturnUri = buildAppReturnUri();
@@ -425,7 +421,7 @@ export async function signInWithDrupal(): Promise<MicboxxSession> {
 export async function revokeDrupalSession(
   session: MicboxxSession | null,
 ): Promise<void> {
-  if (!session?.refreshToken || !hasLiveDrupalConfig()) {
+  if (!session?.refreshToken) {
     return;
   }
 

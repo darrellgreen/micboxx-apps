@@ -553,3 +553,49 @@ export interface PlaylistMetadataUpdate {
   title?: string;
   description?: string;
 }
+
+export interface DashboardPlaylistTrackOption {
+  id: number;
+  title: string;
+  slug: string;
+  duration: number;
+  artist: {
+    id: number;
+    displayName: string;
+    verifiedBadge?: boolean;
+  } | null;
+  genre: {
+    id: number;
+    name: string;
+  } | null;
+  album: {
+    id: number;
+    title: string;
+  } | null;
+  status: {
+    published: boolean;
+    processing: "pending" | "processing" | "ready" | "failed";
+    ready: boolean;
+    publicReady: boolean;
+    reason: string | null;
+  };
+  eligibility: {
+    canAdd: boolean;
+    reason: string | null;
+  };
+  artworkUrl: string | null;
+  href: string;
+}
+
+export interface DashboardPlaylistOptions {
+  currentUser: {
+    id: number;
+    uuid: string;
+    username: string;
+    displayName: string;
+    email: string;
+    roles: string[];
+  };
+  tracks: DashboardPlaylistTrackOption[];
+}
+
