@@ -22,19 +22,21 @@ export function SocialAuthGate() {
     return unsubscribe;
   }, [dispatch]);
 
+  const hasSession = Boolean(session?.accessToken);
+
   useEffect(() => {
     if (!hasFirebaseConfig()) {
       dispatch(setFirebaseUid(null));
       return;
     }
 
-    if (session?.accessToken) {
+    if (hasSession) {
       void dispatch(authenticateFirebaseSocial());
       return;
     }
 
     void dispatch(signOutFirebaseSocial());
-  }, [dispatch, session?.accessToken]);
+  }, [dispatch, hasSession]);
 
   return null;
 }

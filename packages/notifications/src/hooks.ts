@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SocialNotification } from "@micboxx/contracts";
 import type { RoomNotification } from "@micboxx/api";
 import { normalizeAndSortNotifications, getUnreadNotificationCount } from "./helpers";
 import type { NotificationAdapter, NotificationItem } from "./types";
+
+// Module-level cache so room notifications survive component unmount/remount.
+// Keyed by accessToken so the cache is invalidated on account switch.
+let roomNotificationsCache: { token: string; items: RoomNotification[] } | null = null;
 
 export interface UseMicboxxNotificationsParams {
   maxItems?: number;
@@ -26,15 +30,22 @@ export function useMicboxxNotifications({
   onRetryAuth,
 }: UseMicboxxNotificationsParams) {
   const [socialItems, setSocialItems] = useState<SocialNotification[]>([]);
-  const [roomItems, setRoomItems] = useState<RoomNotification[]>([]);
+  const cachedItems = accessToken && roomNotificationsCache?.token === accessToken
+    ? roomNotificationsCache.items
+    : [];
+  const [roomItems, setRoomItems] = useState<RoomNotification[]>(cachedItems);
   const [socialLoading, setSocialLoading] = useState(false);
   const [roomLoading, setRoomLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roomError, setRoomError] = useState<string | null>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
+  const roomItemsRef = useRef<RoomNotification[]>(cachedItems);
 
   const firebaseConfigured = adapter.isSocialConfigured();
   const isReady = socialStatus === "authenticated" && Boolean(firebaseUid);
+
+  const accessTokenRef = useRef(accessToken);
+  useEffect(() => { accessTokenRef.current = accessToken; }, [accessToken]);
 
   const authError = !firebaseConfigured
     ? "Firebase social is not configured for this build."
@@ -74,8 +85,10 @@ export function useMicboxxNotifications({
   }, [firebaseConfigured, firebaseUid, maxItems, reloadNonce, socialStatus, adapter]);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (!hasDrupalSession) {
       setRoomItems([]);
+      roomItemsRef.current = [];
+      roomNotificationsCache = null;
       setRoomLoading(false);
       setRoomError(null);
       return;
@@ -84,13 +97,21 @@ export function useMicboxxNotifications({
     let cancelled = false;
 
     const fetchRoomItems = async () => {
-      setRoomLoading(true);
+      // Only show a loading indicator when there are no cached items to display.
+      if (roomItemsRef.current.length === 0) {
+        setRoomLoading(true);
+      }
       try {
         const response = await adapter.fetchRoomNotifications({
           maxItems,
-          accessToken,
+          accessToken: accessTokenRef.current,
         });
         if (!cancelled) {
+          roomNotificationsCache = {
+            token: accessTokenRef.current ?? "",
+            items: response.notifications,
+          };
+          roomItemsRef.current = response.notifications;
           setRoomItems(response.notifications);
           setRoomError(null);
         }
@@ -114,7 +135,7 @@ export function useMicboxxNotifications({
     return () => {
       cancelled = true;
     };
-  }, [accessToken, maxItems, reloadNonce, adapter]);
+  }, [hasDrupalSession, maxItems, reloadNonce, adapter]);
 
   const items = useMemo<NotificationItem[]>(() => {
     return normalizeAndSortNotifications(socialItems, roomItems, maxItems);
