@@ -269,3 +269,24 @@ export async function createPlaylist(
   return response.playlist;
 }
 
+export async function addTrackToPlaylist(
+  playlistId: number,
+  trackId: number,
+  accessToken?: string | null,
+): Promise<void> {
+  const sessionToken = await getMicboxxApiConfig().getToken();
+  const liveAccessToken = sessionToken ?? accessToken ?? null;
+
+  if (!liveAccessToken) {
+    throw new Error("Sign in again to update your playlist.");
+  }
+
+  if (getMicboxxApiConfig().useFixtures) return;
+
+  await apiFetch(`/v1/dashboard/playlists/${playlistId}/members`, {
+    method: "POST",
+    body: JSON.stringify({ trackId }),
+    accessToken: liveAccessToken,
+  });
+}
+

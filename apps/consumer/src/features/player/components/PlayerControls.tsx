@@ -61,25 +61,26 @@ export function PlayerControls({ compact = false }: { compact?: boolean }) {
           />
         </AnimatedPressable>
       ) : null}
-      <AnimatedPressable
-        onPress={() => {
-          hapticSelection();
-          void skipPrevious();
-        }}
-        disabled={!selectHasPrevious(state)}
-        style={[
-          styles.secondaryButton,
-          compact && styles.compactSecondaryButton,
-          !selectHasPrevious(state) && styles.disabled,
-          secondaryButtonStyle,
-        ]}
-      >
-        <Ionicons
-          name="play-skip-back"
-          size={compact ? 15 : 22}
-          color={tokens.colors.textPrimary}
-        />
-      </AnimatedPressable>
+      {!compact ? (
+        <AnimatedPressable
+          onPress={() => {
+            hapticSelection();
+            void skipPrevious();
+          }}
+          disabled={!selectHasPrevious(state)}
+          style={[
+            styles.secondaryButton,
+            !selectHasPrevious(state) && styles.disabled,
+            secondaryButtonStyle,
+          ]}
+        >
+          <Ionicons
+            name="play-skip-back"
+            size={22}
+            color={tokens.colors.textPrimary}
+          />
+        </AnimatedPressable>
+      ) : null}
       <AnimatedPressable
         onPress={() => {
           hapticLight();
@@ -89,7 +90,7 @@ export function PlayerControls({ compact = false }: { compact?: boolean }) {
         style={[
           styles.primaryButton,
           compact && styles.compactPrimaryButton,
-          primaryButtonStyle,
+          !compact && primaryButtonStyle,
         ]}
       >
         <Ionicons
@@ -99,25 +100,26 @@ export function PlayerControls({ compact = false }: { compact?: boolean }) {
           style={!isPlaying ? styles.playOffset : undefined}
         />
       </AnimatedPressable>
-      <AnimatedPressable
-        onPress={() => {
-          hapticSelection();
-          void skipNext();
-        }}
-        disabled={!selectHasNext(state)}
-        style={[
-          styles.secondaryButton,
-          compact && styles.compactSecondaryButton,
-          !selectHasNext(state) && styles.disabled,
-          secondaryButtonStyle,
-        ]}
-      >
-        <Ionicons
-          name="play-skip-forward"
-          size={compact ? 15 : 22}
-          color={tokens.colors.textPrimary}
-        />
-      </AnimatedPressable>
+      {!compact ? (
+        <AnimatedPressable
+          onPress={() => {
+            hapticSelection();
+            void skipNext();
+          }}
+          disabled={!selectHasNext(state)}
+          style={[
+            styles.secondaryButton,
+            !selectHasNext(state) && styles.disabled,
+            secondaryButtonStyle,
+          ]}
+        >
+          <Ionicons
+            name="play-skip-forward"
+            size={22}
+            color={tokens.colors.textPrimary}
+          />
+        </AnimatedPressable>
+      ) : null}
       {!compact ? (
         <AnimatedPressable style={styles.utilityButton} haptic="selection">
           <Ionicons
@@ -145,7 +147,6 @@ const styles = StyleSheet.create({
     width: 78,
     height: 78,
     borderRadius: 39,
-    backgroundColor: tokens.colors.accent,
     alignItems: "center",
     justifyContent: "center",
     ...tokens.shadows.accent,
@@ -154,6 +155,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.5)",
   },
   secondaryButton: {
     width: 48,

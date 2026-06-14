@@ -28,7 +28,7 @@ import {
   uploadUserCover,
   type DashboardUserProfile,
 } from "@/features/account/api";
-import { UserProfileView } from "@/features/account/components/UserProfileView";
+import { UserProfileView } from "@/features/account/components/profile/UserProfileView";
 
 import { TrackRow } from "@/components/discover";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
@@ -43,7 +43,6 @@ import {
   type AccountDestinationSlug,
 } from "@/features/account/destinations";
 import { useAccountPreferences } from "@/features/account/provider";
-import { ensureFreshSession } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/provider";
 import type {
   LibraryOwnedAlbum,
@@ -448,9 +447,7 @@ export default function AccountDestinationScreen() {
     async function load() {
       setLoadingProfile(true);
       try {
-        const fresh = await ensureFreshSession(session);
-        if (!fresh?.accessToken) return;
-        const data = await fetchUserProfile(fresh.accessToken);
+        const data = await fetchUserProfile(session.accessToken, session);
         if (!isCancelled) {
           setProfile(data);
         }
@@ -472,16 +469,14 @@ export default function AccountDestinationScreen() {
   }, [slug, session]);
 
   const handleUploadAvatar = async (fileUri: string, filename: string) => {
-    const fresh = await ensureFreshSession(session);
-    if (!fresh?.accessToken) return;
-    const updated = await uploadUserAvatar(fresh.accessToken, fileUri, filename);
+    if (!session?.accessToken) return;
+    const updated = await uploadUserAvatar(session.accessToken, fileUri, filename, session);
     setProfile(updated);
   };
 
   const handleUploadCover = async (fileUri: string, filename: string) => {
-    const fresh = await ensureFreshSession(session);
-    if (!fresh?.accessToken) return;
-    const updated = await uploadUserCover(fresh.accessToken, fileUri, filename);
+    if (!session?.accessToken) return;
+    const updated = await uploadUserCover(session.accessToken, fileUri, filename, session);
     setProfile(updated);
   };
   const { state: libraryState, summary: librarySummary } = useLibraryDomains(
@@ -543,6 +538,7 @@ export default function AccountDestinationScreen() {
             <UserProfileView
               profile={profile}
               accessToken={session.accessToken}
+              session={session}
               coverTopInset={insets.top}
               onUpdateProfile={(updated) => setProfile(updated as DashboardUserProfile)}
               onUploadAvatar={handleUploadAvatar}
@@ -725,6 +721,7 @@ export default function AccountDestinationScreen() {
           <UserProfileView
             profile={profile}
             accessToken={session.accessToken}
+            session={session}
             onUpdateProfile={(updated) => setProfile(updated as DashboardUserProfile)}
             onUploadAvatar={handleUploadAvatar}
             onUploadCover={handleUploadCover}

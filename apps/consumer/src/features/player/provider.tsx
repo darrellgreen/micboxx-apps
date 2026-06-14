@@ -104,6 +104,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const wasPlayingBeforeInterruptionRef = useRef(false);
   const stateRef = useRef(state);
+  const sessionRef = useRef(session);
 
   const playbackReportRef = useRef<{ trackId: string | null; reported: boolean }>({
     trackId: null,
@@ -140,6 +141,10 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   const resolveSourceType = useCallback((): string => {
     const contextType = stateRef.current.queue.context?.type;
@@ -262,7 +267,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
   const playerAnalyticsSinkRef = useRef(
     createServerPlayerAnalyticsSink(
-      () => stateRef.current ? session?.accessToken ?? null : null,
+      () => stateRef.current ? sessionRef.current?.accessToken ?? null : null,
       () => analyticsSessionIdRef.current ?? "unknown",
     ),
   );

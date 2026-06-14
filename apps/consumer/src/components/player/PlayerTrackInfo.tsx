@@ -70,7 +70,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 20,
-    marginTop: 48,
+    marginTop: 20,
   },
   statItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   titleWrap: {

@@ -45,7 +45,7 @@ export function PlayerArtworkRing({ artworkUrl }: PlayerArtworkRingProps) {
 const s = StyleSheet.create({
   artworkSection: {
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 4,
   },
   artworkRing: {
     width: RING_SIZE,

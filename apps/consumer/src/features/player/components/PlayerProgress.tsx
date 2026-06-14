@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   compactLabel: {
-    color: "rgba(169,180,192,0.64)",
+    color: "rgba(255,255,255,0.7)",
     fontSize: 10,
     fontWeight: "600",
     letterSpacing: 0.2,
@@ -131,16 +131,12 @@ const styles = StyleSheet.create({
     height: 3,
     width: "100%",
     borderRadius: tokens.radii.pill,
-    backgroundColor: "rgba(255,255,255,0.10)",
+    backgroundColor: "rgba(255,255,255,0.30)",
     overflow: "hidden",
   },
   compactFill: {
     height: "100%",
     borderRadius: tokens.radii.pill,
-    backgroundColor: tokens.colors.teal,
-    shadowColor: tokens.colors.teal,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    backgroundColor: "#fff",
   },
 });

@@ -215,11 +215,16 @@ export function useTrackSocialState({
     trackUuid,
   ]);
 
+  // The meta doc count may lag behind (cloud function not yet run, or never ran).
+  // If the user has liked the track, always show at least 1 so the count is
+  // consistent with the highlighted state.
+  const displayLikeCount = liked ? Math.max(likeCount, 1) : likeCount;
+
   return {
     configured,
     socialReady,
     authPending,
-    likeCount,
+    likeCount: displayLikeCount,
     favoriteCount,
     commentCount,
     liked,

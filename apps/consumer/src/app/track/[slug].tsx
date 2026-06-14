@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -19,7 +19,7 @@ import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TrackRow } from "@/components/discover";
-import { AppHeader, VerifiedBadge, Screen, ErrorState, Button, Heading, Subtext, BodyText, Pill, Skeleton } from "@micboxx/ui";
+import { AppHeader, VerifiedBadge, Screen, ErrorState, Button, Heading, Subtext, BodyText, Pill, Skeleton, BottomActionSheet, type BottomActionSheetItem } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { useAuth } from "@/features/auth/provider";
 import {
@@ -39,6 +39,7 @@ import {
     resolveTrackPlaybackState,
 } from "@/features/catalog/track-access";
 import { TrackWaveform } from "@/features/player/components/TrackWaveform";
+import { AddToPlaylistSheet } from "@/features/catalog/components/AddToPlaylistSheet";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { TrackComments } from "@/features/social/components/TrackComments";
 import { useTrackSocialState } from "@/features/social/hooks/useTrackSocialState";
@@ -55,6 +56,8 @@ export default function TrackDetailScreen() {
   const router = useRouter();
   const { session } = useAuth();
   const progressValue = useSharedValue(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [playlistSheetOpen, setPlaylistSheetOpen] = useState(false);
   const trackAccessContext = useMemo(
     () => buildTrackAccessContext(session),
     [session],
@@ -383,19 +386,13 @@ export default function TrackDetailScreen() {
 
               <Heading level="h2" numberOfLines={2} style={styles.trackTitle}>{track.title}</Heading>
 
-              {badgeLabel ? (
-                <View style={styles.badgePill}>
-                  <Text style={styles.badgePillLabel}>{badgeLabel}</Text>
-                </View>
-              ) : null}
-
               {heroMeta ? (
                 <Subtext color="muted">{heroMeta}</Subtext>
               ) : null}
 
               <View style={styles.socialStatsRow}>
                 <SocialStat
-                  icon="play"
+                  icon="play-outline"
                   count={track.stats.plays}
                   label="Plays"
                 />
@@ -439,9 +436,23 @@ export default function TrackDetailScreen() {
           </View>
 
           <View style={styles.heroActionsRow}>
-            <HeroActionButton action={primaryAction} tone="primary" />
-            <HeroActionButton action={shareAction} tone="glass" />
-            <HeroActionButton action={secondaryAction} tone="glass" />
+            <Pressable
+              onPress={() => void primaryAction.onPress()}
+              disabled={primaryAction.disabled}
+              style={({ pressed }) => [
+                styles.playCircle,
+                pressed && styles.pressed,
+                primaryAction.disabled && styles.heroActionButtonDisabled,
+              ]}
+            >
+              <Ionicons name={primaryAction.icon} size={26} color="#FFF" />
+            </Pressable>
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              style={({ pressed }) => [styles.menuCircle, pressed && styles.pressed]}
+            >
+              <Ionicons name="ellipsis-horizontal" size={20} color="#FFF" />
+            </Pressable>
           </View>
 
           <View style={styles.waveformWrap}>
@@ -460,51 +471,6 @@ export default function TrackDetailScreen() {
             <Text style={styles.sectionEyebrow}>Description</Text>
             <Text style={styles.bodyText}>{track.description}</Text>
 
-            <View style={styles.linkRow}>
-              {track.genre ? (
-                <Pressable
-                  onPress={() =>
-                    router.push(`/genre/${encodeURIComponent(track.genre!.slug)}` as never)
-                  }
-                  style={({ pressed }) => [
-                    styles.inlineLink,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.inlineLinkLabel}>
-                    #{track.genre.name}
-                  </Text>
-                </Pressable>
-              ) : null}
-
-              {track.artist ? (
-                <Pressable
-                  onPress={() =>
-                    router.push(resolveUserRoute(track.artist!) as never)
-                  }
-                  style={({ pressed }) => [
-                    styles.inlineLink,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.inlineLinkLabel}>Open profile</Text>
-                </Pressable>
-              ) : null}
-
-              {track.album ? (
-                <Pressable
-                  onPress={() =>
-                    router.push(resolveAlbumRoute(track.album!) as never)
-                  }
-                  style={({ pressed }) => [
-                    styles.inlineLink,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.inlineLinkLabel}>View album</Text>
-                </Pressable>
-              ) : null}
-            </View>
           </View>
         ) : null}
 
@@ -548,6 +514,64 @@ export default function TrackDetailScreen() {
           </View>
         </View>
       </View>
+      <BottomActionSheet
+        visible={menuOpen}
+        title="Track options"
+        onClose={() => setMenuOpen(false)}
+        items={[
+          {
+            key: "share",
+            label: "Share",
+            icon: "share-social-outline",
+            onPress: () => {
+              setMenuOpen(false);
+              void handleShareTrack();
+            },
+          },
+          {
+            key: "queue",
+            label: "Add to queue",
+            icon: "add-circle-outline",
+            onPress: () => {
+              setMenuOpen(false);
+              void enqueueAll();
+            },
+          },
+          {
+            key: "playlist",
+            label: "Add to playlist",
+            icon: "musical-notes-outline",
+            onPress: () => {
+              setMenuOpen(false);
+              setPlaylistSheetOpen(true);
+            },
+          },
+          ...(track.artist ? [{
+            key: "profile",
+            label: "Open profile",
+            icon: "person-outline" as const,
+            onPress: () => {
+              setMenuOpen(false);
+              router.push(resolveUserRoute(track.artist!) as never);
+            },
+          }] : []),
+          ...(track.album ? [{
+            key: "album",
+            label: "View album",
+            icon: "disc-outline" as const,
+            onPress: () => {
+              setMenuOpen(false);
+              router.push(resolveAlbumRoute(track.album!) as never);
+            },
+          }] : []),
+        ] satisfies BottomActionSheetItem[]}
+      />
+      <AddToPlaylistSheet
+        visible={playlistSheetOpen}
+        trackId={track.id}
+        accessToken={session?.accessToken}
+        onClose={() => setPlaylistSheetOpen(false)}
+      />
     </Screen>
   );
 }
@@ -626,7 +650,7 @@ function HeroActionButton({
       <Button
         tone={tone === "primary" ? "primary" : "secondary"}
         label={action.label}
-        icon={<Ionicons name={action.icon} size={15} color={tone === "primary" ? "#000" : "#FFF"} />}
+        icon={<Ionicons name={action.icon} size={15} color="#FFF" />}
         onPress={() => void action.onPress()}
         disabled={action.disabled}
       />
@@ -783,6 +807,22 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     zIndex: 1,
   },
+  playCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: tokens.colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    ...tokens.shadows.cta,
+  },
+  menuCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   heroActionButton: {
     minHeight: 44,
     borderRadius: tokens.radii.pill,
@@ -863,9 +903,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.pill,
     paddingHorizontal: 6,
   },
-  socialStatButtonActive: {
-    backgroundColor: "rgba(8,218,255,0.08)",
-  },
+  socialStatButtonActive: {},
   socialStatButtonDisabled: {
     opacity: 0.6,
   },

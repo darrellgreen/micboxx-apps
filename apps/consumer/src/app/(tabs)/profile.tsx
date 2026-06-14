@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ensureFreshSession } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/provider";
 import {
   fetchUserProfile,
@@ -12,7 +11,7 @@ import {
   uploadUserCover,
   type DashboardUserProfile,
 } from "@/features/account/api";
-import { UserProfileView } from "@/features/account/components/UserProfileView";
+import { UserProfileView } from "@/features/account/components/profile/UserProfileView";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { AnimatedPressable } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
@@ -42,12 +41,10 @@ export default function ProfileTab() {
       setLoading(true);
       setError(null);
       try {
-        const fresh = await ensureFreshSession(session);
-        if (!fresh?.accessToken) throw new Error("Session expired.");
-        const data = await fetchUserProfile(fresh.accessToken);
+        const data = await fetchUserProfile(session.accessToken, session);
         if (!cancelled) {
           setProfile(data);
-          loadedForToken.current = session!.accessToken;
+          loadedForToken.current = session.accessToken;
         }
       } catch (err) {
         if (!cancelled) {
@@ -63,16 +60,14 @@ export default function ProfileTab() {
   }, [session]);
 
   const handleUploadAvatar = async (fileUri: string, filename: string) => {
-    const fresh = await ensureFreshSession(session);
-    if (!fresh?.accessToken) return;
-    const updated = await uploadUserAvatar(fresh.accessToken, fileUri, filename);
+    if (!session?.accessToken) return;
+    const updated = await uploadUserAvatar(session.accessToken, fileUri, filename, session);
     setProfile(updated);
   };
 
   const handleUploadCover = async (fileUri: string, filename: string) => {
-    const fresh = await ensureFreshSession(session);
-    if (!fresh?.accessToken) return;
-    const updated = await uploadUserCover(fresh.accessToken, fileUri, filename);
+    if (!session?.accessToken) return;
+    const updated = await uploadUserCover(session.accessToken, fileUri, filename, session);
     setProfile(updated);
   };
 
@@ -135,6 +130,7 @@ export default function ProfileTab() {
           <UserProfileView
             profile={profile}
             accessToken={session.accessToken}
+            session={session}
             coverTopInset={insets.top}
             onUpdateProfile={(updated) => setProfile(updated as DashboardUserProfile)}
             onUploadAvatar={handleUploadAvatar}

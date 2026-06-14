@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 
 import { AccountDrawerProvider } from "@/components/navigation/account-drawer";
+import { PersistentTabBar } from "@/components/navigation/PersistentTabBar";
 import { AppBackdrop, ToastProvider } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { AccountPreferencesProvider } from "@/features/account/provider";
@@ -78,6 +79,14 @@ const navigationTheme = {
   },
 };
 
+const CHROME_HIDDEN_ROUTES = ["/now-playing", "/sign-in", "/sign-up", "/sign-up-verify", "/auth/callback"];
+
+function PersistentTabBarGate() {
+  const pathname = usePathname();
+  if (CHROME_HIDDEN_ROUTES.includes(pathname)) return null;
+  return <PersistentTabBar />;
+}
+
 function MiniPlayerGate() {
   const pathname = usePathname();
   const playerQueue = usePlayerQueue();
@@ -90,7 +99,7 @@ function MiniPlayerGate() {
     }
   }, [isRoomOwnedQueue, isRoomRoute, playerQueue.clearQueue]);
 
-  if (pathname === "/now-playing" || isRoomRoute || isRoomOwnedQueue) return null;
+  if (CHROME_HIDDEN_ROUTES.includes(pathname) || isRoomRoute || isRoomOwnedQueue) return null;
   return <MiniPlayer />;
 }
 
@@ -282,6 +291,7 @@ function RootLayout() {
                           }}
                         />
                         </Stack>
+                        <PersistentTabBarGate />
                         <MiniPlayerGate />
                         <StatusBar style="light" />
                       </AuthGate>

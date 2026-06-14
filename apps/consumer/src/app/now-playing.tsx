@@ -212,6 +212,7 @@ export default function NowPlayingScreen() {
             likePending={likePending}
             onToggleLike={() => void toggleLike()}
           />
+          <View style={s.centerSpacer} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(280)} style={s.bottomGroup}>
@@ -248,7 +249,7 @@ export default function NowPlayingScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.bgApp },
   scrim: { backgroundColor: "rgba(10,14,20,0.55)" },
-  safe: { flex: 1, justifyContent: "space-between" },
+  safe: { flex: 1 },
 
   loadingWrap: {
     flex: 1,
@@ -258,10 +259,17 @@ const s = StyleSheet.create({
   },
 
   centerGroup: {
+    flex: 1,
     alignItems: "center",
+    paddingTop: 4,
+  },
+
+  centerSpacer: {
+    flex: 1,
+    maxHeight: 48,
   },
 
   bottomGroup: {
-    paddingBottom: 0,
+    paddingBottom: 16,
   },
 });

@@ -1,4 +1,3 @@
-import { BlurView } from "expo-blur";
 import { router, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
@@ -139,7 +138,7 @@ export function MiniPlayer() {
   }
 
   const bottomOffset =
-    insets.bottom + (isInTabs ? tokens.tabBar.height : 0) + 14;
+    insets.bottom + 60 + 8;
 
   return (
     <View
@@ -148,7 +147,7 @@ export function MiniPlayer() {
     >
       <GestureDetector gesture={composed}>
         <Animated.View style={animatedStyle}>
-          <BlurView intensity={72} tint="dark" style={styles.blur}>
+          <View style={styles.blur}>
             <AnimatedPressable
               style={styles.touchTarget}
               scaleValue={0.988}
@@ -169,7 +168,7 @@ export function MiniPlayer() {
               </View>
               <PlayerProgressCompact />
             </AnimatedPressable>
-          </BlurView>
+          </View>
         </Animated.View>
       </GestureDetector>
     </View>
@@ -184,11 +183,9 @@ const styles = StyleSheet.create({
   },
   blur: {
     overflow: "hidden",
-    borderRadius: tokens.radii.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(13,17,23,0.82)",
-    ...tokens.shadows.md,
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.accentStrong,
+    ...tokens.shadows.accent,
   },
   touchTarget: {
     paddingHorizontal: 12,
@@ -207,19 +204,19 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   kicker: {
-    color: tokens.colors.accent,
+    color: "rgba(255,255,255,0.7)",
     fontSize: 9,
     fontWeight: "700",
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
   title: {
-    color: tokens.colors.textPrimary,
+    color: "#fff",
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "500",
   },
   subtitle: {
-    color: tokens.colors.textSecondary,
+    color: "rgba(255,255,255,0.7)",
     fontSize: 11,
   },
 });

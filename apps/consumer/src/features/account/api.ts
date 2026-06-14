@@ -1,4 +1,45 @@
 import { env } from "@/config/env";
+import { getRecentlyPlayedTracks } from "@micboxx/api";
+import { ensureFreshSession } from "@/features/auth/api";
+import type { MicboxxSession, PublicTrackSummary } from "@micboxx/contracts";
+
+async function authedFetch(
+  accessToken: string,
+  session: MicboxxSession | null | undefined,
+  input: string,
+  init: RequestInit,
+): Promise<Response> {
+  const response = await fetch(input, {
+    ...init,
+    headers: { ...init.headers, authorization: `Bearer ${accessToken}` },
+  });
+
+  if (response.status !== 401 || !session) {
+    return response;
+  }
+
+  const fresh = await ensureFreshSession(session);
+  const freshToken = fresh?.accessToken ?? accessToken;
+  return fetch(input, {
+    ...init,
+    headers: { ...init.headers, authorization: `Bearer ${freshToken}` },
+  });
+}
+
+export async function fetchRecentlyPlayed(
+  limit: number,
+  accessToken: string,
+  session?: MicboxxSession | null,
+): Promise<PublicTrackSummary[]> {
+  try {
+    const { tracks } = await getRecentlyPlayedTracks(limit, accessToken);
+    return tracks;
+  } catch {
+    const fresh = await ensureFreshSession(session);
+    const { tracks } = await getRecentlyPlayedTracks(limit, fresh?.accessToken ?? accessToken);
+    return tracks;
+  }
+}
 
 export interface DashboardVerificationState {
   status: "not_requested" | "pending" | "verified" | "rejected" | "revoked";
@@ -55,12 +96,12 @@ async function safeParseProfileResponse(response: Response, defaultError: string
   return payload.data.profile;
 }
 
-export async function fetchUserProfile(accessToken: string): Promise<DashboardUserProfile> {
-  const response = await fetch(`${env.drupalBaseUrl}/v1/dashboard/user/profile`, {
-    headers: {
-      accept: "application/json",
-      authorization: `Bearer ${accessToken}`,
-    },
+export async function fetchUserProfile(
+  accessToken: string,
+  session?: MicboxxSession | null,
+): Promise<DashboardUserProfile> {
+  const response = await authedFetch(accessToken, session, `${env.drupalBaseUrl}/v1/dashboard/user/profile`, {
+    headers: { accept: "application/json" },
   });
 
   return safeParseProfileResponse(response, "Unable to fetch user profile.");
@@ -78,14 +119,11 @@ export interface UpdateProfilePayload {
 export async function updateUserProfile(
   accessToken: string,
   data: UpdateProfilePayload,
+  session?: MicboxxSession | null,
 ): Promise<DashboardUserProfile> {
-  const response = await fetch(`${env.drupalBaseUrl}/v1/dashboard/user/profile`, {
+  const response = await authedFetch(accessToken, session, `${env.drupalBaseUrl}/v1/dashboard/user/profile`, {
     method: "PATCH",
-    headers: {
-      accept: "application/json",
-      "content-type": "application/json",
-      authorization: `Bearer ${accessToken}`,
-    },
+    headers: { accept: "application/json", "content-type": "application/json" },
     body: JSON.stringify(data),
   });
 
@@ -96,24 +134,18 @@ export async function uploadUserAvatar(
   accessToken: string,
   fileUri: string,
   filename: string,
+  session?: MicboxxSession | null,
 ): Promise<DashboardUserProfile> {
   const formData = new FormData();
   const extension = filename.split(".").pop()?.toLowerCase() ?? "jpg";
   const type = extension === "png" ? "image/png" : "image/jpeg";
 
   // @ts-ignore
-  formData.append("avatar", {
-    uri: fileUri,
-    name: filename,
-    type,
-  });
+  formData.append("avatar", { uri: fileUri, name: filename, type });
 
-  const response = await fetch(`${env.drupalBaseUrl}/v1/dashboard/user/avatar`, {
+  const response = await authedFetch(accessToken, session, `${env.drupalBaseUrl}/v1/dashboard/user/avatar`, {
     method: "POST",
-    headers: {
-      accept: "application/json",
-      authorization: `Bearer ${accessToken}`,
-    },
+    headers: { accept: "application/json" },
     body: formData,
   });
 
@@ -124,24 +156,18 @@ export async function uploadUserCover(
   accessToken: string,
   fileUri: string,
   filename: string,
+  session?: MicboxxSession | null,
 ): Promise<DashboardUserProfile> {
   const formData = new FormData();
   const extension = filename.split(".").pop()?.toLowerCase() ?? "jpg";
   const type = extension === "png" ? "image/png" : "image/jpeg";
 
   // @ts-ignore
-  formData.append("cover", {
-    uri: fileUri,
-    name: filename,
-    type,
-  });
+  formData.append("cover", { uri: fileUri, name: filename, type });
 
-  const response = await fetch(`${env.drupalBaseUrl}/v1/dashboard/user/cover`, {
+  const response = await authedFetch(accessToken, session, `${env.drupalBaseUrl}/v1/dashboard/user/cover`, {
     method: "POST",
-    headers: {
-      accept: "application/json",
-      authorization: `Bearer ${accessToken}`,
-    },
+    headers: { accept: "application/json" },
     body: formData,
   });
 

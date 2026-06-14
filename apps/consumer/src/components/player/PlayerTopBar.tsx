@@ -13,7 +13,7 @@ export function PlayerTopBar({ onBack }: PlayerTopBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[s.topBar, { paddingTop: insets.top + 4 }]}>
+    <View style={[s.topBar, { paddingTop: insets.top }]}>
       <Pressable onPress={onBack} style={s.circleBtn}>
         <Ionicons
           name="chevron-back"

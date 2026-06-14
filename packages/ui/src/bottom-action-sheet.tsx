@@ -141,7 +141,6 @@ const styles = StyleSheet.create({
   itemButton: {
     height: ITEM_HEIGHT,
     borderRadius: tokens.radii.xl,
-    backgroundColor: "rgba(255,255,255,0.04)",
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
