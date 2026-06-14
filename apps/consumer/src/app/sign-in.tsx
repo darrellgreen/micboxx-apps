@@ -23,24 +23,6 @@ export default function SignInScreen() {
 
   return (
     <Screen scroll={false} safeAreaEdges={["top", "bottom"]}>
-      {/* Close / back button */}
-      <View style={s.topBar}>
-        <AnimatedPressable
-          style={s.closeBtn}
-          hitSlop={8}
-          onPress={() => {
-            if (router.canGoBack()) router.back();
-            else router.replace("/(tabs)/home");
-          }}
-        >
-          <Ionicons
-            name="close"
-            size={20}
-            color={tokens.colors.textSecondary}
-          />
-        </AnimatedPressable>
-      </View>
-
       {/* Body */}
       <View style={s.body}>
         {/* Logo */}
@@ -118,28 +100,6 @@ export default function SignInScreen() {
               tone="ghost"
             />
 
-            <AnimatedPressable
-              style={s.ghostBtn}
-              haptic="none"
-              onPress={() => {
-                router.push("/sign-up-verify");
-              }}
-              disabled={busy}
-            >
-              <Text style={s.ghostLabel}>Enter verification code</Text>
-            </AnimatedPressable>
-
-            <AnimatedPressable
-              style={s.ghostBtn}
-              haptic="none"
-              onPress={() => {
-                if (router.canGoBack()) router.back();
-                else router.replace("/(tabs)/home");
-              }}
-              disabled={busy}
-            >
-              <Text style={s.ghostLabel}>Continue as guest</Text>
-            </AnimatedPressable>
           </>
         )}
       </View>

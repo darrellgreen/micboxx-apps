@@ -23,9 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { TrackRow } from "@/components/discover";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
-import { Avatar } from "@micboxx/ui";
-import { Pill } from "@micboxx/ui";
-import { ShimmerPlaceholder } from "@micboxx/ui";
+import { Avatar, Button, Pill, ShimmerPlaceholder } from "@micboxx/ui";
 import { getFirebaseClientDb } from "@/config/firebase";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import {
@@ -777,6 +775,14 @@ export default function AccountDestinationScreen() {
               }
               disabled={preferencesHydrating}
             />
+
+            <View style={{ marginTop: 20 }}>
+              <Button
+                label={session ? "Log out" : "Sign in"}
+                tone={session ? "secondary" : "primary"}
+                onPress={() => void handleAuthAction()}
+              />
+            </View>
           </View>
         </>
       );

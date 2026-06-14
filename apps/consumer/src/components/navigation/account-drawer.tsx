@@ -26,12 +26,9 @@ import {
 } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 
-import { AnimatedPressable } from "@micboxx/ui";
-import { Avatar } from "@micboxx/ui";
-import { Pill } from "@micboxx/ui";
+import { AnimatedPressable, Avatar, Button, Pill, hapticLight } from "@micboxx/ui";
 import type { AccountDestinationSlug } from "@/features/account/destinations";
 import { useAuth } from "@/features/auth/provider";
-import { hapticLight } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.84, 360);
@@ -164,7 +161,7 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
   }, [openAccountDestination]);
 
   const supportItems = useMemo<DrawerItem[]>(() => {
-    const items: DrawerItem[] = [
+    return [
       {
         key: "settings",
         label: "Settings",
@@ -180,19 +177,7 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
         onPress: () => openAccountDestination("help", false),
       },
     ];
-
-    if (session) {
-      items.push({
-        key: "logout",
-        label: "Logout",
-        icon: "log-out-outline",
-        onPress: () => void handleAuthAction(),
-        destructive: true,
-      });
-    }
-
-    return items;
-  }, [handleAuthAction, openAccountDestination, session]);
+  }, [openAccountDestination]);
 
   const overlayOpacity = progress.interpolate({
     inputRange: [0, 1],
@@ -342,7 +327,7 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
                     ))}
                   </DrawerSection>
 
-                  <DrawerSection title="Support & Account" variant="plain">
+                  <DrawerSection title="Support" variant="plain">
                     {supportItems.map((item) => (
                       <DrawerItemRow
                         key={item.key}

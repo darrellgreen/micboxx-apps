@@ -4,10 +4,10 @@ import "@/config/suppress-deprecation-warnings";
 
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import * as Sentry from "@sentry/react-native";
-import { Stack, usePathname } from "expo-router";
+import { Stack, usePathname, Redirect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,7 +17,7 @@ import { AccountDrawerProvider } from "@/components/navigation/account-drawer";
 import { AppBackdrop, ToastProvider } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { AccountPreferencesProvider } from "@/features/account/provider";
-import { AuthProvider } from "@/features/auth/provider";
+import { AuthProvider, useAuth } from "@/features/auth/provider";
 import { MiniPlayer } from "@/features/player/components/MiniPlayer";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
 import { PlayerProvider } from "@/features/player/provider";
@@ -148,6 +148,36 @@ const eb = StyleSheet.create({
   },
 });
 
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { session, isHydrating } = useAuth();
+  const pathname = usePathname();
+
+  if (isHydrating) {
+    return (
+      <View style={{ flex: 1, backgroundColor: tokens.colors.bgApp, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color={tokens.colors.accent} />
+      </View>
+    );
+  }
+
+  const authRoutes = ["/sign-in", "/sign-up", "/sign-up-verify", "/auth/callback"];
+  const isAuthRoute = authRoutes.includes(pathname);
+
+  if (!session && !isAuthRoute) {
+    return (
+      <>
+        {children}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: tokens.colors.bgApp, alignItems: "center", justifyContent: "center", zIndex: 9999 }]}>
+          <ActivityIndicator size="large" color={tokens.colors.accent} />
+          <Redirect href="/sign-in" />
+        </View>
+      </>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -164,81 +194,77 @@ function RootLayout() {
                       style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}
                     >
                       <AppBackdrop />
-                      <Stack
-                        screenOptions={{
-                          headerTransparent: true,
-                          headerShadowVisible: false,
-                          headerTintColor: tokens.colors.textPrimary,
-                          headerStyle: {
-                            backgroundColor: "transparent",
-                          },
-                          contentStyle: {
-                            backgroundColor: "transparent",
-                          },
-                        }}
-                      >
-                      <Stack.Screen
-                        name="(tabs)"
-                        options={{ headerShown: false }}
-                      />
-                      <Stack.Screen
-                        name="now-playing"
-                        options={{
-                          headerShown: false,
-                          presentation: "modal",
-                          animation: "slide_from_bottom",
-                          contentStyle: {
-                            backgroundColor: tokens.colors.bgApp,
-                          },
-                        }}
-                      />
-                      <Stack.Screen
-                        name="sign-in"
-                        options={{
-                          headerShown: false,
-                          presentation: "modal",
-                          animation: "slide_from_bottom",
-                          contentStyle: {
-                            backgroundColor: tokens.colors.bgApp,
-                          },
-                        }}
-                      />
-                      <Stack.Screen
-                        name="sign-up"
-                        options={{
-                          headerShown: false,
-                          presentation: "modal",
-                          animation: "slide_from_bottom",
-                          contentStyle: {
-                            backgroundColor: tokens.colors.bgApp,
-                          },
-                        }}
-                      />
-                      <Stack.Screen
-                        name="sign-up-verify"
-                        options={{
-                          headerShown: false,
-                          presentation: "modal",
-                          animation: "slide_from_bottom",
-                          contentStyle: {
-                            backgroundColor: tokens.colors.bgApp,
-                          },
-                        }}
-                      />
-                      <Stack.Screen
-                        name="auth/callback"
-                        options={{
-                          headerShown: false,
-                          presentation: "transparentModal",
-                          animation: "fade",
-                          contentStyle: {
-                            backgroundColor: tokens.colors.bgApp,
-                          },
-                        }}
-                      />
-                      </Stack>
-                      <MiniPlayerGate />
-                      <StatusBar style="light" />
+                      <AuthGate>
+                        <Stack
+                          screenOptions={{
+                            headerTransparent: true,
+                            headerShadowVisible: false,
+                            headerTintColor: tokens.colors.textPrimary,
+                            headerStyle: {
+                              backgroundColor: "transparent",
+                            },
+                            contentStyle: {
+                              backgroundColor: "transparent",
+                            },
+                          }}
+                        >
+                        <Stack.Screen
+                          name="(tabs)"
+                          options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                          name="now-playing"
+                          options={{
+                            headerShown: false,
+                            presentation: "modal",
+                            animation: "slide_from_bottom",
+                            contentStyle: {
+                              backgroundColor: tokens.colors.bgApp,
+                            },
+                          }}
+                        />
+                        <Stack.Screen
+                          name="sign-in"
+                          options={{
+                            headerShown: false,
+                            contentStyle: {
+                              backgroundColor: tokens.colors.bgApp,
+                            },
+                          }}
+                        />
+                        <Stack.Screen
+                          name="sign-up"
+                          options={{
+                            headerShown: false,
+                            contentStyle: {
+                              backgroundColor: tokens.colors.bgApp,
+                            },
+                          }}
+                        />
+                        <Stack.Screen
+                          name="sign-up-verify"
+                          options={{
+                            headerShown: false,
+                            contentStyle: {
+                              backgroundColor: tokens.colors.bgApp,
+                            },
+                          }}
+                        />
+                        <Stack.Screen
+                          name="auth/callback"
+                          options={{
+                            headerShown: false,
+                            presentation: "transparentModal",
+                            animation: "fade",
+                            contentStyle: {
+                              backgroundColor: tokens.colors.bgApp,
+                            },
+                          }}
+                        />
+                        </Stack>
+                        <MiniPlayerGate />
+                        <StatusBar style="light" />
+                      </AuthGate>
                     </View>
                   </ToastProvider>
                 </AccountDrawerProvider>

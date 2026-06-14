@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -208,6 +209,8 @@ export default function PremiumScreen() {
   );
 
   const visiblePlans = allPlans.filter((p) => {
+    const tier = resolveTierKey(p.machineKey);
+    if (tier !== "free" && tier !== "subscriber") return false;
     if (isFreePlan(p)) return true;
     if (billingPeriod === "annual") return isAnnualPlan(p);
     return !isAnnualPlan(p);
@@ -446,6 +449,28 @@ export default function PremiumScreen() {
             </AnimatedPressable>
           </View>
         )}
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerDisclaimer}>
+            Auto-renewable subscription. Payment will be charged to your Apple ID at confirmation of purchase and will automatically renew unless canceled at least 24 hours before the end of the current period. Manage or cancel in your Apple ID Account Settings.
+          </Text>
+          <View style={styles.footerLinks}>
+            <Text
+              style={styles.footerLink}
+              onPress={() => void Linking.openURL("https://micboxx.com/terms")}
+            >
+              Terms of Use
+            </Text>
+            <Text style={styles.footerDot}>·</Text>
+            <Text
+              style={styles.footerLink}
+              onPress={() => void Linking.openURL("https://micboxx.com/privacy")}
+            >
+              Privacy Policy
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -872,4 +897,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
+  footer: { gap: 12, paddingTop: 8 },
+  footerDisclaimer: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: "center",
+    opacity: 0.7,
+  },
+  footerLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  footerLink: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "500",
+    textDecorationLine: "underline",
+  },
+  footerDot: { color: tokens.colors.textSecondary, fontSize: 12 },
 });

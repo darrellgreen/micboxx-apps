@@ -1,4 +1,5 @@
 import type {
+  AvailabilityResult,
   RegisterRequest,
   RegisterResult,
   ResendCodeResult,
@@ -31,5 +32,23 @@ export async function resendRegistrationCode(
   return apiFetch<ResendCodeResult>("/v1/auth/resend-code", {
     method: "POST",
     body: JSON.stringify({ uid }),
+  });
+}
+
+export async function checkUsernameAvailability(
+  username: string,
+): Promise<AvailabilityResult> {
+  return apiFetch<AvailabilityResult>("/v1/auth/check-username", {
+    method: "POST",
+    body: JSON.stringify({ username }),
+  });
+}
+
+export async function checkEmailAvailability(
+  email: string,
+): Promise<AvailabilityResult> {
+  return apiFetch<AvailabilityResult>("/v1/auth/check-email", {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
 }
