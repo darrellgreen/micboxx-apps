@@ -1,10 +1,11 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { MicboxxSession } from "@micboxx/contracts";
 import { tokens } from "@micboxx/theme";
 import { useRecentlyPlayed } from "@/features/account/hooks/useRecentlyPlayed";
+import { Skeleton } from "@micboxx/ui";
 import { EmptyState, SectionHeader } from "./profile-shared";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -22,7 +23,14 @@ export function RecentlyPlayedSection({ accessToken, session }: RecentlyPlayedSe
     <View style={s.section}>
       <SectionHeader title="Recently Played" />
       {loading ? (
-        <ActivityIndicator color={tokens.colors.accent} style={{ marginVertical: 20 }} />
+        <View style={s.grid}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={{ width: (SCREEN_WIDTH - 40 - 12 * 2) / 3, gap: 6 }}>
+              <Skeleton width="100%" height={(SCREEN_WIDTH - 40 - 12 * 2) / 3} borderRadius={tokens.radii.sm} />
+              <Skeleton width="70%" height={10} borderRadius={6} />
+            </View>
+          ))}
+        </View>
       ) : tracks.length === 0 ? (
         <EmptyState icon="musical-notes-outline" message="Tracks you listen to will appear here." />
       ) : (

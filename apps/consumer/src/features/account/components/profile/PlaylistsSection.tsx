@@ -1,10 +1,11 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { tokens } from "@micboxx/theme";
 import { useUserPlaylists } from "@/features/account/hooks/useUserPlaylists";
+import { Skeleton } from "@micboxx/ui";
 import { EmptyState, SectionHeader } from "./profile-shared";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -18,7 +19,15 @@ export function PlaylistsSection({ accessToken }: { accessToken: string }) {
     <View style={s.section}>
       <SectionHeader title="Playlists" />
       {loading ? (
-        <ActivityIndicator color={tokens.colors.accent} style={{ marginVertical: 20 }} />
+        <View style={s.grid}>
+          {[1, 2, 3, 4].map((i) => (
+            <View key={i} style={{ width: PLAYLIST_CARD_WIDTH, gap: 6 }}>
+              <Skeleton width="100%" height={PLAYLIST_CARD_WIDTH} borderRadius={tokens.radii.md} />
+              <Skeleton width="80%" height={12} borderRadius={6} />
+              <Skeleton width="50%" height={10} borderRadius={6} />
+            </View>
+          ))}
+        </View>
       ) : playlists.length === 0 ? (
         <EmptyState
           icon="musical-notes-outline"

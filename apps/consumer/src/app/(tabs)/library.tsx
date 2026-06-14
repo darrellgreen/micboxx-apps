@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Screen } from "@micboxx/ui";
+import { Screen, Skeleton } from "@micboxx/ui";
 import { SectionHeader } from "@/components/discover";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { useAuth } from "@/features/auth/provider";
@@ -77,7 +77,7 @@ export default function LibraryScreen() {
         <SectionHeader bold="Your" light="Library" />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-          {tabs.map((tab) => {
+          {tabs.filter((tab) => tab.key === "all" || !state.isLoading && tabCounts[tab.key] > 0).map((tab) => {
             const selected = activeTab === tab.key;
             return (
               <Pressable
@@ -92,30 +92,65 @@ export default function LibraryScreen() {
           })}
         </ScrollView>
 
-        {state.isLoading ? <ActivityIndicator color={tokens.colors.accent} /> : null}
+        {state.isLoading ? <LibrarySkeleton /> : null}
         {state.error ? <InfoCard title="Unable to load library" body={state.error} /> : null}
 
-        {(activeTab === "all" || activeTab === "purchased") ? (
+        {!state.isLoading && !state.error && tabCounts.all === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons name="library-outline" size={44} color={tokens.colors.textMuted} />
+            <Text style={styles.emptyTitle}>Your library is empty</Text>
+            <Text style={styles.emptyBody}>
+              Purchase or save tracks, follow artists, and create playlists to fill your library.
+            </Text>
+          </View>
+        ) : null}
+
+        {(activeTab === "purchased" || (activeTab === "all" && tabCounts.purchased > 0)) ? (
           <PurchasedSection ownedAlbums={state.ownedAlbums} ownedTracks={state.ownedTracks} />
         ) : null}
 
-        {(activeTab === "all" || activeTab === "saved") ? (
+        {(activeTab === "saved" || (activeTab === "all" && tabCounts.saved > 0)) ? (
           <SavedSection savedTracks={state.savedTracks} unavailableDomains={state.unavailableDomains} />
         ) : null}
 
-        {(activeTab === "all" || activeTab === "recent") ? (
+        {(activeTab === "recent" || (activeTab === "all" && tabCounts.recent > 0)) ? (
           <RecentlyPlayedSection tracks={state.recentlyPlayedTracks} />
         ) : null}
 
-        {(activeTab === "all" || activeTab === "artists") ? (
+        {(activeTab === "artists" || (activeTab === "all" && tabCounts.artists > 0)) ? (
           <ArtistsSection followedArtists={state.followedArtists} />
         ) : null}
 
-        {(activeTab === "all" || activeTab === "playlists") ? (
+        {(activeTab === "playlists" || (activeTab === "all" && tabCounts.playlists > 0)) ? (
           <PlaylistsSection playlists={state.playlists} />
         ) : null}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function SkeletonRow() {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 }}>
+      <Skeleton width={48} height={48} borderRadius={8} />
+      <View style={{ flex: 1, gap: 6 }}>
+        <Skeleton width="55%" height={14} borderRadius={6} />
+        <Skeleton width="35%" height={12} borderRadius={6} />
+      </View>
+    </View>
+  );
+}
+
+function LibrarySkeleton() {
+  return (
+    <View style={{ gap: 24 }}>
+      {[1, 2, 3].map((s) => (
+        <View key={s} style={{ gap: 4 }}>
+          <Skeleton width="30%" height={14} borderRadius={6} style={{ marginBottom: 8 }} />
+          {[1, 2, 3].map((r) => <SkeletonRow key={r} />)}
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -129,6 +164,9 @@ const styles = StyleSheet.create({
   primaryButton: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 11, backgroundColor: tokens.colors.accent },
   primaryButtonLabel: { color: "#fff", fontWeight: "800" },
   tabs: { gap: 8, paddingRight: 20 },
+  empty: { alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 12 },
+  emptyTitle: { color: tokens.colors.textPrimary, fontSize: 18, fontWeight: "700", textAlign: "center" },
+  emptyBody: { color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 20, textAlign: "center", maxWidth: 280 },
   tab: { flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.06)" },
   tabSelected: { backgroundColor: tokens.colors.accent },
   tabText: { color: tokens.colors.textSecondary, fontSize: 13, fontWeight: "800" },

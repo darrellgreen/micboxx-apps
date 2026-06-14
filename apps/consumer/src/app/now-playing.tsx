@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -26,6 +26,7 @@ import { useTrackSocialState } from "@/features/social/hooks/useTrackSocialState
 import type { PlayerItem } from "@micboxx/contracts";
 import { useGetTrackPageQuery } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
+import { Skeleton } from "@micboxx/ui";
 
 export default function NowPlayingScreen() {
   const router = useRouter();
@@ -169,7 +170,14 @@ export default function NowPlayingScreen() {
     return (
       <View style={s.container}>
         <View style={s.loadingWrap}>
-          <ActivityIndicator size="large" color={tokens.colors.accent} />
+          <Skeleton width={280} height={280} borderRadius={20} />
+          <View style={{ gap: 10, marginTop: 28, width: 280 }}>
+            <Skeleton width="70%" height={22} borderRadius={8} />
+            <Skeleton width="45%" height={15} borderRadius={6} />
+          </View>
+          <View style={{ flexDirection: "row", gap: 32, marginTop: 32 }}>
+            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} width={36} height={36} borderRadius={18} />)}
+          </View>
         </View>
       </View>
     );

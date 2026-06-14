@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/provider";
@@ -13,7 +13,7 @@ import {
 } from "@/features/account/api";
 import { UserProfileView } from "@/features/account/components/profile/UserProfileView";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable, Skeleton } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
 export default function ProfileTab() {
@@ -100,10 +100,37 @@ export default function ProfileTab() {
   if (loading && !profile) {
     return (
       <SafeAreaView style={s.safe} edges={["left", "right"]}>
-        <ScreenHeader title="Profile" leftIcon="menu" />
-        <View style={s.centered}>
-          <ActivityIndicator color={tokens.colors.accent} />
+        <View style={[s.floatingHeader, { top: insets.top }]}>
+          <ScreenHeader title="" leftIcon="menu" />
         </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+          <View style={{ gap: 0 }}>
+            <Skeleton width="100%" height={200} borderRadius={0} />
+            <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 12 }}>
+              <Skeleton width={80} height={80} borderRadius={40} style={{ marginTop: -40 }} />
+              <Skeleton width="45%" height={20} borderRadius={8} />
+              <Skeleton width="30%" height={14} borderRadius={6} />
+              <View style={{ flexDirection: "row", gap: 24, marginTop: 4 }}>
+                {[1, 2, 3].map((i) => (
+                  <View key={i} style={{ gap: 4 }}>
+                    <Skeleton width={32} height={18} borderRadius={6} />
+                    <Skeleton width={48} height={12} borderRadius={6} />
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View style={{ paddingHorizontal: 20, paddingTop: 28, gap: 20 }}>
+              <Skeleton width="35%" height={14} borderRadius={6} />
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                {[1, 2, 3].map((i) => <Skeleton key={i} width={90} height={90} borderRadius={10} />)}
+              </View>
+              <Skeleton width="30%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                {[1, 2, 3, 4].map((i) => <Skeleton key={i} width={68} height={68} borderRadius={8} />)}
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }

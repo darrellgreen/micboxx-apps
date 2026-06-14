@@ -11,7 +11,6 @@ import {
   type ReactNode,
 } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -33,7 +32,7 @@ import { UserProfileView } from "@/features/account/components/profile/UserProfi
 import { TrackRow } from "@/components/discover";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
-import { Avatar, Button, Pill, ShimmerPlaceholder } from "@micboxx/ui";
+import { Avatar, Button, Pill, ShimmerPlaceholder, Skeleton } from "@micboxx/ui";
 import { getFirebaseClientDb } from "@/config/firebase";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import {
@@ -532,7 +531,14 @@ export default function AccountDestinationScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.profileScroll}>
           {loadingProfile && !profile && (
-            <ActivityIndicator style={{ marginTop: 160 }} color={tokens.colors.brandPrimary} />
+            <View style={{ gap: 0 }}>
+              <Skeleton width="100%" height={200} borderRadius={0} />
+              <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 12 }}>
+                <Skeleton width={80} height={80} borderRadius={40} style={{ marginTop: -40 }} />
+                <Skeleton width="45%" height={20} borderRadius={8} />
+                <Skeleton width="30%" height={14} borderRadius={6} />
+              </View>
+            </View>
           )}
           {profile && session && (
             <UserProfileView
@@ -711,10 +717,11 @@ export default function AccountDestinationScreen() {
         content = <GuestState />;
       } else if (loadingProfile && !profile) {
         content = (
-          <ActivityIndicator
-            style={{ marginVertical: 40 }}
-            color={tokens.colors.brandPrimary}
-          />
+          <View style={{ gap: 12, paddingHorizontal: 20, paddingTop: 12 }}>
+            <Skeleton width={80} height={80} borderRadius={40} />
+            <Skeleton width="45%" height={20} borderRadius={8} />
+            <Skeleton width="30%" height={14} borderRadius={6} />
+          </View>
         );
       } else if (profile) {
         content = (
@@ -992,8 +999,16 @@ function renderPurchasesPanel({
   if (loading) {
     return (
       <View style={styles.panel}>
-        <View style={styles.loadingRow}>
-          <ActivityIndicator color={tokens.colors.accent} />
+        <View style={{ gap: 12, paddingVertical: 8 }}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Skeleton width={44} height={44} borderRadius={6} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton width="50%" height={13} borderRadius={6} />
+                <Skeleton width="30%" height={11} borderRadius={6} />
+              </View>
+            </View>
+          ))}
         </View>
       </View>
     );
@@ -1341,8 +1356,10 @@ function renderSubscriptionPanel({
   if (loading) {
     return (
       <View style={styles.panel}>
-        <View style={styles.loadingRow}>
-          <ActivityIndicator color={tokens.colors.accent} />
+        <View style={{ gap: 10, paddingVertical: 8 }}>
+          <Skeleton width="50%" height={16} borderRadius={8} />
+          <Skeleton width="70%" height={12} borderRadius={6} />
+          <Skeleton width="40%" height={12} borderRadius={6} />
         </View>
       </View>
     );
@@ -1499,8 +1516,16 @@ function TrackPanel({
       <Text style={styles.description}>{subtitle}</Text>
 
       {loading ? (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator color={tokens.colors.accent} />
+        <View style={{ gap: 10, paddingVertical: 4 }}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Skeleton width={44} height={44} borderRadius={6} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton width="50%" height={13} borderRadius={6} />
+                <Skeleton width="30%" height={11} borderRadius={6} />
+              </View>
+            </View>
+          ))}
         </View>
       ) : tracks.length ? (
         <View style={styles.trackCard}>

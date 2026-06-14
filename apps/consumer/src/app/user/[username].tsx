@@ -2,7 +2,6 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
     Alert,
     ScrollView,
     Share,
@@ -17,6 +16,7 @@ import { TrackRow } from "@/components/discover";
 import {
   BottomActionSheet,
   type BottomActionSheetItem,
+  Skeleton,
 } from "@micboxx/ui";
 import {
   DetailHeroCard,
@@ -155,10 +155,33 @@ export default function UserDetailScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator
-          style={styles.loading}
-          color={tokens.colors.accent}
-        />
+        <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+          <Skeleton width="100%" height={220} borderRadius={0} />
+          <View style={{ paddingHorizontal: 20, paddingTop: 14, gap: 12 }}>
+            <Skeleton width={72} height={72} borderRadius={36} style={{ marginTop: -36 }} />
+            <Skeleton width="40%" height={20} borderRadius={8} />
+            <Skeleton width="25%" height={14} borderRadius={6} />
+            <View style={{ flexDirection: "row", gap: 20, marginTop: 4 }}>
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={{ gap: 4 }}>
+                  <Skeleton width={28} height={16} borderRadius={6} />
+                  <Skeleton width={44} height={11} borderRadius={6} />
+                </View>
+              ))}
+            </View>
+            <View style={{ gap: 10, marginTop: 12 }}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <Skeleton width={44} height={44} borderRadius={6} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Skeleton width="50%" height={13} borderRadius={6} />
+                    <Skeleton width="30%" height={11} borderRadius={6} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }

@@ -99,7 +99,7 @@ export function RoomChatPanel({
   } = useRoomChatList({
     messageCount: visibleMessages.length,
     windowHeight,
-    insetsBottom: insets.bottom,
+    insetsBottom: insets.bottom + 60,
     hasPinnedMessage: Boolean(pinnedMessageText),
     artistPresenceActive,
   });

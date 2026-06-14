@@ -1,10 +1,11 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { tokens } from "@micboxx/theme";
 import { useRoomHistory } from "@/features/account/hooks/useRoomHistory";
+import { Skeleton } from "@micboxx/ui";
 import { EmptyState, SectionHeader } from "./profile-shared";
 
 export function RoomHistorySection({ accessToken }: { accessToken: string }) {
@@ -15,7 +16,17 @@ export function RoomHistorySection({ accessToken }: { accessToken: string }) {
     <View style={s.section}>
       <SectionHeader title="Room History" />
       {loading ? (
-        <ActivityIndicator color={tokens.colors.accent} style={{ marginVertical: 20 }} />
+        <View style={{ gap: 0 }}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={[s.item, i === 3 && { borderBottomWidth: 0 }]}>
+              <Skeleton width={52} height={52} borderRadius={tokens.radii.sm} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton width="55%" height={13} borderRadius={6} />
+                <Skeleton width="35%" height={11} borderRadius={6} />
+              </View>
+            </View>
+          ))}
+        </View>
       ) : rooms.length === 0 ? (
         <EmptyState icon="mic-outline" message="Rooms you join will appear here." />
       ) : (
