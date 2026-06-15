@@ -37,6 +37,8 @@ export function PlayerSheetHost() {
 
   // Vertical swipe down gesture to collapse the sheet
   const panGesture = Gesture.Pan()
+    .activeOffsetY(10) // Only activate when dragging down by at least 10px
+    .failOffsetX([-15, 15]) // Fail if dragging horizontally (e.g. seeking waveform)
     .onStart(() => {
       startProgress.value = progress.value;
     })
@@ -56,6 +58,11 @@ export function PlayerSheetHost() {
       }
     });
 
+  // Gesture.Native() runs simultaneously with the pan gesture, which allows
+  // React Native Pressable (JS responder system) to receive taps inside the
+  // panel even while RNGH is watching for a swipe-down gesture.
+  const gesture = Gesture.Simultaneous(panGesture, Gesture.Native());
+
   const animatedStyle = useAnimatedStyle(() => {
     const translateY = (1 - progress.value) * SCREEN_HEIGHT;
     return {
@@ -68,7 +75,7 @@ export function PlayerSheetHost() {
   }
 
   return (
-    <GestureDetector gesture={panGesture}>
+    <GestureDetector gesture={gesture}>
       <Animated.View
         style={[StyleSheet.absoluteFill, styles.container, animatedStyle]}
         pointerEvents="auto"

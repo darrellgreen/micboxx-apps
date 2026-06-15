@@ -11,9 +11,7 @@ import {
   PlayerTrackInfo,
   PlayerTransport,
 } from "@/components/player";
-import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
-import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
+import { usePlaybackController } from "@/features/player/hooks/usePlaybackController";
 import { usePlayerState } from "@/features/player/hooks/usePlayerState";
 import { mapTrackToPlayerItem } from "@/features/player/mapper/playerItemMapper";
 import {
@@ -33,11 +31,9 @@ export interface NowPlayingPanelProps {
 }
 
 export function NowPlayingPanel({ slug, onBack }: NowPlayingPanelProps) {
-  const { currentItem, playbackState, position, progressPercent } =
-    useNowPlaying();
-  const { play, pause, skipNext, skipPrevious, setRepeatMode } =
-    usePlayerControls();
-  const { startPlayback } = usePlayerQueue();
+  const playback = usePlaybackController();
+  const { currentItem, playbackState, position, progressPercent, isPlaying: isControllerPlaying } =
+    playback;
   const playerState = usePlayerState();
 
   /*
@@ -118,35 +114,30 @@ export function NowPlayingPanel({ slug, onBack }: NowPlayingPanelProps) {
   const togglePlay = useCallback(() => {
     if (isActiveTrack) {
       /* Same track — just toggle */
-      if (playbackState === "playing") {
-        pause();
-      } else {
-        play();
-      }
+      void playback.togglePlayPause();
       return;
     }
 
-    /* Different track or nothing playing — load + play */
+    /* Different track or nothing playing — use the controller's playOrToggleTrack */
     if (!trackPageData?.track) return;
 
-    const item = mapTrackToPlayerItem(trackPageData.track);
-    const relatedItems = (trackPageData.relatedTracks ?? []).map((t) =>
-      mapTrackToPlayerItem(t),
-    );
+    const allTracks = [
+      trackPageData.track,
+      ...(trackPageData.relatedTracks ?? []),
+    ];
 
-    justStartedIdRef.current = item.id;
+    justStartedIdRef.current = String(trackPageData.track.id);
 
-    startPlayback({
-      items: [item, ...relatedItems],
-      startIndex: 0,
-      context: {
+    void playback.playOrToggleTrack(
+      trackPageData.track,
+      {
         type: "track",
         slug: trackPageData.track.slug,
         title: trackPageData.track.title,
       },
-      autoplay: true,
-    });
-  }, [isActiveTrack, playbackState, pause, play, trackPageData, startPlayback]);
+      allTracks,
+    );
+  }, [isActiveTrack, trackPageData, playback]);
 
   const repeatMode = playerState.queue.repeatMode;
   const hasPrevious = selectHasPrevious(playerState);
@@ -155,8 +146,8 @@ export function NowPlayingPanel({ slug, onBack }: NowPlayingPanelProps) {
   const cycleRepeatMode = useCallback(() => {
     const nextMode =
       repeatMode === "off" ? "queue" : repeatMode === "queue" ? "track" : "off";
-    void setRepeatMode(nextMode);
-  }, [repeatMode, setRepeatMode]);
+    void playback.setRepeatMode(nextMode);
+  }, [repeatMode, playback]);
 
   /* ── Loading ─────────────────────────────────────────────────────────────── */
 
@@ -246,8 +237,8 @@ export function NowPlayingPanel({ slug, onBack }: NowPlayingPanelProps) {
                 : displayItem.durationSec || 0
             }
             onTogglePlay={togglePlay}
-            onSkipPrevious={() => void skipPrevious()}
-            onSkipNext={() => void skipNext()}
+            onSkipPrevious={() => void playback.skipPrevious()}
+            onSkipNext={() => void playback.skipNext()}
             hasPrevious={hasPrevious}
             hasNext={hasNext}
             waveformDarkUrl={displayItem.waveformDarkUrl}

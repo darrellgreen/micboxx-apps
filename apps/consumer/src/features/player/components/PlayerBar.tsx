@@ -3,15 +3,25 @@ import { StyleSheet, Text, View } from "react-native";
 import { PlayerArtwork } from "@/features/player/components/PlayerArtwork";
 import { PlayerControls } from "@/features/player/components/PlayerControls";
 import { PlayerProgress } from "@/features/player/components/PlayerProgress";
-import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { selectDisplaySubtitle } from "@/features/player/selectors";
+import { usePlaybackController } from "@/features/player/hooks/usePlaybackController";
+import { usePlayerState } from "@/features/player/hooks/usePlayerState";
+import {
+  selectDisplaySubtitle,
+  selectHasNext,
+  selectHasPrevious,
+} from "@/features/player/selectors";
 import { tokens } from "@micboxx/theme";
 
 export function PlayerBar() {
-  const { currentItem } = useNowPlaying();
-  if (!currentItem) {
+  const playback = usePlaybackController();
+  const playerState = usePlayerState();
+
+  if (!playback.currentItem) {
     return null;
   }
+
+  const hasPrevious = selectHasPrevious(playerState);
+  const hasNext = selectHasNext(playerState);
 
   return (
     <View style={styles.card}>
@@ -19,15 +29,22 @@ export function PlayerBar() {
         <PlayerArtwork size={56} />
         <View style={styles.copy}>
           <Text numberOfLines={1} style={styles.title}>
-            {currentItem.title}
+            {playback.currentItem.title}
           </Text>
           <Text numberOfLines={1} style={styles.subtitle}>
-            {selectDisplaySubtitle(currentItem)}
+            {selectDisplaySubtitle(playback.currentItem)}
           </Text>
         </View>
       </View>
       <PlayerProgress />
-      <PlayerControls />
+      <PlayerControls
+        isPlaying={playback.isPlaying}
+        onTogglePlay={() => void playback.togglePlayPause()}
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
+        onSkipPrevious={() => void playback.skipPrevious()}
+        onSkipNext={() => void playback.skipNext()}
+      />
     </View>
   );
 }

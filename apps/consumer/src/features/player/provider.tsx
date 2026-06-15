@@ -312,6 +312,8 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       dispatch(resetPlayerState());
       return { ok: true };
     } catch (error) {
+      applyQueueState(emptyQueueState);
+      dispatch(resetPlayerState());
       return {
         ok: false,
         error: error instanceof Error ? error.message : "Unable to clear queue.",

@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from "react";
 
 import type { PublicTrack, PublicTrackSummary } from "@micboxx/contracts";
-import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
+import { usePlaybackController } from "@/features/player/hooks/usePlaybackController";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
 import { mapTrackListToPlayerItems } from "@/features/player/mapper/playerItemMapper";
 import type { QueueContext } from "@micboxx/contracts";
@@ -15,47 +14,22 @@ export function useDetailPlayback(
   context: QueueContext,
   authorizationOptions?: PlaybackAccessOptions,
 ) {
-  const { currentItem, playbackState } = useNowPlaying();
-  const { play, pause } = usePlayerControls();
+  const playback = usePlaybackController();
   const { enqueue, startPlayback } = usePlayerQueue();
 
   const queueItems = useMemo(
     () => mapTrackListToPlayerItems(tracks, authorizationOptions),
     [authorizationOptions, tracks],
   );
-  const activeTrackId = currentItem ? Number(currentItem.id) : null;
-  const isPlaying =
-    playbackState === "playing" || playbackState === "buffering";
+  const activeTrackId = playback.currentItem
+    ? Number(playback.currentItem.id)
+    : null;
 
   const playFromTrack = useCallback(
     async (track: MappableTrack) => {
-      if (currentItem?.id === String(track.id)) {
-        if (isPlaying) {
-          await pause();
-        } else {
-          await play();
-        }
-        return;
-      }
-
-      const startIndex = tracks.findIndex((item) => item.id === track.id);
-      await startPlayback({
-        items: queueItems,
-        startIndex: startIndex >= 0 ? startIndex : 0,
-        context,
-        autoplay: true,
-      });
+      await playback.playOrToggleTrack(track, context, tracks);
     },
-    [
-      context,
-      currentItem?.id,
-      isPlaying,
-      pause,
-      play,
-      queueItems,
-      startPlayback,
-      tracks,
-    ],
+    [context, playback, tracks],
   );
 
   const playAll = useCallback(async () => {
@@ -91,7 +65,7 @@ export function useDetailPlayback(
 
   return {
     activeTrackId,
-    isPlaying,
+    isPlaying: playback.isPlaying,
     playFromTrack,
     playAll,
     shuffleAll,

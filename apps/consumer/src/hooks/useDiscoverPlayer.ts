@@ -1,19 +1,15 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 
 import type { PublicTrackSummary } from "@micboxx/contracts";
-import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
-import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
-import { mapTrackListToPlayerItems } from "@/features/player/mapper/playerItemMapper";
+import { usePlaybackController } from "@/features/player/hooks/usePlaybackController";
 
 export function useDiscoverPlayer() {
-  const { currentItem, playbackState, progressPercent } = useNowPlaying();
-  const { play, pause } = usePlayerControls();
-  const { startPlayback } = usePlayerQueue();
+  const playback = usePlaybackController();
 
-  const playing = playbackState === "playing";
-  const activeId = currentItem ? Number(currentItem.id) : null;
+  const activeId = playback.currentItem
+    ? Number(playback.currentItem.id)
+    : null;
 
   /* Animated progress value for the ring on TrackRow PlayButton */
   const progressValue = useSharedValue(0);
@@ -21,40 +17,24 @@ export function useDiscoverPlayer() {
   /* Keep the shared value in sync with global progress */
   useEffect(() => {
     if (activeId !== null) {
-      progressValue.value = withTiming(progressPercent, {
+      progressValue.value = withTiming(playback.progressPercent, {
         duration: 240,
         easing: Easing.linear,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- progressValue is a stable Reanimated SharedValue ref
-  }, [activeId, progressPercent]);
+  }, [activeId, playback.progressPercent]);
 
-  const handleAction = useCallback(
-    (track: PublicTrackSummary, allTracks?: PublicTrackSummary[]) => {
-      /* Already-active track: toggle play/pause */
-      if (Number(currentItem?.id) === track.id) {
-        if (playing) {
-          pause();
-        } else {
-          play();
-        }
-        return;
-      }
+  const handleAction = (
+    track: PublicTrackSummary,
+    allTracks?: PublicTrackSummary[],
+  ) => {
+    void playback.playOrToggleTrack(
+      track,
+      { type: "recommendation" },
+      allTracks,
+    );
+  };
 
-      /* Build PlayerItem list and start global playback */
-      const tracksToMap = allTracks ?? [track];
-      const items = mapTrackListToPlayerItems(tracksToMap);
-      const startIndex = tracksToMap.findIndex((t) => t.id === track.id);
-
-      startPlayback({
-        items,
-        startIndex: startIndex >= 0 ? startIndex : 0,
-        context: { type: "recommendation" },
-        autoplay: true,
-      });
-    },
-    [currentItem?.id, playing, play, pause, startPlayback],
-  );
-
-  return { activeId, playing, progressValue, handleAction };
+  return { activeId, playing: playback.isPlaying, progressValue, handleAction };
 }

@@ -11,19 +11,28 @@ import {
 } from "react-native-reanimated";
 
 import { AnimatedPressable } from "@micboxx/ui";
-import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
-import { usePlayerState } from "@/features/player/hooks/usePlayerState";
-import { selectHasNext, selectHasPrevious } from "@/features/player/selectors";
 import { hapticLight, hapticSelection } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
-export function PlayerControls({ compact = false }: { compact?: boolean }) {
-  const { play, pause, skipNext, skipPrevious } = usePlayerControls();
-  const { playbackState } = useNowPlaying();
-  const state = usePlayerState();
-  const isPlaying =
-    playbackState === "playing" || playbackState === "buffering";
+export interface PlayerControlsProps {
+  compact?: boolean;
+  isPlaying: boolean;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
+  onTogglePlay: () => void;
+  onSkipPrevious?: () => void;
+  onSkipNext?: () => void;
+}
+
+export function PlayerControls({
+  compact = false,
+  isPlaying,
+  hasPrevious = false,
+  hasNext = false,
+  onTogglePlay,
+  onSkipPrevious,
+  onSkipNext,
+}: PlayerControlsProps) {
   const playProgress = useSharedValue(isPlaying ? 1 : 0);
 
   useEffect(() => {
@@ -65,12 +74,12 @@ export function PlayerControls({ compact = false }: { compact?: boolean }) {
         <AnimatedPressable
           onPress={() => {
             hapticSelection();
-            void skipPrevious();
+            onSkipPrevious?.();
           }}
-          disabled={!selectHasPrevious(state)}
+          disabled={!hasPrevious}
           style={[
             styles.secondaryButton,
-            !selectHasPrevious(state) && styles.disabled,
+            !hasPrevious && styles.disabled,
             secondaryButtonStyle,
           ]}
         >
@@ -84,7 +93,7 @@ export function PlayerControls({ compact = false }: { compact?: boolean }) {
       <AnimatedPressable
         onPress={() => {
           hapticLight();
-          void (isPlaying ? pause() : play());
+          onTogglePlay();
         }}
         scaleValue={0.93}
         style={[
@@ -104,12 +113,12 @@ export function PlayerControls({ compact = false }: { compact?: boolean }) {
         <AnimatedPressable
           onPress={() => {
             hapticSelection();
-            void skipNext();
+            onSkipNext?.();
           }}
-          disabled={!selectHasNext(state)}
+          disabled={!hasNext}
           style={[
             styles.secondaryButton,
-            !selectHasNext(state) && styles.disabled,
+            !hasNext && styles.disabled,
             secondaryButtonStyle,
           ]}
         >
