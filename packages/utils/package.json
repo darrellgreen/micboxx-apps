@@ -2,11 +2,9 @@
   "name": "@micboxx/utils",
   "version": "0.0.1",
   "private": true,
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "scripts": {
-    "build": "tsup",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -14,12 +12,5 @@
   },
   "dependencies": {
     "@micboxx/contracts": "*"
-  },
-  "exports": {
-    ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts"
-    }
   }
 }

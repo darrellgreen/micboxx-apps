@@ -12,8 +12,5 @@
   },
   "dependencies": {
     "@micboxx/contracts": "*"
-  },
-  "exports": {
-    ".": "./src/index.ts"
   }
 }

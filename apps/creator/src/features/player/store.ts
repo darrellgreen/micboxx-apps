@@ -44,6 +44,7 @@ export const initialPlayerProviderState: PlayerProviderState = {
   nowPlaying: {
     currentItem: null,
     playbackState: "idle",
+    playbackIntent: "pause",
     position: emptyPlaybackPosition,
     volume: 1,
     rate: 1,
