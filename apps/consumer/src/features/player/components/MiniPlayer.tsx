@@ -19,6 +19,7 @@ import { PlayerControls } from "@/features/player/components/PlayerControls";
 import { PlayerProgressCompact } from "@/features/player/components/PlayerProgress";
 import { usePlaybackController } from "@/features/player/hooks/usePlaybackController";
 import { selectDisplaySubtitle } from "@/features/player/selectors";
+import { useAppSelector } from "@/store/hooks";
 import { usePlayerSheet } from "../context/PlayerSheetContext";
 import { AnimatedPressable } from "@micboxx/ui";
 import { hapticLight, hapticSuccess } from "@micboxx/ui";
@@ -46,21 +47,43 @@ export function MiniPlayer() {
   const segments = useSegments();
   const playback = usePlaybackController();
   const { currentItem, isPlaying } = playback;
+  const playerInitialized = useAppSelector((state) => state.player.initialized);
+  const playerRestoring = useAppSelector((state) => state.player.restoring);
   const { expand, collapse, progress, isExpandedState, isDragging, startDrag, finishDrag } = usePlayerSheet();
 
-  // Keep reference of the last active track to render card data while fading out
+  const canRenderMiniPlayer = playerInitialized && !playerRestoring;
+
+  // Keep reference of the last active track only for deliberate fade-out after
+  // a real session ends. During startup/restore/loading churn, stale content
+  // should not flash over skeleton screens.
   const lastTrack = useRef(currentItem);
-  if (currentItem) {
+  if (canRenderMiniPlayer && currentItem) {
     lastTrack.current = currentItem;
   }
-  const displayItem = currentItem ?? lastTrack.current;
+  const displayItem = canRenderMiniPlayer
+    ? currentItem ?? lastTrack.current
+    : null;
 
   // Declarative visibility animation based on active track existence
-  const isPlayerActive = currentItem !== null;
+  const isPlayerActive = canRenderMiniPlayer && currentItem !== null;
   const visibility = useSharedValue(isPlayerActive ? 1 : 0);
 
   useEffect(() => {
-    visibility.value = withTiming(isPlayerActive ? 1 : 0, { duration: 200 });
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (isPlayerActive) {
+      visibility.value = withTiming(1, { duration: 200 });
+    } else {
+      // Delay the hide animation slightly (e.g. 150ms) to allow transient null states
+      // during track transitions to resolve without animating the mini-player away and back.
+      timeoutId = setTimeout(() => {
+        visibility.value = withTiming(0, { duration: 200 });
+      }, 150);
+    }
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isPlayerActive, visibility]);
 
   // Only add tab-bar clearance when we're actually inside the (tabs) group.
