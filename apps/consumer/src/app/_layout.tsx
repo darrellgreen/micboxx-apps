@@ -9,7 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, Text, View, ActivityIndicator, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 
@@ -22,6 +22,8 @@ import { AuthProvider, useAuth } from "@/features/auth/provider";
 import { MiniPlayer } from "@/features/player/components/MiniPlayer";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
 import { PlayerProvider } from "@/features/player/provider";
+import { PlayerSheetProvider } from "@/features/player/context/PlayerSheetContext";
+import { PlayerSheetHost } from "@/features/player/components/PlayerSheetHost";
 import { registerMicboxxPlaybackService } from "@/features/player/registerPlaybackService";
 import { registerRoomLiveKitGlobals } from "@/features/rooms/live-video/registerLiveKitGlobals";
 import { PushProvider } from "@/features/push/PushProvider";
@@ -82,24 +84,51 @@ const navigationTheme = {
 // Routes where the bottom chrome (tab bar + mini player) should be hidden.
 // "Hidden" means opacity:0 + non-interactive, NOT unmounted — so returning
 // from a modal like /now-playing doesn't pay a fresh-mount cost.
-const CHROME_HIDDEN_ROUTES = [
-  ...(Platform.OS === "ios" ? [] : ["/now-playing"]),
-  "/sign-in",
-  "/sign-up",
-  "/sign-up-verify",
-  "/auth/callback",
-];
+const CHROME_HIDDEN_ROUTES = ["/sign-in", "/sign-up", "/sign-up-verify", "/auth/callback"];
+
+interface AnimatedGateProps {
+  hidden: boolean;
+  children: React.ReactNode;
+}
+
+function AnimatedGate({ hidden, children }: AnimatedGateProps) {
+  const visibleProgress = useSharedValue(hidden ? 0 : 1);
+
+  useEffect(() => {
+    visibleProgress.value = withTiming(hidden ? 0 : 1, {
+      duration: 180,
+    });
+  }, [hidden, visibleProgress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: visibleProgress.value,
+    transform: [
+      {
+        translateY: interpolate(visibleProgress.value, [0, 1], [18, 0]),
+      },
+    ],
+  }));
+
+  return (
+    <Animated.View
+      pointerEvents={hidden ? "none" : "box-none"}
+      style={animatedStyle}
+    >
+      {children}
+    </Animated.View>
+  );
+}
 
 function PersistentTabBarGate() {
   const pathname = usePathname();
-  const hidden = CHROME_HIDDEN_ROUTES.includes(pathname);
+  const isIOS = Platform.OS === "ios";
+  const isNowPlaying = pathname === "/now-playing";
+  const hidden = CHROME_HIDDEN_ROUTES.includes(pathname) || (!isIOS && isNowPlaying);
+
   return (
-    <View
-      pointerEvents={hidden ? "none" : "auto"}
-      style={hidden ? s.chromeHidden : undefined}
-    >
+    <AnimatedGate hidden={hidden}>
       <PersistentTabBar />
-    </View>
+    </AnimatedGate>
   );
 }
 
@@ -118,14 +147,18 @@ function MiniPlayerGate() {
     }
   }, [isRoomOwnedQueue, isRoomRoute, clearQueue]);
 
-  const hidden = CHROME_HIDDEN_ROUTES.includes(pathname) || isRoomRoute || isRoomOwnedQueue;
+  const isIOS = Platform.OS === "ios";
+  const isNowPlaying = pathname === "/now-playing";
+  const hidden =
+    CHROME_HIDDEN_ROUTES.includes(pathname) ||
+    (!isIOS && isNowPlaying) ||
+    isRoomRoute ||
+    isRoomOwnedQueue;
+
   return (
-    <View
-      pointerEvents={hidden ? "none" : "auto"}
-      style={hidden ? s.chromeHidden : undefined}
-    >
+    <AnimatedGate hidden={hidden}>
       <MiniPlayer />
-    </View>
+    </AnimatedGate>
   );
 }
 
@@ -226,109 +259,121 @@ function RootLayout() {
             <SocialAuthGate />
             <PushProvider />
             <PlayerProvider>
-              <ThemeProvider value={navigationTheme}>
-                <AccountDrawerProvider>
-                  <ToastProvider>
-                    <View
-                      style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}
-                    >
-                      <AppBackdrop />
-                      <AuthGate>
-                        <Stack
-                          screenOptions={{
-                            headerTransparent: true,
-                            headerShadowVisible: false,
-                            headerTintColor: tokens.colors.textPrimary,
-                            headerStyle: {
-                              backgroundColor: "transparent",
-                            },
-                            contentStyle: {
-                              backgroundColor: "transparent",
-                            },
-                          }}
-                        >
-                        <Stack.Screen
-                          name="(tabs)"
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="now-playing"
-                          options={{
-                            headerShown: false,
-                            presentation: "modal",
-                            animation: "slide_from_bottom",
-                            contentStyle: {
-                              backgroundColor: tokens.colors.bgApp,
-                            },
-                          }}
-                        />
-                        <Stack.Screen
-                          name="sign-in"
-                          options={{
-                            headerShown: false,
-                            contentStyle: {
-                              backgroundColor: tokens.colors.bgApp,
-                            },
-                          }}
-                        />
-                        <Stack.Screen
-                          name="sign-up"
-                          options={{
-                            headerShown: false,
-                            contentStyle: {
-                              backgroundColor: tokens.colors.bgApp,
-                            },
-                          }}
-                        />
-                        <Stack.Screen
-                          name="sign-up-verify"
-                          options={{
-                            headerShown: false,
-                            contentStyle: {
-                              backgroundColor: tokens.colors.bgApp,
-                            },
-                          }}
-                        />
-                        <Stack.Screen
-                          name="auth/callback"
-                          options={{
-                            headerShown: false,
-                            presentation: "transparentModal",
-                            animation: "fade",
-                            contentStyle: {
-                              backgroundColor: tokens.colors.bgApp,
-                            },
-                          }}
-                        />
-                        <Stack.Screen
-                          name="settings"
-                          options={{
-                            headerShown: false,
-                            contentStyle: {
-                              backgroundColor: tokens.colors.bgApp,
-                            },
-                          }}
-                        />
-                        <Stack.Screen
-                          name="playlist/create"
-                          options={{
-                            headerShown: false,
-                            presentation: "modal",
-                            animation: "slide_from_bottom",
-                            contentStyle: {
-                              backgroundColor: tokens.colors.bgApp,
-                            },
-                          }}
-                        />
-                        </Stack>
-                        <PersistentTabBarGate />
-                        <MiniPlayerGate />
-                        <StatusBar style="light" />
-                      </AuthGate>
-                    </View>
-                  </ToastProvider>
-                </AccountDrawerProvider>
-              </ThemeProvider>
+              <PlayerSheetProvider>
+                <ThemeProvider value={navigationTheme}>
+                  <AccountDrawerProvider>
+                    <ToastProvider>
+                      <View
+                        style={{ flex: 1, backgroundColor: tokens.colors.bgApp }}
+                      >
+                        <AppBackdrop />
+                        <AuthGate>
+                          <Stack
+                            screenOptions={{
+                              headerTransparent: true,
+                              headerShadowVisible: false,
+                              headerTintColor: tokens.colors.textPrimary,
+                              headerStyle: {
+                                backgroundColor: "transparent",
+                              },
+                              contentStyle: {
+                                backgroundColor: "transparent",
+                              },
+                            }}
+                          >
+                          <Stack.Screen
+                            name="(tabs)"
+                            options={{ headerShown: false }}
+                          />
+                          <Stack.Screen
+                            name="now-playing"
+                            options={{
+                              headerShown: false,
+                              presentation: "modal",
+                              animation: "slide_from_bottom",
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
+                            name="sign-in"
+                            options={{
+                              headerShown: false,
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
+                            name="sign-up"
+                            options={{
+                              headerShown: false,
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
+                            name="sign-up-verify"
+                            options={{
+                              headerShown: false,
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
+                            name="auth/callback"
+                            options={{
+                              headerShown: false,
+                              presentation: "transparentModal",
+                              animation: "fade",
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
+                            name="settings"
+                            options={{
+                              headerShown: false,
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
+                            name="recently-played"
+                            options={{
+                              headerShown: false,
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
+                            name="playlist/create"
+                            options={{
+                              headerShown: false,
+                              presentation: "modal",
+                              animation: "slide_from_bottom",
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          </Stack>
+                          <PersistentTabBarGate />
+                          <MiniPlayerGate />
+                          <PlayerSheetHost />
+                          <StatusBar style="light" />
+                        </AuthGate>
+                      </View>
+                    </ToastProvider>
+                  </AccountDrawerProvider>
+                </ThemeProvider>
+              </PlayerSheetProvider>
             </PlayerProvider>
           </AccountPreferencesProvider>
         </AuthProvider>

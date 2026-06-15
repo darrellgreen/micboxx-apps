@@ -18,6 +18,7 @@ import { SearchTabIcon } from "@/components/icons/SearchTabIcon";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
 import { VideoLibraryIcon } from "@/components/icons/VideoLibraryIcon";
 import { tokens } from "@micboxx/theme";
+import { usePlayerSheet } from "@/features/player/context/PlayerSheetContext";
 
 const TABS = [
   { name: "home", label: "Discover", route: "/(tabs)/home" },
@@ -48,6 +49,7 @@ export function PersistentTabBar() {
   const router = useRouter();
   const activeTab = resolveActiveTab(pathname);
   const lastActiveTabRef = useRef<TabName>("home");
+  const { progress } = usePlayerSheet();
 
   if (activeTab) {
     lastActiveTabRef.current = activeTab;
@@ -55,8 +57,16 @@ export function PersistentTabBar() {
 
   const displayActiveTab = activeTab ?? lastActiveTabRef.current;
 
+  const animatedStyle = useAnimatedStyle(() => {
+    // Translate the tab bar fully off-screen (120px is safely more than its height + padding)
+    const translateY = progress.value * 120;
+    return {
+      transform: [{ translateY }],
+    };
+  });
+
   return (
-    <View style={[styles.wrapper, { paddingBottom: Math.max(4, insets.bottom) }]}>
+    <Animated.View style={[styles.wrapper, { paddingBottom: Math.max(4, insets.bottom) }, animatedStyle]}>
       <BlurView intensity={70} tint="dark" style={styles.blur}>
         <View style={styles.bar}>
           <View style={styles.tabGroup}>
@@ -72,7 +82,7 @@ export function PersistentTabBar() {
           </View>
         </View>
       </BlurView>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -131,7 +141,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   blur: {
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     borderRadius: 28,
     overflow: "hidden",
     borderWidth: 1,

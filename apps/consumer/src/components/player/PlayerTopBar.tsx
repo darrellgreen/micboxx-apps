@@ -13,7 +13,7 @@ export function PlayerTopBar({ onBack }: PlayerTopBarProps) {
     <View style={s.topBar}>
       <Pressable onPress={onBack} style={s.circleBtn}>
         <Ionicons
-          name="chevron-back"
+          name="chevron-down"
           size={22}
           color={tokens.colors.textPrimary}
         />

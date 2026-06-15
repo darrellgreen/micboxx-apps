@@ -136,6 +136,13 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
   const mainItems = useMemo<DrawerItem[]>(
     () => [
       {
+        key: "recently-played",
+        label: "Recently Played",
+        icon: "time-outline",
+        onPress: () => openRoute("/recently-played"),
+        requiresAuth: true,
+      },
+      {
         key: "messages",
         label: "Messages",
         icon: "mail-outline",

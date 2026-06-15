@@ -16,6 +16,7 @@ import { PlayerProgressCompact } from "@/features/player/components/PlayerProgre
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { usePlayerContext } from "@/features/player/provider";
 import { selectDisplaySubtitle } from "@/features/player/selectors";
+import { usePlayerSheet } from "../context/PlayerSheetContext";
 import { AnimatedPressable } from "@micboxx/ui";
 import { hapticLight, hapticSuccess } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
@@ -39,6 +40,7 @@ export function MiniPlayer() {
   const segments = useSegments();
   const { actions } = usePlayerContext();
   const { currentItem } = useNowPlaying();
+  const { expand, progress, isExpandedState } = usePlayerSheet();
 
   // Only add tab-bar clearance when we're actually inside the (tabs) group.
   // On modals and other stack screens there is no tab bar so the player sits
@@ -59,7 +61,7 @@ export function MiniPlayer() {
 
   function openNowPlaying() {
     hapticLight();
-    router.push("/now-playing");
+    expand({ slug: currentItem?.slug });
   }
 
   const dismissHapticFired = useSharedValue(false);
@@ -117,16 +119,17 @@ export function MiniPlayer() {
 
   // Full opacity until FADE_START, then fades to 0 over the final stretch
   // before the dismiss threshold so the card only visibly disappears when
-  // it's about to fly off.
+  // it's about to fly off. Also crossfades dynamically as the sheet expands.
   const animatedStyle = useAnimatedStyle(() => {
     const absX = Math.abs(translateX.value);
-    const opacity =
+    const swipeOpacity =
       absX < FADE_START
         ? 1
         : Math.max(
             0,
             1 - (absX - FADE_START) / (DISMISS_THRESHOLD - FADE_START),
           );
+    const opacity = swipeOpacity * (1 - progress.value);
     return {
       opacity,
       transform: [{ translateX: translateX.value }],
@@ -142,7 +145,7 @@ export function MiniPlayer() {
 
   return (
     <View
-      pointerEvents="box-none"
+      pointerEvents={isExpandedState ? "none" : "box-none"}
       style={[styles.container, { bottom: bottomOffset }]}
     >
       <GestureDetector gesture={composed}>
