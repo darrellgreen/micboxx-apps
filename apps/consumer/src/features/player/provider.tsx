@@ -412,13 +412,6 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         // On error, release the guard so future events are not silently dropped.
         if (controlledLoadRef.current?.loadId === loadId) {
           controlledLoadRef.current = null;
-          void trackPlayerAdapter
-            .getNowPlaying()
-            .then((nowPlaying) => {
-              dispatch(setPlaybackState(nowPlaying.state));
-              dispatch(setPosition(nowPlaying.position));
-            })
-            .catch(() => undefined);
         }
         throw e;
       }
@@ -594,13 +587,6 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
                   void syncMetadata(currentState.queue.items[nextIndex] ?? null);
                 }
                 controlledLoadRef.current = null;
-                void trackPlayerAdapter
-                  .getNowPlaying()
-                  .then((nowPlaying) => {
-                    dispatch(setPlaybackState(nowPlaying.state));
-                    dispatch(setPosition(nowPlaying.position));
-                  })
-                  .catch(() => undefined);
               }
               break;
             }
