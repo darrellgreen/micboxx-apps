@@ -210,7 +210,6 @@ export function useMicboxxUnreadNotificationCount({
       socialStatus !== "authenticated" ||
       !firebaseConfigured
     ) {
-      setSocialUnreadCount((prev) => (prev !== 0 ? 0 : prev));
       return;
     }
 
@@ -221,12 +220,14 @@ export function useMicboxxUnreadNotificationCount({
       }
     );
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      setSocialUnreadCount(0);
+    };
   }, [firebaseConfigured, firebaseUid, socialStatus, adapter]);
 
   useEffect(() => {
     if (!accessToken) {
-      setRoomUnreadCount((prev) => (prev !== 0 ? 0 : prev));
       return;
     }
 
@@ -239,9 +240,7 @@ export function useMicboxxUnreadNotificationCount({
           setRoomUnreadCount((prev) => (prev !== count ? count : prev));
         }
       } catch {
-        if (!cancelled) {
-          setRoomUnreadCount((prev) => (prev !== 0 ? 0 : prev));
-        }
+        // leave previous count on transient errors
       }
     };
 
@@ -249,6 +248,7 @@ export function useMicboxxUnreadNotificationCount({
 
     return () => {
       cancelled = true;
+      setRoomUnreadCount(0);
     };
   }, [accessToken, adapter]);
 
