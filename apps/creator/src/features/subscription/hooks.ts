@@ -14,8 +14,26 @@ import { ENTITLEMENT_PRO, useSubscription } from '@/features/subscription/provid
 export interface PresentPaywallResult {
   /** Whether the user completed a purchase or restored an active subscription. */
   purchased: boolean;
+  /** Whether the user intentionally dismissed/cancelled the purchase flow. */
+  cancelled?: boolean;
   /** The updated CustomerInfo after the paywall was dismissed (may be null on error). */
   customerInfo: CustomerInfo | null;
+}
+
+function isPurchaseCancelledError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') {
+    return false;
+  }
+
+  const purchasesError = err as {
+    code?: unknown;
+    userCancelled?: unknown;
+  };
+
+  return (
+    purchasesError.code === Purchases.PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR ||
+    purchasesError.userCancelled === true
+  );
 }
 
 /**
@@ -38,9 +56,13 @@ export function usePresentPaywall() {
 
       const info = await Purchases.getCustomerInfo();
       const purchased = result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
+      const cancelled = result === PAYWALL_RESULT.CANCELLED;
 
-      return { purchased, customerInfo: info };
+      return { purchased, cancelled, customerInfo: info };
     } catch (err) {
+      if (isPurchaseCancelledError(err)) {
+        return { purchased: false, cancelled: true, customerInfo: null };
+      }
       if (__DEV__) {
         console.warn('[RevenueCat] presentPaywall error:', err);
       }
@@ -70,9 +92,13 @@ export function usePresentPaywallIfNeeded() {
 
       const info = await Purchases.getCustomerInfo();
       const purchased = result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
+      const cancelled = result === PAYWALL_RESULT.CANCELLED;
 
-      return { purchased, customerInfo: info };
+      return { purchased, cancelled, customerInfo: info };
     } catch (err) {
+      if (isPurchaseCancelledError(err)) {
+        return { purchased: false, cancelled: true, customerInfo: null };
+      }
       if (__DEV__) {
         console.warn('[RevenueCat] presentPaywallIfNeeded error:', err);
       }
@@ -115,6 +141,7 @@ export function usePurchasePlan() {
           return {
             purchased: result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED,
             customerInfo: info,
+            cancelled: result === PAYWALL_RESULT.CANCELLED,
           };
         }
 
@@ -122,6 +149,9 @@ export function usePurchasePlan() {
         await refreshCustomerInfo();
         return { purchased: true, customerInfo: info };
       } catch (err) {
+        if (isPurchaseCancelledError(err)) {
+          return { purchased: false, cancelled: true, customerInfo: null };
+        }
         if (__DEV__) {
           console.warn('[RevenueCat] purchasePlan error:', err);
         }

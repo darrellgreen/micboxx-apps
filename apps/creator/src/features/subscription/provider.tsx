@@ -12,7 +12,7 @@ import Purchases, {
   type CustomerInfo,
   LOG_LEVEL,
   type PurchasesOffering,
-} from "react-native-purchases";
+} from 'react-native-purchases';
 import {
   createContext,
   useCallback,
@@ -22,10 +22,10 @@ import {
   useState,
   type FC,
   type PropsWithChildren,
-} from "react";
-import { Platform } from "react-native";
+} from 'react';
+import { Platform } from 'react-native';
 
-import { useAuth } from "../auth/provider";
+import { useAuth } from '../auth/provider';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -33,16 +33,16 @@ import { useAuth } from "../auth/provider";
  * RevenueCat iOS SDK key — injected at build time from EXPO_PUBLIC_REVENUECAT_IOS_KEY.
  * Set this in .env (or as an EAS secret for CI builds).
  */
-const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? "";
+const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
 
 /** The entitlement identifier configured in the RevenueCat dashboard. */
-export const ENTITLEMENT_PRO = "MicBoxx Pro";
+export const ENTITLEMENT_PRO = 'MicBoxx Pro';
 
 /** Product identifiers — must match the offering in the RC dashboard. */
-export const PRODUCT_YEARLY = "yearly";
-export const PRODUCT_MONTHLY = "monthly";
-export const PRODUCT_VIP_MONTHLY = "vip_monthly";
-export const PRODUCT_VIP_YEARLY = "vip_yearly";
+export const PRODUCT_YEARLY = 'yearly';
+export const PRODUCT_MONTHLY = 'monthly';
+export const PRODUCT_VIP_MONTHLY = 'vip_monthly';
+export const PRODUCT_VIP_YEARLY = 'vip_yearly';
 
 // ─── types ───────────────────────────────────────────────────────────────────
 
@@ -81,13 +81,42 @@ function deriveIsPro(info: CustomerInfo): boolean {
   return info.entitlements.active[ENTITLEMENT_PRO] !== undefined;
 }
 
+function shouldIgnoreRevenueCatLog(message: string): boolean {
+  return message.includes('Purchase was cancelled');
+}
+
+function configureRevenueCatLogging(): void {
+  Purchases.setLogHandler((level, message) => {
+    if (shouldIgnoreRevenueCatLog(message)) {
+      return;
+    }
+
+    const formattedMessage = `[RevenueCat] ${message}`;
+    switch (level) {
+      case LOG_LEVEL.DEBUG:
+        console.debug(formattedMessage);
+        break;
+      case LOG_LEVEL.INFO:
+        console.info(formattedMessage);
+        break;
+      case LOG_LEVEL.WARN:
+        console.warn(formattedMessage);
+        break;
+      case LOG_LEVEL.ERROR:
+        console.error(formattedMessage);
+        break;
+      default:
+        console.log(formattedMessage);
+    }
+  });
+}
+
 // ─── provider ────────────────────────────────────────────────────────────────
 
 export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
-  const [currentOffering, setCurrentOffering] =
-    useState<PurchasesOffering | null>(null);
+  const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
   const [isSdkReady, setIsSdkReady] = useState(false);
 
   const isConfigured = useRef(false);
@@ -105,7 +134,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
       try {
         if (!REVENUECAT_API_KEY) {
           throw new Error(
-            "EXPO_PUBLIC_REVENUECAT_IOS_KEY is not set. Add it to .env before building."
+            'EXPO_PUBLIC_REVENUECAT_IOS_KEY is not set. Add it to .env before building.',
           );
         }
 
@@ -113,6 +142,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
           Purchases.setLogLevel(LOG_LEVEL.DEBUG);
         }
 
+        configureRevenueCatLogging();
         Purchases.configure({ apiKey: REVENUECAT_API_KEY });
 
         // Load current customer info and offerings in parallel.
@@ -126,7 +156,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
         setCurrentOffering(offeringsResult?.current ?? null);
       } catch (err) {
         if (__DEV__) {
-          console.warn("[RevenueCat] configure failed:", err);
+          console.warn('[RevenueCat] configure failed:', err);
         }
       } finally {
         setIsLoading(false);
@@ -145,11 +175,11 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
     });
 
     return () => {
-      if (typeof listenerResult === "function") {
+      if (typeof listenerResult === 'function') {
         (listenerResult as () => void)();
       } else if (
         listenerResult != null &&
-        typeof (listenerResult as { remove?: () => void }).remove === "function"
+        typeof (listenerResult as { remove?: () => void }).remove === 'function'
       ) {
         (listenerResult as { remove: () => void }).remove();
       }
@@ -162,7 +192,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
       setCustomerInfo(info);
     } catch (err) {
       if (__DEV__) {
-        console.warn("[RevenueCat] refreshCustomerInfo failed:", err);
+        console.warn('[RevenueCat] refreshCustomerInfo failed:', err);
       }
     }
   }, []);
@@ -178,7 +208,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
       setCustomerInfo(info);
     } catch (err) {
       if (__DEV__) {
-        console.warn("[RevenueCat] logIn failed:", err);
+        console.warn('[RevenueCat] logIn failed:', err);
       }
     }
   }, []);
@@ -193,7 +223,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
       setCustomerInfo(info);
     } catch (err) {
       if (__DEV__) {
-        console.warn("[RevenueCat] logOut failed:", err);
+        console.warn('[RevenueCat] logOut failed:', err);
       }
     }
   }, []);

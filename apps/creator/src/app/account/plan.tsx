@@ -5,44 +5,40 @@
  * with RevenueCat wired for purchase / manage / restore actions.
  */
 
-import { Ionicons } from "@expo/vector-icons";
-import { useState, useEffect, useRef } from "react";
-import {
-  Linking,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { AnimatedPressable, Skeleton } from "@micboxx/ui";
+import { Ionicons } from '@expo/vector-icons';
+import { useState, useEffect, useRef } from 'react';
+import { Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AnimatedPressable, Skeleton } from '@micboxx/ui';
 
-import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { useAuth } from "@/features/auth/provider";
+import { ScreenHeader } from '@/components/navigation/ScreenHeader';
+import { useAuth } from '@/features/auth/provider';
 import {
   usePresentPaywallIfNeeded,
   usePresentCustomerCenter,
   useRestorePurchases,
   usePurchasePlan,
-} from "@/features/subscription/hooks";
+} from '@/features/subscription/hooks';
+import { ENTITLEMENT_PRO, useSubscription } from '@/features/subscription/provider';
+import { useCreatorBootstrap } from '@/features/bootstrap/provider';
 import {
   apiFetch,
   useGetCurrentEntitlementsQuery,
   useGetPublicSubscriptionPlansQuery,
   formatCurrency,
-} from "@micboxx/api";
-import { ensureFreshSession } from "@/features/auth/api";
+} from '@micboxx/api';
+import { ensureFreshSession } from '@/features/auth/api';
 import type {
   EntitlementCapabilityDetail,
   EntitlementState,
   PublicSubscriptionPlan,
-} from "@micboxx/contracts";
-import { tokens } from "@micboxx/theme";
+} from '@micboxx/contracts';
+import { tokens } from '@micboxx/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TierKey = "free" | "subscriber" | "pro" | "vip";
-type BillingPeriod = "monthly" | "annual";
+type TierKey = 'free' | 'subscriber' | 'pro' | 'vip';
+type BillingPeriod = 'monthly' | 'annual';
 
 // ─── Palette — matches consumer premium screen exactly ────────────────────────
 
@@ -50,7 +46,7 @@ const TIER_PALETTE: Record<
   TierKey,
   {
     label: string;
-    icon: React.ComponentProps<typeof Ionicons>["name"];
+    icon: React.ComponentProps<typeof Ionicons>['name'];
     color: string;
     bg: string;
     border: string;
@@ -58,32 +54,32 @@ const TIER_PALETTE: Record<
   }
 > = {
   free: {
-    label: "FREE",
-    icon: "musical-notes-outline",
-    color: "rgba(216,223,238,0.65)",
-    bg: "rgba(216,223,238,0.05)",
-    border: "rgba(216,223,238,0.16)",
+    label: 'FREE',
+    icon: 'musical-notes-outline',
+    color: 'rgba(216,223,238,0.65)',
+    bg: 'rgba(216,223,238,0.05)',
+    border: 'rgba(216,223,238,0.16)',
   },
   subscriber: {
-    label: "SUBSCRIBER",
-    icon: "headset-outline",
-    color: "#00B3A6",
-    bg: "rgba(0,179,166,0.09)",
-    border: "rgba(0,179,166,0.32)",
+    label: 'SUBSCRIBER',
+    icon: 'headset-outline',
+    color: '#00B3A6',
+    bg: 'rgba(0,179,166,0.09)',
+    border: 'rgba(0,179,166,0.32)',
   },
   pro: {
-    label: "PRO",
-    icon: "flash-outline",
-    color: "#E6B85C",
-    bg: "rgba(230,184,92,0.09)",
-    border: "rgba(230,184,92,0.32)",
+    label: 'PRO',
+    icon: 'flash-outline',
+    color: '#E6B85C',
+    bg: 'rgba(230,184,92,0.09)',
+    border: 'rgba(230,184,92,0.32)',
   },
   vip: {
-    label: "VIP",
-    icon: "diamond-outline",
-    color: "#A78BFA",
-    bg: "rgba(167,139,250,0.09)",
-    border: "rgba(167,139,250,0.32)",
+    label: 'VIP',
+    icon: 'diamond-outline',
+    color: '#A78BFA',
+    bg: 'rgba(167,139,250,0.09)',
+    border: 'rgba(167,139,250,0.32)',
     bestValue: true,
   },
 };
@@ -92,18 +88,18 @@ const TIER_PALETTE: Record<
 
 function resolveTierKey(machineKey: string): TierKey {
   const k = machineKey.toLowerCase();
-  if (k.includes("founding")) return "subscriber"; // treated as consumer-only
-  if (k.includes("vip")) return "vip";
-  if (k.includes("pro")) return "pro";
-  if (k.includes("subscriber") || k.includes("listener") || k.includes("premium"))
-    return "subscriber";
-  return "free";
+  if (k.includes('founding')) return 'subscriber'; // treated as consumer-only
+  if (k.includes('vip')) return 'vip';
+  if (k.includes('pro')) return 'pro';
+  if (k.includes('subscriber') || k.includes('listener') || k.includes('premium'))
+    return 'subscriber';
+  return 'free';
 }
 
 function isAnnualPlan(plan: PublicSubscriptionPlan): boolean {
   return (
-    plan.billingIntervalUnit === "year" ||
-    (plan.billingIntervalUnit === "month" && plan.billingIntervalCount >= 10)
+    plan.billingIntervalUnit === 'year' ||
+    (plan.billingIntervalUnit === 'month' && plan.billingIntervalCount >= 10)
   );
 }
 
@@ -112,8 +108,8 @@ function isFreePlan(plan: PublicSubscriptionPlan): boolean {
 }
 
 function formatPriceLabel(plan: PublicSubscriptionPlan): string {
-  if (isFreePlan(plan)) return "Free";
-  if (!plan.amount) return "Free";
+  if (isFreePlan(plan)) return 'Free';
+  if (!plan.amount) return 'Free';
   if (isAnnualPlan(plan)) {
     return `${formatCurrency(String(plan.amount), plan.currency)} / mo`;
   }
@@ -130,7 +126,7 @@ function computeSavingsPct(
       !isAnnualPlan(p) &&
       !isFreePlan(p) &&
       p.label === annualPlan.label &&
-      p.billingIntervalUnit === "month" &&
+      p.billingIntervalUnit === 'month' &&
       p.billingIntervalCount === 1,
   );
   if (!monthlyPlan?.amount) return null;
@@ -150,18 +146,18 @@ function isCurrentPlan(
 
 function resolveEntitlementStatus(
   entitlement: EntitlementState | null | undefined,
-): "active" | "grace" | "lapsed" | "none" {
-  if (!entitlement) return "none";
+): 'active' | 'grace' | 'lapsed' | 'none' {
+  if (!entitlement) return 'none';
   const s = entitlement.status.toLowerCase();
-  if (s === "active") return "active";
-  if (s.includes("grace")) return "grace";
-  if (s.includes("cancel") || s.includes("expired") || s.includes("lapsed")) return "lapsed";
-  return "active";
+  if (s === 'active') return 'active';
+  if (s.includes('grace')) return 'grace';
+  if (s.includes('cancel') || s.includes('expired') || s.includes('lapsed')) return 'lapsed';
+  return 'active';
 }
 
 function formatCapabilityFallback(capability: string): string {
-  const tail = capability.split(".").at(-1) ?? capability;
-  return tail.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const tail = capability.split('.').at(-1) ?? capability;
+  return tail.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function getCapabilityDetails(
@@ -173,8 +169,8 @@ function getCapabilityDetails(
     key: capability,
     label: formatCapabilityFallback(capability),
     shortLabel: formatCapabilityFallback(capability),
-    description: "",
-    group: "Plan",
+    description: '',
+    group: 'Plan',
     sortOrder: index + 1,
   }));
 }
@@ -197,9 +193,14 @@ function UsageBar({ used, limit }: { used: number; limit: number | null }) {
   );
 }
 const bar = StyleSheet.create({
-  track: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.10)", overflow: "hidden" },
-  fill: { height: "100%", borderRadius: 3, backgroundColor: tokens.colors.accent },
-  warn: { backgroundColor: "#FF8C42" },
+  track: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    overflow: 'hidden',
+  },
+  fill: { height: '100%', borderRadius: 3, backgroundColor: tokens.colors.accent },
+  warn: { backgroundColor: '#FF8C42' },
 });
 
 // ─── Plan card ────────────────────────────────────────────────────────────────
@@ -215,7 +216,7 @@ function PlanCard({
 }: {
   plan: PublicSubscriptionPlan;
   tierKey: TierKey;
-  palette: typeof TIER_PALETTE[TierKey];
+  palette: (typeof TIER_PALETTE)[TierKey];
   isCurrent: boolean;
   savingsPct: number | null;
   allPlans: PublicSubscriptionPlan[];
@@ -241,7 +242,9 @@ function PlanCard({
             <Ionicons name={palette.icon} size={20} color={palette.color} />
           </View>
           <View style={s.cardMeta}>
-            <View style={[s.tierChip, { backgroundColor: palette.bg, borderColor: palette.border }]}>
+            <View
+              style={[s.tierChip, { backgroundColor: palette.bg, borderColor: palette.border }]}
+            >
               <Text style={[s.tierChipText, { color: palette.color }]}>{palette.label}</Text>
             </View>
             <Text style={s.cardTitle}>{plan.label}</Text>
@@ -254,8 +257,15 @@ function PlanCard({
               </View>
             )}
             {savingsPct !== null && (
-              <View style={[s.savingsBadge, { backgroundColor: palette.bg, borderColor: palette.border }]}>
-                <Text style={[s.savingsBadgeText, { color: palette.color }]}>SAVE {savingsPct}%</Text>
+              <View
+                style={[
+                  s.savingsBadge,
+                  { backgroundColor: palette.bg, borderColor: palette.border },
+                ]}
+              >
+                <Text style={[s.savingsBadgeText, { color: palette.color }]}>
+                  SAVE {savingsPct}%
+                </Text>
               </View>
             )}
           </View>
@@ -275,8 +285,12 @@ function PlanCard({
 
         {/* CTA */}
         {!isCurrent ? (
-          <AnimatedPressable onPress={onUpgrade} scaleValue={0.93} style={[s.cta, { backgroundColor: palette.color }]}>
-            <Text style={s.ctaLabel}>{isFree ? "Upgrade to Pro" : "Upgrade"}</Text>
+          <AnimatedPressable
+            onPress={onUpgrade}
+            scaleValue={0.93}
+            style={[s.cta, { backgroundColor: palette.color }]}
+          >
+            <Text style={s.ctaLabel}>{isFree ? 'Upgrade to Pro' : 'Upgrade'}</Text>
           </AnimatedPressable>
         ) : null}
       </View>
@@ -287,15 +301,16 @@ function PlanCard({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function PlanScreen() {
-
+  const bootstrap = useCreatorBootstrap();
   const { session } = useAuth();
+  const { customerInfo } = useSubscription();
   const presentPaywallIfNeeded = usePresentPaywallIfNeeded();
   const presentCustomerCenter = usePresentCustomerCenter();
   const restorePurchases = useRestorePurchases();
   const purchasePlan = usePurchasePlan();
 
   const paywallSessionIdRef = useRef(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `paywall-${Date.now()}`,
   );
@@ -303,16 +318,16 @@ export default function PlanScreen() {
   useEffect(() => {
     void ensureFreshSession()
       .then((fresh) => {
-        void apiFetch("/v1/public/events", {
-          method: "POST",
-          headers: { "content-type": "application/json", accept: "application/json" },
+        void apiFetch('/v1/public/events', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
           body: JSON.stringify({
-            eventType: "paywall_view",
-            subjectType: "micboxx.platform",
-            subjectId: "creator_paywall",
+            eventType: 'paywall_view',
+            subjectType: 'micboxx.platform',
+            subjectId: 'creator_paywall',
             sessionId: paywallSessionIdRef.current,
-            sourceType: "creator_app",
-            metadata: { surface: "account_plan" },
+            sourceType: 'creator_app',
+            metadata: { surface: 'account_plan' },
           }),
           accessToken: fresh?.accessToken ?? null,
         }).catch(() => undefined);
@@ -320,33 +335,51 @@ export default function PlanScreen() {
       .catch(() => undefined);
   }, []);
 
-  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
   const [isRestoring, setIsRestoring] = useState(false);
 
-  const { data: allPlans = [], isLoading: plansLoading, isError: plansError } = useGetPublicSubscriptionPlansQuery();
-  const { data: entitlement, isLoading: entitlementLoading } = useGetCurrentEntitlementsQuery(
-    { accessToken: session?.accessToken },
-    { skip: !session },
-  );
+  const {
+    data: allPlans = [],
+    isLoading: plansLoading,
+    isError: plansError,
+  } = useGetPublicSubscriptionPlansQuery();
+  const {
+    data: entitlement,
+    isLoading: entitlementLoading,
+    refetch: refetchEntitlement,
+  } = useGetCurrentEntitlementsQuery({ accessToken: session?.accessToken }, { skip: !session });
 
   const loading = plansLoading || (!!session && entitlementLoading);
 
   const entitlementStatus = resolveEntitlementStatus(entitlement);
-  const hasActivePlan = entitlementStatus === "active" || entitlementStatus === "grace";
+  const revenueCatEntitlement = customerInfo?.entitlements.active[ENTITLEMENT_PRO] ?? null;
+  const revenueCatActiveProductId = revenueCatEntitlement?.productIdentifier ?? null;
+  const revenueCatPlan = revenueCatActiveProductId
+    ? (allPlans.find((plan) => plan.storeProductId === revenueCatActiveProductId) ?? null)
+    : null;
+  const hasDrupalActivePlan = entitlementStatus === 'active' || entitlementStatus === 'grace';
+  const hasActivePlan = hasDrupalActivePlan || revenueCatPlan !== null;
   const hasAnnualPlans = allPlans.some((p) => !isFreePlan(p) && isAnnualPlan(p));
 
   const currentCapabilityDetails = getCapabilityDetails(
-    entitlement?.plan.capabilityDetails,
-    entitlement?.capabilities ?? [],
+    entitlement?.plan.capabilityDetails ?? revenueCatPlan?.capabilityDetails,
+    entitlement?.capabilities ?? revenueCatPlan?.capabilities ?? [],
   );
+  const currentPlanLabel = entitlement?.plan.label ?? revenueCatPlan?.label ?? 'MicBoxx Pro';
+  const currentPlanMachineKey = entitlement?.plan.machineKey ?? revenueCatPlan?.machineKey ?? 'pro';
+  const currentPeriodEndsAt =
+    entitlement?.period.currentPeriodEndsAt ??
+    (revenueCatEntitlement?.expirationDateMillis
+      ? Math.floor(revenueCatEntitlement.expirationDateMillis / 1000)
+      : null);
 
   const visiblePlans = allPlans.filter((p) => {
     // Allowlist: only show free, pro, and vip tiers in the creator app.
     // Subscriber/listener and founder plans are consumer-facing only.
     const tier = resolveTierKey(p.machineKey);
-    if (tier !== "free" && tier !== "pro" && tier !== "vip") return false;
+    if (tier !== 'free' && tier !== 'pro' && tier !== 'vip') return false;
     if (isFreePlan(p)) return true;
-    if (billingPeriod === "annual") return isAnnualPlan(p);
+    if (billingPeriod === 'annual') return isAnnualPlan(p);
     return !isAnnualPlan(p);
   });
 
@@ -356,12 +389,25 @@ export default function PlanScreen() {
     setIsRestoring(false);
   }
 
+  async function handleUpgrade(storeProductId: string | null | undefined) {
+    const result = storeProductId
+      ? await purchasePlan(storeProductId)
+      : await presentPaywallIfNeeded();
+
+    if (result.cancelled) {
+      Alert.alert('Purchase cancelled', 'No changes were made to your subscription.');
+    } else if (result.purchased) {
+      await Promise.allSettled([refetchEntitlement(), bootstrap.refetch()]);
+      Alert.alert('Subscription updated', 'Your plan is active.');
+    }
+  }
+
   if (plansError && !plansLoading) {
     return (
-      <SafeAreaView style={s.safe} edges={["top"]}>
+      <SafeAreaView style={s.safe} edges={['top']}>
         <ScreenHeader title="Plans" subtitle="Subscription and access" showBackButton />
         <View style={s.loadingWrap}>
-          <Text style={{ color: tokens.colors.textSecondary, fontSize: 14, textAlign: "center" }}>
+          <Text style={{ color: tokens.colors.textSecondary, fontSize: 14, textAlign: 'center' }}>
             Unable to load plans. Check your connection and try again.
           </Text>
         </View>
@@ -371,7 +417,7 @@ export default function PlanScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={s.safe} edges={["top"]}>
+      <SafeAreaView style={s.safe} edges={['top']}>
         <ScreenHeader title="Plans" subtitle="Subscription and access" showBackButton />
         <View style={s.loadingWrap}>
           <Skeleton width={140} height={20} borderRadius={10} />
@@ -383,25 +429,33 @@ export default function PlanScreen() {
   }
 
   return (
-    <SafeAreaView style={s.safe} edges={["top"]}>
+    <SafeAreaView style={s.safe} edges={['top']}>
       <ScreenHeader title="Plans" subtitle="Subscription and access" showBackButton />
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-
         {/* ── Hero ──────────────────────────────────────────────────────── */}
         <View style={s.heroWrap}>
-          {hasActivePlan && entitlement ? (
+          {hasActivePlan ? (
             (() => {
-              const tier = resolveTierKey(entitlement.plan.machineKey);
+              const tier = resolveTierKey(currentPlanMachineKey);
               const palette = TIER_PALETTE[tier];
               return (
                 <>
-                  <View style={[s.heroBadge, { backgroundColor: palette.bg, borderColor: palette.border }]}>
+                  <View
+                    style={[
+                      s.heroBadge,
+                      { backgroundColor: palette.bg, borderColor: palette.border },
+                    ]}
+                  >
                     <Ionicons name={palette.icon} size={12} color={palette.color} />
                     <Text style={[s.heroBadgeText, { color: palette.color }]}>{palette.label}</Text>
                   </View>
-                  <Text style={s.heroTitle}>{entitlement.plan.label}</Text>
-                  <Text style={s.heroSubtitle}>Your current plan</Text>
-                  {entitlementStatus === "grace" && (
+                  <Text style={s.heroTitle}>{currentPlanLabel}</Text>
+                  <Text style={s.heroSubtitle}>
+                    {hasDrupalActivePlan
+                      ? 'Your current plan'
+                      : 'Your App Store subscription is active'}
+                  </Text>
+                  {entitlementStatus === 'grace' && (
                     <View style={s.graceRow}>
                       <Ionicons name="warning-outline" size={13} color={tokens.colors.warning} />
                       <Text style={s.graceText}>Payment issue — update billing to keep access</Text>
@@ -412,7 +466,7 @@ export default function PlanScreen() {
             })()
           ) : (
             <>
-              <Text style={s.heroTitle}>Unlock the full{"\n"}creator toolkit.</Text>
+              <Text style={s.heroTitle}>Unlock the full{'\n'}creator toolkit.</Text>
               <Text style={s.heroSubtitle}>
                 Sell directly to fans, access advanced analytics, and upload faster.
               </Text>
@@ -420,25 +474,24 @@ export default function PlanScreen() {
           )}
         </View>
 
-
         {/* ── Billing toggle ────────────────────────────────────────────── */}
         {hasAnnualPlans && (
           <View style={s.toggleWrap}>
             <AnimatedPressable
-              onPress={() => setBillingPeriod("monthly")}
+              onPress={() => setBillingPeriod('monthly')}
               haptic="selection"
-              style={[s.toggleOption, billingPeriod === "monthly" && s.toggleOptionActive]}
+              style={[s.toggleOption, billingPeriod === 'monthly' && s.toggleOptionActive]}
             >
-              <Text style={[s.toggleLabel, billingPeriod === "monthly" && s.toggleLabelActive]}>
+              <Text style={[s.toggleLabel, billingPeriod === 'monthly' && s.toggleLabelActive]}>
                 Monthly
               </Text>
             </AnimatedPressable>
             <AnimatedPressable
-              onPress={() => setBillingPeriod("annual")}
+              onPress={() => setBillingPeriod('annual')}
               haptic="selection"
-              style={[s.toggleOption, billingPeriod === "annual" && s.toggleOptionActive]}
+              style={[s.toggleOption, billingPeriod === 'annual' && s.toggleOptionActive]}
             >
-              <Text style={[s.toggleLabel, billingPeriod === "annual" && s.toggleLabelActive]}>
+              <Text style={[s.toggleLabel, billingPeriod === 'annual' && s.toggleLabelActive]}>
                 Yearly
               </Text>
               <View style={s.saveChip}>
@@ -449,7 +502,7 @@ export default function PlanScreen() {
         )}
 
         {/* ── Current plan perks ────────────────────────────────────────── */}
-        {hasActivePlan && entitlement && (
+        {hasActivePlan && (
           <View style={s.section}>
             <Text style={s.sectionLabel}>What&apos;s included</Text>
             <View style={s.capList}>
@@ -464,12 +517,12 @@ export default function PlanScreen() {
                 <Text style={s.mutedText}>Full access granted via your active plan.</Text>
               )}
             </View>
-            {entitlement.period.currentPeriodEndsAt ? (
+            {currentPeriodEndsAt ? (
               <View style={s.renewRow}>
                 <Ionicons name="calendar-outline" size={13} color={tokens.colors.textSecondary} />
                 <Text style={s.renewText}>
-                  {entitlementStatus === "grace" ? "Grace period ends " : "Renews "}
-                  {new Date(entitlement.period.currentPeriodEndsAt * 1000).toLocaleDateString()}
+                  {entitlementStatus === 'grace' ? 'Grace period ends ' : 'Renews '}
+                  {new Date(currentPeriodEndsAt * 1000).toLocaleDateString()}
                 </Text>
               </View>
             ) : null}
@@ -482,20 +535,23 @@ export default function PlanScreen() {
         {/* ── Plan cards ────────────────────────────────────────────────── */}
         {visiblePlans.length > 0 && (
           <View style={s.section}>
-            <Text style={s.sectionLabel}>{hasActivePlan ? "All plans" : "Choose a plan"}</Text>
+            <Text style={s.sectionLabel}>{hasActivePlan ? 'All plans' : 'Choose a plan'}</Text>
             <View style={s.cardList}>
               {visiblePlans.map((plan) => {
                 const tierKey = resolveTierKey(plan.machineKey);
                 const palette = TIER_PALETTE[tierKey];
                 const isCurrent = isCurrentPlan(plan, entitlement);
+                const isRevenueCatCurrent =
+                  revenueCatActiveProductId !== null &&
+                  plan.storeProductId === revenueCatActiveProductId;
                 const savingsPct =
-                  billingPeriod === "annual" && isAnnualPlan(plan)
+                  billingPeriod === 'annual' && isAnnualPlan(plan)
                     ? computeSavingsPct(plan, allPlans)
                     : null;
 
                 // Free card upgrades to pro; all other cards purchase themselves.
                 const upgradeTarget = isFreePlan(plan)
-                  ? visiblePlans.find((p) => resolveTierKey(p.machineKey) === "pro")
+                  ? visiblePlans.find((p) => resolveTierKey(p.machineKey) === 'pro')
                   : plan;
 
                 return (
@@ -504,16 +560,12 @@ export default function PlanScreen() {
                     plan={plan}
                     tierKey={tierKey}
                     palette={palette}
-                    isCurrent={isCurrent}
+                    isCurrent={isCurrent || isRevenueCatCurrent}
                     savingsPct={savingsPct}
                     allPlans={allPlans}
                     onUpgrade={() => {
                       const productId = upgradeTarget?.storeProductId;
-                      if (productId) {
-                        void purchasePlan(productId);
-                      } else {
-                        void presentPaywallIfNeeded();
-                      }
+                      void handleUpgrade(productId);
                     }}
                   />
                 );
@@ -525,29 +577,30 @@ export default function PlanScreen() {
         {/* ── Footer ────────────────────────────────────────────────────── */}
         <View style={s.footer}>
           <Text style={s.footerDisclaimer}>
-            Auto-renewable subscription. Payment will be charged to your Apple ID at confirmation of purchase and will automatically renew unless canceled at least 24 hours before the end of the current period. Manage or cancel in your Apple ID Account Settings.
+            Auto-renewable subscription. Payment will be charged to your Apple ID at confirmation of
+            purchase and will automatically renew unless canceled at least 24 hours before the end
+            of the current period. Manage or cancel in your Apple ID Account Settings.
           </Text>
           <View style={s.footerLinks}>
             <Text
               style={s.footerLink}
-              onPress={() => void Linking.openURL("https://micboxx.com/terms")}
+              onPress={() => void Linking.openURL('https://micboxx.com/terms')}
             >
               Terms of Use
             </Text>
             <Text style={s.footerDot}>·</Text>
             <Text
               style={s.footerLink}
-              onPress={() => void Linking.openURL("https://micboxx.com/privacy")}
+              onPress={() => void Linking.openURL('https://micboxx.com/privacy')}
             >
               Privacy Policy
             </Text>
             <Text style={s.footerDot}>·</Text>
             <Text style={s.footerLink} onPress={() => void handleRestore()}>
-              {isRestoring ? "Restoring…" : "Restore Purchases"}
+              {isRestoring ? 'Restoring…' : 'Restore Purchases'}
             </Text>
           </View>
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -557,85 +610,171 @@ export default function PlanScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: tokens.colors.bgApp },
-  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 24 },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   scroll: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 140, gap: 20 },
 
   heroWrap: { gap: 10, paddingVertical: 4 },
   heroBadge: {
-    alignSelf: "flex-start", flexDirection: "row", alignItems: "center",
-    gap: 5, paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: tokens.radii.pill, borderWidth: 1,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: tokens.radii.pill,
+    borderWidth: 1,
   },
-  heroBadgeText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
-  heroTitle: { color: tokens.colors.textPrimary, fontSize: 26, fontWeight: "800", lineHeight: 33 },
+  heroBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
+  heroTitle: { color: tokens.colors.textPrimary, fontSize: 26, fontWeight: '800', lineHeight: 33 },
   heroSubtitle: { color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 21, maxWidth: 320 },
-  graceRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
+  graceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   graceText: { color: tokens.colors.warning, fontSize: 13, flexShrink: 1, lineHeight: 18 },
 
   usageCard: {
     backgroundColor: tokens.colors.panelGlassStrong,
-    borderRadius: tokens.radii.xl, borderWidth: 1,
-    borderColor: tokens.colors.borderAccent, padding: 16, gap: 10,
+    borderRadius: tokens.radii.xl,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderAccent,
+    padding: 16,
+    gap: 10,
   },
-  usageLabelRow: { flexDirection: "row", justifyContent: "space-between" },
-  usageLabel: { color: tokens.colors.textSecondary, fontSize: 13, fontWeight: "600" },
-  usageCount: { color: tokens.colors.textPrimary, fontSize: 13, fontWeight: "700" },
-  usageWarning: { color: "#FF8C42", fontSize: 12, lineHeight: 18 },
+  usageLabelRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  usageLabel: { color: tokens.colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  usageCount: { color: tokens.colors.textPrimary, fontSize: 13, fontWeight: '700' },
+  usageWarning: { color: '#FF8C42', fontSize: 12, lineHeight: 18 },
 
   toggleWrap: {
-    flexDirection: "row", alignSelf: "center",
-    borderRadius: tokens.radii.pill, borderWidth: 1,
+    flexDirection: 'row',
+    alignSelf: 'center',
+    borderRadius: tokens.radii.pill,
+    borderWidth: 1,
     borderColor: tokens.colors.borderSubtle,
-    backgroundColor: tokens.colors.bgSurface, padding: 3, gap: 2,
+    backgroundColor: tokens.colors.bgSurface,
+    padding: 3,
+    gap: 2,
   },
-  toggleOption: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 18, paddingVertical: 8, borderRadius: tokens.radii.pill },
+  toggleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: tokens.radii.pill,
+  },
   toggleOptionActive: { backgroundColor: tokens.colors.bgElevated },
-  toggleLabel: { color: tokens.colors.textSecondary, fontSize: 13, fontWeight: "600" },
+  toggleLabel: { color: tokens.colors.textSecondary, fontSize: 13, fontWeight: '600' },
   toggleLabelActive: { color: tokens.colors.textPrimary },
-  saveChip: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: tokens.radii.pill, backgroundColor: "rgba(0,179,166,0.18)" },
-  saveChipText: { color: "#00B3A6", fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
+  saveChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: tokens.radii.pill,
+    backgroundColor: 'rgba(0,179,166,0.18)',
+  },
+  saveChipText: { color: '#00B3A6', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
 
   section: { gap: 10 },
-  sectionLabel: { color: tokens.colors.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
-  capList: { borderRadius: tokens.radii.xl, backgroundColor: tokens.colors.bgSurface, borderWidth: 1, borderColor: tokens.colors.borderSubtle, padding: 16, gap: 10 },
-  capRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  sectionLabel: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  capList: {
+    borderRadius: tokens.radii.xl,
+    backgroundColor: tokens.colors.bgSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+    padding: 16,
+    gap: 10,
+  },
+  capRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   capText: { color: tokens.colors.textPrimary, fontSize: 13, flex: 1 },
   mutedText: { color: tokens.colors.textSecondary, fontSize: 13, lineHeight: 19 },
-  renewRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  renewRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   renewText: { color: tokens.colors.textSecondary, fontSize: 12 },
   manageButton: {
-    alignSelf: "flex-start", paddingHorizontal: 16, paddingVertical: 10,
-    borderRadius: tokens.radii.pill, borderWidth: 1,
-    borderColor: tokens.colors.borderAccent, backgroundColor: tokens.colors.accentDim,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: tokens.radii.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderAccent,
+    backgroundColor: tokens.colors.accentDim,
   },
-  manageButtonLabel: { color: tokens.colors.textPrimary, fontSize: 13, fontWeight: "700" },
+  manageButtonLabel: { color: tokens.colors.textPrimary, fontSize: 13, fontWeight: '700' },
 
   cardList: { gap: 16 },
-  bestValueRow: { alignItems: "center", marginBottom: 8 },
+  bestValueRow: { alignItems: 'center', marginBottom: 8 },
   bestValuePill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: tokens.radii.pill },
-  bestValueText: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2 },
+  bestValueText: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
   card: { borderRadius: tokens.radii.xl, borderWidth: 1, padding: 20, gap: 18 },
-  cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
-  iconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
   cardMeta: { flex: 1, gap: 4 },
-  tierChip: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: tokens.radii.pill, borderWidth: 1 },
-  tierChipText: { fontSize: 9, fontWeight: "800", letterSpacing: 0.7 },
-  cardTitle: { color: tokens.colors.textPrimary, fontSize: 16, fontWeight: "700" },
-  priceCol: { alignItems: "flex-end", gap: 5 },
-  price: { fontSize: 14, fontWeight: "700" },
-  currentBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: tokens.radii.pill, backgroundColor: tokens.colors.accent },
-  currentBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  savingsBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: tokens.radii.pill, borderWidth: 1 },
-  savingsBadgeText: { fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
+  tierChip: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: tokens.radii.pill,
+    borderWidth: 1,
+  },
+  tierChipText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.7 },
+  cardTitle: { color: tokens.colors.textPrimary, fontSize: 16, fontWeight: '700' },
+  priceCol: { alignItems: 'flex-end', gap: 5 },
+  price: { fontSize: 14, fontWeight: '700' },
+  currentBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: tokens.radii.pill,
+    backgroundColor: tokens.colors.accent,
+  },
+  currentBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  savingsBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: tokens.radii.pill,
+    borderWidth: 1,
+  },
+  savingsBadgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   capBlock: { gap: 8 },
-  cta: { alignItems: "center", paddingVertical: 14, borderRadius: tokens.radii.pill },
-  ctaLabel: { color: "#fff", fontSize: 14, fontWeight: "700" },
-  freeCta: { alignItems: "center", paddingVertical: 13, borderRadius: tokens.radii.pill, borderWidth: 1 },
-  freeCtaLabel: { fontSize: 13, fontWeight: "600" },
+  cta: { alignItems: 'center', paddingVertical: 14, borderRadius: tokens.radii.pill },
+  ctaLabel: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  freeCta: {
+    alignItems: 'center',
+    paddingVertical: 13,
+    borderRadius: tokens.radii.pill,
+    borderWidth: 1,
+  },
+  freeCtaLabel: { fontSize: 13, fontWeight: '600' },
 
   footer: { gap: 12, paddingTop: 8 },
-  footerDisclaimer: { color: tokens.colors.textSecondary, fontSize: 11, lineHeight: 16, textAlign: "center", opacity: 0.7 },
-  footerLinks: { flexDirection: "row", alignItems: "center", justifyContent: "center", flexWrap: "wrap", gap: 6 },
-  footerLink: { color: tokens.colors.textSecondary, fontSize: 12, fontWeight: "500", textDecorationLine: "underline" },
+  footerDisclaimer: {
+    color: tokens.colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: 'center',
+    opacity: 0.7,
+  },
+  footerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  footerLink: {
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
   footerDot: { color: tokens.colors.textSecondary, fontSize: 12 },
 });

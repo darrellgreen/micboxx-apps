@@ -48,6 +48,26 @@ interface DrawerItem {
 
 const AccountDrawerContext = createContext<AccountDrawerContextValue | null>(null);
 
+const ROLE_LABELS: Record<string, string> = {
+  micboxx_creator: 'Artist',
+  micboxx_subscriber: 'Subscriber',
+  micboxx_fan: 'Fan',
+  administrator: 'Admin',
+  editor: 'Editor',
+  subscriber: 'Listener',
+};
+
+function formatRoleLabel(role?: string): string {
+  if (!role) return 'Listener';
+  return (
+    ROLE_LABELS[role] ??
+    role
+      .replace(/micboxx_/i, '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}
+
 export function AccountDrawerProvider({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const { session, signOut } = useAuth();
@@ -243,7 +263,12 @@ export function AccountDrawerProvider({ children }: PropsWithChildren) {
                             {session ? `@${session.user.username}` : 'Not Signed In'}
                           </Text>
 
-                          <Pill label="Listener" active variant="accent" style={styles.rolePill} />
+                          <Pill
+                            label={formatRoleLabel(session?.user.roles[0])}
+                            active
+                            variant="accent"
+                            style={styles.rolePill}
+                          />
                         </View>
 
                         <View style={styles.heroIdentityChevron}>

@@ -1,34 +1,33 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import {
-    ActivityIndicator,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { SectionHeader } from "@/components/discover";
-import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
-import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import type { PublicRoomSummary } from "@micboxx/contracts";
-import { useGetPublicRoomsQuery } from "@micboxx/api";
-import { tokens } from "@micboxx/theme";
-import { Skeleton, ErrorState, EmptyState } from "@micboxx/ui";
+import { SectionHeader } from '@/components/discover';
+import { SoundwaveTabIcon } from '@/components/icons/SoundwaveTabIcon';
+import { ScreenHeader } from '@/components/navigation/ScreenHeader';
+import type { PublicRoomSummary } from '@micboxx/contracts';
+import { useGetPublicRoomsQuery } from '@micboxx/api';
+import { tokens } from '@micboxx/theme';
+import { Skeleton, ErrorState, EmptyState } from '@micboxx/ui';
 
 function roomKey(room: PublicRoomSummary): string {
   return room.release_identifier || `${room.release_ref_type}:${room.release_ref_id}`;
 }
 
-function dedupeRooms(
-  rooms: PublicRoomSummary[],
-  seen = new Set<string>(),
-): PublicRoomSummary[] {
+function dedupeRooms(rooms: PublicRoomSummary[], seen = new Set<string>()): PublicRoomSummary[] {
   const deduped: PublicRoomSummary[] = [];
   for (const room of rooms) {
     const key = roomKey(room);
@@ -48,7 +47,7 @@ function formatRoomTime(value: number | null | undefined): string | null {
 
   const diffSeconds = Math.max(0, Math.floor(Date.now() / 1000) - value);
   if (diffSeconds < 60) {
-    return "just now";
+    return 'just now';
   }
   if (diffSeconds < 3600) {
     return `${Math.floor(diffSeconds / 60)}m ago`;
@@ -57,24 +56,24 @@ function formatRoomTime(value: number | null | undefined): string | null {
     return `${Math.floor(diffSeconds / 3600)}h ago`;
   }
   const days = Math.floor(diffSeconds / 86400);
-  return days === 1 ? "yesterday" : `${days}d ago`;
+  return days === 1 ? 'yesterday' : `${days}d ago`;
 }
 
 function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
     maximumFractionDigits: 0,
   }).format(cents / 100);
 }
 
 function formatPresenceChipLabel(count: number): string {
   if (count <= 0) {
-    return "Listening room is open";
+    return 'Listening room is open';
   }
 
   if (count === 1) {
-    return "Just you here";
+    return 'Just you here';
   }
 
   return `${count} people in the Room`;
@@ -83,11 +82,11 @@ function formatPresenceChipLabel(count: number): string {
 export default function RoomsScreen() {
   const router = useRouter();
   const activeRoomsQuery = useGetPublicRoomsQuery({
-    filter: "artist_in_room",
+    filter: 'artist_in_room',
     limit: 6,
   });
   const availableRoomsQuery = useGetPublicRoomsQuery({
-    filter: "all",
+    filter: 'all',
     limit: 24,
   });
   const { activeRooms, availableRooms } = useMemo(() => {
@@ -109,12 +108,8 @@ export default function RoomsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScreenHeader
-        title="Rooms"
-        subtitle="Live release spaces"
-        leftIcon="menu"
-      />
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenHeader title="Rooms" subtitle="Live release spaces" leftIcon="menu" />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -130,8 +125,8 @@ export default function RoomsScreen() {
           <Text style={styles.eyebrow}>Rooms</Text>
           <SectionHeader bold="Release" light="Rooms" />
           <Text style={styles.headingCopy}>
-            Step into live spaces around releases. Rooms show real listening
-            moments, artist visits, support, and history without staged activity.
+            Step into live spaces around releases. Rooms show real listening moments, artist visits,
+            support, and history without staged activity.
           </Text>
         </View>
 
@@ -177,12 +172,9 @@ export default function RoomsScreen() {
   );
 }
 
-function enterRoom(
-  router: ReturnType<typeof useRouter>,
-  room: PublicRoomSummary,
-) {
+function enterRoom(router: ReturnType<typeof useRouter>, room: PublicRoomSummary) {
   router.push({
-    pathname: "/album/[slug]/room",
+    pathname: '/album/[slug]/room',
     params: { slug: room.release_identifier },
   } as never);
 }
@@ -204,57 +196,39 @@ function RoomSection({
       </View>
       <View style={styles.list}>
         {rooms.map((room) => (
-          <RoomCard
-            key={`${title}-${roomKey(room)}`}
-            room={room}
-            onPress={() => onEnter(room)}
-          />
+          <RoomCard key={`${title}-${roomKey(room)}`} room={room} onPress={() => onEnter(room)} />
         ))}
       </View>
     </View>
   );
 }
 
-function RoomCard({
-  room,
-  onPress,
-}: {
-  room: PublicRoomSummary;
-  onPress: () => void;
-}) {
+function RoomCard({ room, onPress }: { room: PublicRoomSummary; onPress: () => void }) {
   const canEnter = room.capabilities.can_enter_room;
   const hasVisits =
-    room.has_visits ??
-    Boolean(room.last_visited_at ?? room.last_activity_at ?? room.awakened_at);
+    room.has_visits ?? Boolean(room.last_visited_at ?? room.last_activity_at ?? room.awakened_at);
   const timeLabel = formatRoomTime(
     room.last_visited_at ?? room.last_activity_at ?? room.awakened_at,
   );
   const stateLine =
     room.room_summary_text ||
     room.state_line ||
-    (hasVisits ? "Room has history." : "No one's been here yet. Be the first.");
+    (hasVisits ? 'Room has history.' : "No one's been here yet. Be the first.");
   const activePresenceCount =
-    typeof room.active_presence_count === "number" &&
-    room.active_presence_count >= 0
+    typeof room.active_presence_count === 'number' && room.active_presence_count >= 0
       ? room.active_presence_count
       : null;
   const presenceStateLine =
-    activePresenceCount !== null
-      ? formatPresenceChipLabel(activePresenceCount)
-      : stateLine;
+    activePresenceCount !== null ? formatPresenceChipLabel(activePresenceCount) : stateLine;
   const supportGoalCents = room.support_enabled ? room.support_goal_cents : null;
-  const supportMomentumVisible =
-    supportGoalCents !== null && supportGoalCents > 0;
+  const supportMomentumVisible = supportGoalCents !== null && supportGoalCents > 0;
   const supportProgressPercent = supportMomentumVisible
     ? Math.min((room.support_total_cents / supportGoalCents) * 100, 100)
     : 0;
-  const showPrimaryBadge =
-    hasVisits && room.primary_room_badge.trim().length > 0;
+  const showPrimaryBadge = hasVisits && room.primary_room_badge.trim().length > 0;
   const footerMetaLabel =
     activePresenceCount !== null
-      ? `${activePresenceCount} ${
-          activePresenceCount === 1 ? "PERSON" : "PEOPLE"
-        } HERE`
+      ? `${activePresenceCount} ${activePresenceCount === 1 ? 'PERSON' : 'PEOPLE'} HERE`
       : hasVisits && timeLabel
         ? `LAST ACTIVE ${timeLabel.toUpperCase()}`
         : hasVisits && showPrimaryBadge
@@ -271,15 +245,24 @@ function RoomCard({
         pressed && styles.pressed,
       ]}
     >
+      {/* Raw artwork scaled up slightly so blur edge artifacts are clipped */}
       {room.artwork_url ? (
-        <Image
-          source={{ uri: room.artwork_url }}
-          style={styles.cardBackdrop}
-          contentFit="cover"
-          blurRadius={26}
-        />
+        <Image source={{ uri: room.artwork_url }} style={styles.cardBackdrop} contentFit="cover" />
       ) : null}
-      <View style={styles.cardOverlay} />
+      {/* BlurView applies real native blur over the artwork, same as CSS blur-2xl */}
+      <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFillObject} />
+      {/* Transparent at top so blurred art color shows, darkens to near-black at bottom */}
+      <LinearGradient
+        colors={['transparent', 'rgba(8,9,11,0.65)', '#08090b']}
+        locations={[0, 0.55, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
+      {/* Subtle emerald-300 glow at top matching the web */}
+      <LinearGradient
+        colors={['rgba(110,231,183,0.10)', 'transparent']}
+        locations={[0, 0.5]}
+        style={styles.cardGlow}
+      />
 
       <View style={styles.cardTop}>
         <View style={styles.roomBadge}>
@@ -317,7 +300,7 @@ function RoomCard({
 
       <View style={styles.roomStateRow}>
         <Ionicons
-          name={activePresenceCount !== null ? "people-outline" : "sparkles-outline"}
+          name={activePresenceCount !== null ? 'people-outline' : 'sparkles-outline'}
           size={15}
           color={tokens.colors.accentLight}
         />
@@ -331,20 +314,15 @@ function RoomCard({
           <View style={styles.supportHeading}>
             <Text style={styles.supportTitle}>Release momentum</Text>
             <Text style={styles.supportState}>
-              {room.support_goal_reached ? "Goal reached" : "Building"}
+              {room.support_goal_reached ? 'Goal reached' : 'Building'}
             </Text>
           </View>
           <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${supportProgressPercent}%` },
-              ]}
-            />
+            <View style={[styles.progressFill, { width: `${supportProgressPercent}%` }]} />
           </View>
           <Text numberOfLines={1} style={styles.supportCopy}>
             {room.support_goal_reached
-              ? "The next release moment is ready."
+              ? 'The next release moment is ready.'
               : `Bumped ${formatCurrency(room.support_total_cents)} toward ${formatCurrency(
                   supportGoalCents,
                 )} next moment`}
@@ -382,16 +360,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   eyebrow: {
-    alignSelf: "flex-start",
-    overflow: "hidden",
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 5,
     backgroundColor: tokens.colors.accentDim,
     color: tokens.colors.accentLight,
     fontSize: 11,
-    fontWeight: "900",
-    textTransform: "uppercase",
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   headingCopy: {
     color: tokens.colors.textSecondary,
@@ -399,7 +377,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   statusCard: {
-    alignItems: "center",
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: tokens.colors.borderSubtle,
     borderRadius: 8,
@@ -410,14 +388,14 @@ const styles = StyleSheet.create({
   statusTitle: {
     color: tokens.colors.textPrimary,
     fontSize: 16,
-    fontWeight: "900",
-    textAlign: "center",
+    fontWeight: '900',
+    textAlign: 'center',
   },
   statusText: {
     color: tokens.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
-    textAlign: "center",
+    textAlign: 'center',
   },
   emptyAction: {
     marginTop: 4,
@@ -427,30 +405,30 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.accent,
   },
   emptyActionText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 13,
-    fontWeight: "900",
+    fontWeight: '900',
   },
   section: { gap: 12 },
   sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   sectionTitle: {
     color: tokens.colors.textPrimary,
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: '900',
   },
   list: { gap: 14 },
   card: {
     minHeight: 260,
-    overflow: "hidden",
+    overflow: 'hidden',
     borderRadius: 8,
-    backgroundColor: "#0f1216",
+    backgroundColor: '#0f1216',
     padding: 16,
-    justifyContent: "space-between",
-    shadowColor: "#000",
+    justifyContent: 'space-between',
+    shadowColor: '#000',
     shadowOpacity: 0.28,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 14 },
@@ -460,53 +438,51 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.82 },
   cardBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.5,
-    transform: [{ scale: 1.12 }],
+    transform: [{ scale: 1.15 }],
   },
-  cardOverlay: {
+  cardGlow: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(8,9,11,0.72)",
   },
   cardTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     gap: 12,
   },
   roomBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 5,
     borderWidth: 1,
-    borderColor: "rgba(215,255,251,0.20)",
+    borderColor: 'rgba(215,255,251,0.20)',
     borderRadius: 14,
     paddingHorizontal: 9,
     paddingVertical: 5,
-    backgroundColor: "rgba(0,179,166,0.12)",
+    backgroundColor: 'rgba(0,179,166,0.12)',
   },
   roomBadgeText: {
     color: tokens.colors.accentLight,
     fontSize: 10,
-    fontWeight: "900",
-    textTransform: "uppercase",
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   primaryBadge: {
-    maxWidth: "52%",
+    maxWidth: '52%',
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
+    borderColor: 'rgba(255,255,255,0.10)',
     borderRadius: 14,
     paddingHorizontal: 9,
     paddingVertical: 5,
-    backgroundColor: "rgba(0,0,0,0.28)",
+    backgroundColor: 'rgba(0,0,0,0.28)',
   },
   primaryBadgeText: {
-    color: "rgba(255,255,255,0.78)",
+    color: 'rgba(255,255,255,0.78)',
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: '800',
   },
   cardBody: {
-    flexDirection: "row",
-    alignItems: "flex-end",
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     gap: 12,
     marginTop: 42,
   },
@@ -514,109 +490,109 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: 'rgba(255,255,255,0.12)',
     borderRadius: 8,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   artworkFallback: {
-    color: "rgba(255,255,255,0.45)",
+    color: 'rgba(255,255,255,0.45)',
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: '800',
   },
   cardCopy: { flex: 1, minWidth: 0 },
   title: {
     color: tokens.colors.textPrimary,
     fontSize: 19,
-    fontWeight: "900",
+    fontWeight: '900',
   },
   artist: {
-    color: "rgba(255,255,255,0.58)",
+    color: 'rgba(255,255,255,0.58)',
     fontSize: 14,
     marginTop: 2,
   },
   roomStateRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
     marginTop: 16,
   },
   stateLine: {
     flex: 1,
-    color: "rgba(255,255,255,0.76)",
+    color: 'rgba(255,255,255,0.76)',
     fontSize: 14,
   },
   supportBox: {
     marginTop: 14,
     borderWidth: 1,
-    borderColor: "rgba(215,255,251,0.15)",
+    borderColor: 'rgba(215,255,251,0.15)',
     borderRadius: 8,
-    backgroundColor: "rgba(0,179,166,0.08)",
+    backgroundColor: 'rgba(0,179,166,0.08)',
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
   },
   supportHeading: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 12,
   },
   supportTitle: {
-    color: "rgba(215,255,251,0.82)",
+    color: 'rgba(215,255,251,0.82)',
     fontSize: 10,
-    fontWeight: "900",
-    textTransform: "uppercase",
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   supportState: {
-    color: "rgba(255,255,255,0.46)",
+    color: 'rgba(255,255,255,0.46)',
     fontSize: 10,
-    fontWeight: "900",
-    textTransform: "uppercase",
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   progressTrack: {
     height: 6,
-    overflow: "hidden",
+    overflow: 'hidden',
     borderRadius: 6,
-    backgroundColor: "rgba(255,255,255,0.10)",
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   progressFill: {
-    height: "100%",
+    height: '100%',
     borderRadius: 6,
     backgroundColor: tokens.colors.accentLight,
   },
   supportCopy: {
-    color: "rgba(255,255,255,0.68)",
+    color: 'rgba(255,255,255,0.68)',
     fontSize: 11,
   },
   cardFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 12,
     marginTop: 16,
   },
   footerMeta: {
     flex: 1,
-    color: "rgba(255,255,255,0.38)",
+    color: 'rgba(255,255,255,0.38)',
     fontSize: 11,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   enterButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
     borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   enterButtonText: {
-    color: "#050708",
+    color: '#050708',
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: '900',
   },
 });
