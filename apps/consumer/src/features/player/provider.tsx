@@ -598,23 +598,30 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     persistQueueState(state.queue);
   }, [state.queue]);
 
+  // Only persist the session when paused or the track changes — not on every
+  // position tick. Position is saved at pause time so resume is accurate;
+  // saving every second just keeps a debounce timer alive during playback
+  // which fires async storage writes mid-animation when the modal closes.
+  const playbackState = state.nowPlaying.playbackState;
+  const sessionTrackId = state.nowPlaying.currentItem?.id ?? null;
+  const isRoomQueue = Boolean(state.queue.context?.id?.startsWith("room:"));
   useEffect(() => {
-    if (isRoomOwnedQueue(state.queue)) {
+    if (isRoomQueue) {
       void clearPersistedPlaybackSession();
       return;
     }
 
+    if (playbackState !== "paused") {
+      return;
+    }
+
     persistPlaybackSession({
-      queue: state.queue,
-      lastKnownTrackId: state.nowPlaying.currentItem?.id ?? null,
-      lastKnownPositionSec: state.nowPlaying.position.positionSec,
+      queue: stateRef.current.queue,
+      lastKnownTrackId: sessionTrackId,
+      lastKnownPositionSec: stateRef.current.nowPlaying.position.positionSec,
       updatedAt: new Date().toISOString(),
     });
-  }, [
-    state.queue,
-    state.nowPlaying.currentItem?.id,
-    state.nowPlaying.position.positionSec,
-  ]);
+  }, [isRoomQueue, sessionTrackId, playbackState]);
 
   const play = useCallback(async (): Promise<PlayerActionResult> => {
     try {

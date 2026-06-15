@@ -6,11 +6,11 @@ import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated"
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-    PlayerActions,
-    PlayerArtworkRing,
-    PlayerTopBar,
-    PlayerTrackInfo,
-    PlayerTransport,
+  PlayerActions,
+  PlayerArtworkRing,
+  PlayerTopBar,
+  PlayerTrackInfo,
+  PlayerTransport,
 } from "@/components/player";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
 import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
@@ -23,10 +23,10 @@ import {
   selectHasPrevious,
 } from "@/features/player/selectors";
 import { useTrackSocialState } from "@/features/social/hooks/useTrackSocialState";
-import type { PlayerItem } from "@micboxx/contracts";
 import { useGetTrackPageQuery } from "@micboxx/api";
+import type { PlayerItem } from "@micboxx/contracts";
 import { tokens } from "@micboxx/theme";
-import { Skeleton } from "@micboxx/ui";
+import { BodyText, Skeleton } from "@micboxx/ui";
 
 export default function NowPlayingScreen() {
   const router = useRouter();
@@ -44,9 +44,11 @@ export default function NowPlayingScreen() {
    * Always fetch by slug so we can display track info independently
    * of what the global player is currently playing.
    */
-  const { data: trackPageData } = useGetTrackPageQuery(slug ?? "", {
-    skip: !slug,
-  });
+  const {
+    data: trackPageData,
+    isLoading: trackLoading,
+    isError: trackError,
+  } = useGetTrackPageQuery(slug ?? "", { skip: !slug });
 
   /*
    * The "display item" is the track we show on this screen.
@@ -75,21 +77,20 @@ export default function NowPlayingScreen() {
 
   /*
    * When we start a different track, the engine's position still holds
-   * the old track's values for a frame or two. Track the ID we just
+   * the old track's values for a frame or two. We track the ID we just
    * started so we can force progress to 0 until the engine catches up.
+   * Reading/clearing a ref during render is safe here — refs don't trigger
+   * re-renders, and this avoids a setState on every position tick.
    */
   const justStartedIdRef = useRef<string | null>(null);
-  if (
-    justStartedIdRef.current &&
+  const engineCaughtUp =
+    justStartedIdRef.current !== null &&
     currentItem?.id === justStartedIdRef.current &&
-    position.positionSec < 1
-  ) {
-    // Engine has caught up — clear the flag
+    position.positionSec >= 1;
+  if (engineCaughtUp) {
     justStartedIdRef.current = null;
   }
-  const positionStale =
-    justStartedIdRef.current !== null &&
-    currentItem?.id === justStartedIdRef.current;
+  const positionStale = justStartedIdRef.current !== null;
 
   const track = trackPageData?.track ?? null;
   const {
@@ -100,6 +101,7 @@ export default function NowPlayingScreen() {
     clearInteractionError,
     toggleLike,
   } = useTrackSocialState({
+    enabled: !!track,
     trackUuid: track?.uuid ?? "",
     trackOwnerUid: track?.artist?.uuid ?? null,
     trackTitle: track?.title ?? "",
@@ -110,15 +112,10 @@ export default function NowPlayingScreen() {
   });
 
   useEffect(() => {
-    if (!interactionError) {
-      return;
-    }
+    if (!interactionError) return;
 
     Alert.alert("Social unavailable", interactionError, [
-      {
-        text: "OK",
-        onPress: clearInteractionError,
-      },
+      { text: "OK", onPress: clearInteractionError },
     ]);
   }, [clearInteractionError, interactionError]);
 
@@ -136,8 +133,7 @@ export default function NowPlayingScreen() {
     /* Different track or nothing playing — load + play */
     if (!trackPageData?.track) return;
 
-    const track = trackPageData.track;
-    const item = mapTrackToPlayerItem(track);
+    const item = mapTrackToPlayerItem(trackPageData.track);
     const relatedItems = (trackPageData.relatedTracks ?? []).map((t) =>
       mapTrackToPlayerItem(t),
     );
@@ -147,7 +143,11 @@ export default function NowPlayingScreen() {
     startPlayback({
       items: [item, ...relatedItems],
       startIndex: 0,
-      context: { type: "track", slug: track.slug, title: track.title },
+      context: {
+        type: "track",
+        slug: trackPageData.track.slug,
+        title: trackPageData.track.title,
+      },
       autoplay: true,
     });
   }, [isActiveTrack, playbackState, pause, play, trackPageData, startPlayback]);
@@ -158,42 +158,55 @@ export default function NowPlayingScreen() {
 
   const cycleRepeatMode = useCallback(() => {
     const nextMode =
-      repeatMode === "off"
-        ? "queue"
-        : repeatMode === "queue"
-          ? "track"
-          : "off";
+      repeatMode === "off" ? "queue" : repeatMode === "queue" ? "track" : "off";
     void setRepeatMode(nextMode);
   }, [repeatMode, setRepeatMode]);
 
-  if (!displayItem) {
+  /* ── Loading ─────────────────────────────────────────────────────────────── */
+
+  if (!displayItem && trackLoading) {
     return (
       <View style={s.container}>
         <View style={s.loadingWrap}>
           <Skeleton width={280} height={280} borderRadius={20} />
-          <View style={{ gap: 10, marginTop: 28, width: 280 }}>
+          <View style={s.loadingMeta}>
             <Skeleton width="70%" height={22} borderRadius={8} />
             <Skeleton width="45%" height={15} borderRadius={6} />
           </View>
-          <View style={{ flexDirection: "row", gap: 32, marginTop: 32 }}>
-            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} width={36} height={36} borderRadius={18} />)}
+          <View style={s.loadingActions}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} width={36} height={36} borderRadius={18} />
+            ))}
           </View>
         </View>
       </View>
     );
   }
 
+  /* ── Error / not found ───────────────────────────────────────────────────── */
+
+  if (!displayItem) {
+    return (
+      <View style={[s.container, s.loadingWrap]}>
+        <BodyText color="secondary">Track not available</BodyText>
+      </View>
+    );
+  }
+
   const artworkUrl = selectDisplayArtwork(displayItem);
+
+  /* ── Player ──────────────────────────────────────────────────────────────── */
 
   return (
     <View style={s.container}>
       {/* ── Blurred background ───────────────────────────────────────── */}
+      <View style={s.backgroundBase} />
       {artworkUrl ? (
         <Image
           source={{ uri: artworkUrl }}
-          style={StyleSheet.absoluteFill}
+          style={s.bgImage}
           contentFit="cover"
-          blurRadius={60}
+          blurRadius={50}
           transition={220}
         />
       ) : null}
@@ -202,7 +215,7 @@ export default function NowPlayingScreen() {
         style={[StyleSheet.absoluteFill, s.scrim]}
       />
 
-      <SafeAreaView style={s.safe} edges={["bottom"]}>
+      <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
         <Animated.View entering={FadeInUp.duration(240)}>
           <PlayerTopBar onBack={() => router.back()} />
         </Animated.View>
@@ -219,8 +232,9 @@ export default function NowPlayingScreen() {
             liked={liked}
             likePending={likePending}
             onToggleLike={() => void toggleLike()}
+            repeatMode={repeatMode}
+            onCycleRepeat={cycleRepeatMode}
           />
-          <View style={s.centerSpacer} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(280)} style={s.bottomGroup}>
@@ -238,10 +252,8 @@ export default function NowPlayingScreen() {
             onTogglePlay={togglePlay}
             onSkipPrevious={() => void skipPrevious()}
             onSkipNext={() => void skipNext()}
-            onCycleRepeat={cycleRepeatMode}
             hasPrevious={hasPrevious}
             hasNext={hasNext}
-            repeatMode={repeatMode}
             waveformDarkUrl={displayItem.waveformDarkUrl}
             waveformLightUrl={displayItem.waveformLightUrl}
             waveformFallbackUrl={displayItem.waveformFallbackUrl}
@@ -256,27 +268,44 @@ export default function NowPlayingScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.bgApp },
-  scrim: { backgroundColor: "rgba(10,14,20,0.55)" },
+  backgroundBase: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: tokens.colors.bgApp,
+  },
+  bgImage: {
+    position: "absolute",
+    top: -100,
+    left: -100,
+    right: -100,
+    bottom: -100,
+    transform: [{ scale: 1.2 }],
+    backgroundColor: tokens.colors.bgApp,
+  },
+  scrim: { backgroundColor: "rgba(10,14,20,0.78)" },
   safe: { flex: 1 },
 
   loadingWrap: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: tokens.colors.bgApp,
+  },
+  loadingMeta: {
+    gap: 10,
+    marginTop: 28,
+    width: 280,
+  },
+  loadingActions: {
+    flexDirection: "row",
+    gap: 32,
+    marginTop: 32,
   },
 
   centerGroup: {
     flex: 1,
     alignItems: "center",
     paddingTop: 4,
+    justifyContent: "center",
   },
-
-  centerSpacer: {
-    flex: 1,
-    maxHeight: 48,
-  },
-
   bottomGroup: {
     paddingBottom: 16,
   },

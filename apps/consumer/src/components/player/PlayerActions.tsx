@@ -9,7 +9,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 
-import { AnimatedPressable } from "@micboxx/ui";
+import { AnimatedPressable, BodyText } from "@micboxx/ui";
 import { hapticSuccess } from "@micboxx/ui";
 import { tokens } from "@micboxx/theme";
 
@@ -17,13 +17,18 @@ interface PlayerActionsProps {
   liked: boolean;
   onToggleLike: () => void;
   likePending?: boolean;
+  repeatMode: "off" | "queue" | "track";
+  onCycleRepeat: () => void;
 }
 
 export function PlayerActions({
   liked,
   onToggleLike,
   likePending = false,
+  repeatMode,
+  onCycleRepeat,
 }: PlayerActionsProps) {
+  const repeatActive = repeatMode !== "off";
   const heartScale = useSharedValue(1);
   const heartColor = useSharedValue(liked ? 1 : 0);
 
@@ -75,6 +80,23 @@ export function PlayerActions({
           />
         </Animated.View>
       </AnimatedPressable>
+
+      <AnimatedPressable
+        style={[s.actionBtn, repeatActive && s.actionBtnActive]}
+        haptic="selection"
+        onPress={onCycleRepeat}
+      >
+        <View>
+          <Ionicons
+            name="repeat"
+            size={24}
+            color={repeatActive ? tokens.colors.accent : tokens.colors.textPrimary}
+          />
+          {repeatMode === "track" ? (
+            <BodyText size="sm" weight="semibold" color="accent" style={s.repeatBadge}>1</BodyText>
+          ) : null}
+        </View>
+      </AnimatedPressable>
     </View>
   );
 }
@@ -94,5 +116,15 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  actionBtnActive: {
+    backgroundColor: "rgba(0,179,166,0.12)",
+    borderColor: "rgba(0,179,166,0.24)",
+  },
+  repeatBadge: {
+    position: "absolute",
+    right: -8,
+    bottom: -4,
+    fontSize: 10,
   },
 });

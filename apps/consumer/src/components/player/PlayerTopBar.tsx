@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { tokens } from "@micboxx/theme";
 
@@ -10,10 +9,8 @@ interface PlayerTopBarProps {
 }
 
 export function PlayerTopBar({ onBack }: PlayerTopBarProps) {
-  const insets = useSafeAreaInsets();
-
   return (
-    <View style={[s.topBar, { paddingTop: insets.top }]}>
+    <View style={s.topBar}>
       <Pressable onPress={onBack} style={s.circleBtn}>
         <Ionicons
           name="chevron-back"
@@ -40,7 +37,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 4,
+    paddingTop: 14,
   },
   centerFill: {
     flex: 1,

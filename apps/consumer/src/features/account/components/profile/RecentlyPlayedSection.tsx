@@ -1,14 +1,12 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { MicboxxSession } from "@micboxx/contracts";
 import { tokens } from "@micboxx/theme";
 import { useRecentlyPlayed } from "@/features/account/hooks/useRecentlyPlayed";
 import { Skeleton } from "@micboxx/ui";
 import { EmptyState, SectionHeader } from "./profile-shared";
-
-const SCREEN_WIDTH = Dimensions.get("window").width;
 
 interface RecentlyPlayedSectionProps {
   accessToken: string;
@@ -23,18 +21,18 @@ export function RecentlyPlayedSection({ accessToken, session }: RecentlyPlayedSe
     <View style={s.section}>
       <SectionHeader title="Recently Played" />
       {loading ? (
-        <View style={s.grid}>
-          {[1, 2, 3].map((i) => (
-            <View key={i} style={{ width: (SCREEN_WIDTH - 40 - 12 * 2) / 3, gap: 6 }}>
-              <Skeleton width="100%" height={(SCREEN_WIDTH - 40 - 12 * 2) / 3} borderRadius={tokens.radii.sm} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
+          {[1, 2, 3, 4].map((i) => (
+            <View key={i} style={{ width: CARD_SIZE, gap: 6 }}>
+              <Skeleton width={CARD_SIZE} height={CARD_SIZE} borderRadius={tokens.radii.sm} />
               <Skeleton width="70%" height={10} borderRadius={6} />
             </View>
           ))}
-        </View>
+        </ScrollView>
       ) : tracks.length === 0 ? (
         <EmptyState icon="musical-notes-outline" message="Tracks you listen to will appear here." />
       ) : (
-        <View style={s.grid}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
           {tracks.map((track) => (
             <TouchableOpacity
               key={track.uuid}
@@ -54,18 +52,21 @@ export function RecentlyPlayedSection({ accessToken, session }: RecentlyPlayedSe
               <Text style={s.trackName} numberOfLines={1}>{track.title}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       )}
     </View>
   );
 }
 
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const CARD_SIZE = Math.round((SCREEN_WIDTH - 40 - 12 * 2) / 3);
+
 const s = StyleSheet.create({
   section: { marginTop: 24, gap: 14 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  item: { alignItems: "center", width: (SCREEN_WIDTH - 40 - 12 * 2) / 3, minWidth: 64 },
-  imgWrap: { width: "100%", aspectRatio: 1, borderRadius: tokens.radii.sm, overflow: "hidden" },
+  row: { flexDirection: "row", gap: 12, paddingRight: 20 },
+  item: { alignItems: "center", width: CARD_SIZE },
+  imgWrap: { width: CARD_SIZE, height: CARD_SIZE, borderRadius: tokens.radii.sm, overflow: "hidden" },
   img: { width: "100%", height: "100%" },
   imgPlaceholder: { backgroundColor: tokens.colors.bgElevated, alignItems: "center", justifyContent: "center" },
-  trackName: { color: tokens.colors.textSecondary, fontSize: 10, textAlign: "center", marginTop: 4 },
+  trackName: { color: tokens.colors.textSecondary, fontSize: 10, textAlign: "center", marginTop: 4, width: CARD_SIZE },
 });

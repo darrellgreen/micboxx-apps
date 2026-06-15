@@ -15,10 +15,8 @@ interface PlayerTransportProps {
   onTogglePlay: () => void;
   onSkipPrevious: () => void;
   onSkipNext: () => void;
-  onCycleRepeat: () => void;
   hasPrevious: boolean;
   hasNext: boolean;
-  repeatMode: "off" | "queue" | "track";
   waveformDarkUrl?: string | null;
   waveformLightUrl?: string | null;
   waveformFallbackUrl?: string | null;
@@ -32,16 +30,12 @@ export function PlayerTransport({
   onTogglePlay,
   onSkipPrevious,
   onSkipNext,
-  onCycleRepeat,
   hasPrevious,
   hasNext,
-  repeatMode,
   waveformDarkUrl,
   waveformLightUrl,
   waveformFallbackUrl,
 }: PlayerTransportProps) {
-  const repeatActive = repeatMode !== "off";
-
   return (
     <View>
       <View style={s.waveformSection}>
@@ -60,27 +54,6 @@ export function PlayerTransport({
       </View>
 
       <View style={s.transportRow}>
-        <AnimatedPressable
-          onPress={onCycleRepeat}
-          style={[s.transportBtn, repeatActive && s.transportBtnActive]}
-          haptic="selection"
-        >
-          <View>
-            <Ionicons
-              name="repeat"
-              size={24}
-              color={
-                repeatActive
-                  ? tokens.colors.accent
-                  : tokens.colors.textPrimary
-              }
-            />
-            {repeatMode === "track" ? (
-              <BodyText size="sm" weight="semibold" color="accent" style={s.repeatBadge}>1</BodyText>
-            ) : null}
-          </View>
-        </AnimatedPressable>
-
         <AnimatedPressable
           onPress={onSkipPrevious}
           disabled={!hasPrevious}
@@ -150,10 +123,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  transportBtnActive: {
-    backgroundColor: "rgba(0,179,166,0.12)",
-    borderRadius: 24,
-  },
   transportBtnDisabled: {
     opacity: 0.3,
   },
@@ -172,11 +141,5 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  repeatBadge: {
-    position: "absolute",
-    right: -8,
-    bottom: -4,
-    fontSize: 10,
   },
 });

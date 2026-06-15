@@ -19,6 +19,7 @@ interface UseTrackSocialStateInput {
   initialComments: number;
   initialLikes: number;
   initialFavourites: number;
+  enabled?: boolean;
 }
 
 export function useTrackSocialState({
@@ -29,6 +30,7 @@ export function useTrackSocialState({
   initialComments,
   initialLikes,
   initialFavourites,
+  enabled = true,
 }: UseTrackSocialStateInput) {
   const [likeCount, setLikeCount] = useState(initialLikes);
   const [favoriteCount, setFavoriteCount] = useState(initialFavourites);
@@ -38,7 +40,7 @@ export function useTrackSocialState({
   const [likePending, setLikePending] = useState(false);
   const [favouritePending, setFavouritePending] = useState(false);
   const configured = isFirebaseConfigured();
-  const hasTrackContext = trackUuid.trim().length > 0;
+  const hasTrackContext = enabled && trackUuid.trim().length > 0;
   const {
     session,
     viewerUid: expectedUserUuid,

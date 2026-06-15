@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { tokens } from "@micboxx/theme";
 import { useUserPlaylists } from "@/features/account/hooks/useUserPlaylists";
@@ -19,15 +19,15 @@ export function PlaylistsSection({ accessToken }: { accessToken: string }) {
     <View style={s.section}>
       <SectionHeader title="Playlists" />
       {loading ? (
-        <View style={s.grid}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
           {[1, 2, 3, 4].map((i) => (
             <View key={i} style={{ width: PLAYLIST_CARD_WIDTH, gap: 6 }}>
-              <Skeleton width="100%" height={PLAYLIST_CARD_WIDTH} borderRadius={tokens.radii.md} />
+              <Skeleton width={PLAYLIST_CARD_WIDTH} height={PLAYLIST_CARD_WIDTH} borderRadius={tokens.radii.md} />
               <Skeleton width="80%" height={12} borderRadius={6} />
               <Skeleton width="50%" height={10} borderRadius={6} />
             </View>
           ))}
-        </View>
+        </ScrollView>
       ) : playlists.length === 0 ? (
         <EmptyState
           icon="musical-notes-outline"
@@ -35,8 +35,8 @@ export function PlaylistsSection({ accessToken }: { accessToken: string }) {
           action={{ label: "Create Playlist", onPress: () => router.push("/playlist/create" as never) }}
         />
       ) : (
-        <View style={s.grid}>
-          {playlists.slice(0, 4).map((playlist) => (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
+          {playlists.map((playlist) => (
             <TouchableOpacity key={playlist.id} style={s.card} activeOpacity={0.7} onPress={() => router.push(`/playlist/${encodeURIComponent(playlist.slug)}` as never)}>
               <View style={s.artWrap}>
                 {playlist.artworkUrl ? (
@@ -56,7 +56,7 @@ export function PlaylistsSection({ accessToken }: { accessToken: string }) {
               <Text style={s.meta}>{playlist.counts.tracks} tracks</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       )}
     </View>
   );
@@ -64,9 +64,9 @@ export function PlaylistsSection({ accessToken }: { accessToken: string }) {
 
 const s = StyleSheet.create({
   section: { marginTop: 24, gap: 14 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 14 },
+  row: { flexDirection: "row", gap: 14, paddingRight: 20 },
   card: { width: PLAYLIST_CARD_WIDTH, gap: 6 },
-  artWrap: { width: "100%", aspectRatio: 1, borderRadius: tokens.radii.md, overflow: "hidden", position: "relative" },
+  artWrap: { width: PLAYLIST_CARD_WIDTH, height: PLAYLIST_CARD_WIDTH, borderRadius: tokens.radii.md, overflow: "hidden", position: "relative" },
   art: { width: "100%", height: "100%" },
   countBadge: {
     position: "absolute",

@@ -246,8 +246,6 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   footer: {
-    borderTopWidth: 1,
-    borderColor: tokens.colors.borderSubtle,
     paddingHorizontal: 16,
     paddingTop: 12,
   },

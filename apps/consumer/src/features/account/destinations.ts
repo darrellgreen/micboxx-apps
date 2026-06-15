@@ -5,7 +5,6 @@ import type { MicboxxSessionUser } from "@micboxx/contracts";
 
 export type AccountDestinationSlug =
   | "profile"
-  | "notifications"
   | "library"
   | "purchases"
   | "subscription"
@@ -36,15 +35,6 @@ export const ACCOUNT_DESTINATIONS: Record<
       "This is the right place for your public MicBoxx identity, creator badge, and account details.",
     guestDescription:
       "Sign in to see your profile, account identity, and public presence on MicBoxx.",
-  },
-  notifications: {
-    title: "Notifications",
-    subtitle: "Replies, releases, follows, and account activity",
-    icon: "notifications-outline",
-    signedInDescription:
-      "Use notifications as your account activity hub for replies, follows, release updates, and quick routing back into the right surface.",
-    guestDescription:
-      "Sign in to tie account activity and notification controls to your MicBoxx identity.",
   },
   library: {
     title: "Library",

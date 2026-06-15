@@ -15,7 +15,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from "react-native";
@@ -28,6 +27,15 @@ import {
   type DashboardUserProfile,
 } from "@/features/account/api";
 import { UserProfileView } from "@/features/account/components/profile/UserProfileView";
+import { GuestState } from "@/features/account/components/shared/GuestState";
+import { SummaryPanel } from "@/features/account/components/shared/SummaryPanel";
+import { ActionPanel, type ActionItem } from "@/features/account/components/shared/ActionPanel";
+import { TrackPanel } from "@/features/account/components/shared/TrackPanel";
+import { SummaryItem } from "@/features/account/components/shared/InfoRow";
+import { PurchasesPanel, type PurchasedView, type PurchasedSort, type PurchasedLayout } from "@/features/account/components/purchases/PurchasesPanel";
+import { SubscriptionPanel } from "@/features/account/components/subscription/SubscriptionPanel";
+import { SettingsNotificationsPanel } from "@/features/account/components/settings/SettingsNotificationsPanel";
+import { SettingsPlaybackPanel } from "@/features/account/components/settings/SettingsPlaybackPanel";
 
 import { TrackRow } from "@/components/discover";
 import { SoundwaveTabIcon } from "@/components/icons/SoundwaveTabIcon";
@@ -49,40 +57,17 @@ import type {
 } from "@/features/library/libraryTypes";
 import { useLibraryDomains } from "@/features/library/useLibraryDomains";
 import {
-  markRoomNotificationRead,
   useGetCurrentEntitlementsQuery,
   useGetDiscoverTracksQuery,
   useGetPopularTracksQuery,
   useGetRecentlyPlayedQuery,
 } from "@micboxx/api";
 import type { EntitlementState } from "@micboxx/contracts";
-import { useNotifications } from "@/features/social/hooks/useNotifications";
-import { NotificationItem } from "@micboxx/notifications";
 import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
 import { tokens } from "@micboxx/theme";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 type PlayerSurface = ReturnType<typeof useDiscoverPlayer>;
-type PurchasedView = "tracks" | "albums";
-type PurchasedSort = "recent" | "oldest" | "alpha";
-type PurchasedLayout = "list" | "grid";
-
-interface ActionItem {
-  key: string;
-  label: string;
-  subtitle: string;
-  icon: IoniconName;
-  onPress: () => void;
-  tone?: "default" | "accent" | "danger";
-}
-
-interface SummaryItem {
-  key: string;
-  label: string;
-  subtitle: string;
-  icon: IoniconName;
-  tone?: "default" | "accent" | "warning";
-}
 
 
 const HELP_ITEMS: SummaryItem[] = [
@@ -140,275 +125,7 @@ function compactActions(
   return items.filter((item): item is ActionItem => Boolean(item));
 }
 
-function formatRelativeDate(value: string | null): string {
-  if (!value) {
-    return "just now";
-  }
 
-  const target = new Date(value);
-  const now = new Date();
-  const diffMs = target.getTime() - now.getTime();
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-  const month = 30 * day;
-  const year = 365 * day;
-  const formatUnit = (count: number, unit: string) => {
-    const absoluteCount = Math.abs(count);
-    const pluralizedUnit = absoluteCount === 1 ? unit : `${unit}s`;
-
-    if (count === 0) {
-      return "just now";
-    }
-
-    return count > 0
-      ? `in ${absoluteCount} ${pluralizedUnit}`
-      : `${absoluteCount} ${pluralizedUnit} ago`;
-  };
-
-  if (Math.abs(diffMs) >= year) {
-    return formatUnit(Math.round(diffMs / year), "year");
-  }
-  if (Math.abs(diffMs) >= month) {
-    return formatUnit(Math.round(diffMs / month), "month");
-  }
-  if (Math.abs(diffMs) >= day) {
-    return formatUnit(Math.round(diffMs / day), "day");
-  }
-  if (Math.abs(diffMs) >= hour) {
-    return formatUnit(Math.round(diffMs / hour), "hour");
-  }
-
-  return formatUnit(Math.round(diffMs / minute), "minute");
-}
-
-type NotificationIconMeta = {
-  icon: IoniconName | "soundwave";
-  color: string;
-  backgroundColor: string;
-};
-
-function getNotificationIconMeta(
-  notification: NotificationItem,
-): NotificationIconMeta {
-  if (
-    notification.source === "room" &&
-    notification.roomType === "room-reward"
-  ) {
-    return {
-      icon: "ribbon-outline",
-      color: "#fde68a",
-      backgroundColor: "rgba(252,211,77,0.15)",
-    };
-  }
-
-  if (notification.type === "room") {
-    return {
-      icon: "soundwave",
-      color: "#6ee7b7",
-      backgroundColor: "rgba(52,211,153,0.15)",
-    };
-  }
-
-  if (notification.type === "direct_message") {
-    return {
-      icon: "chatbubble-ellipses-outline",
-      color: "#f0abfc",
-      backgroundColor: "rgba(232,121,249,0.15)",
-    };
-  }
-
-  if (notification.type === "follow") {
-    return {
-      icon: "person-add-outline",
-      color: "#7dd3fc",
-      backgroundColor: "rgba(56,189,248,0.15)",
-    };
-  }
-
-  if (notification.type === "track_comment") {
-    return {
-      icon: "chatbubble-ellipses-outline",
-      color: "#6ee7b7",
-      backgroundColor: "rgba(52,211,153,0.15)",
-    };
-  }
-
-  return {
-    icon: "heart-outline",
-    color: tokens.colors.accent,
-    backgroundColor: tokens.colors.accentDim,
-  };
-}
-
-function normalizeNotificationPath(href: string | null): string | null {
-  if (!href) {
-    return null;
-  }
-
-  if (href.startsWith("http://") || href.startsWith("https://")) {
-    try {
-      const parsed = new URL(href);
-      return `${parsed.pathname}${parsed.search}`;
-    } catch {
-      return null;
-    }
-  }
-
-  return href.startsWith("/") ? href : `/${href.replace(/^\/+/, "")}`;
-}
-
-function resolveNotificationRoute(
-  notification: NotificationItem,
-): string | null {
-  const path = normalizeNotificationPath(notification.href);
-
-  if (path) {
-    if (path.startsWith("/room/")) {
-      return path;
-    }
-
-    if (path.startsWith("/rooms/")) {
-      return path.replace(/^\/rooms\//, "/room/");
-    }
-
-    if (path.startsWith("/messages/")) {
-      return path;
-    }
-
-    if (path.startsWith("/tracks/")) {
-      return path.replace(/^\/tracks\//, "/track/");
-    }
-
-    if (path.startsWith("/track/")) {
-      return path;
-    }
-
-    if (path.startsWith("/albums/")) {
-      return path.replace(/^\/albums\//, "/album/");
-    }
-
-    if (path.startsWith("/album/")) {
-      return path;
-    }
-
-    if (path.startsWith("/users/")) {
-      return path.replace(/^\/users\//, "/user/");
-    }
-
-    if (path.startsWith("/artist/")) {
-      return path.replace(/^\/artist\//, "/user/");
-    }
-
-    if (path.startsWith("/user/")) {
-      return path;
-    }
-  }
-
-  if (notification.source === "room") {
-    return null;
-  }
-
-  const socialNotification = notification.raw;
-
-  if (
-    socialNotification.type === "direct_message" &&
-    socialNotification.conversationId
-  ) {
-    return `/messages/${socialNotification.conversationId}`;
-  }
-
-  if (
-    socialNotification.type === "follow" &&
-    socialNotification.actorUsername
-  ) {
-    return `/user/${encodeURIComponent(socialNotification.actorUsername)}`;
-  }
-
-  return null;
-}
-
-function formatShortDate(secondsValue: number | null | undefined): string | null {
-  if (!secondsValue) {
-    return null;
-  }
-
-  return new Date(secondsValue * 1000).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function resolveEntitlementStatus(
-  entitlement: EntitlementState | null | undefined,
-): "active" | "grace" | "lapsed" | "none" {
-  if (!entitlement) return "none";
-  const status = entitlement.status.toLowerCase();
-  if (status === "active") return "active";
-  if (status.includes("grace")) return "grace";
-  if (
-    status.includes("cancel") ||
-    status.includes("expired") ||
-    status.includes("lapsed")
-  ) {
-    return "lapsed";
-  }
-
-  return "active";
-}
-
-function formatSubscriptionStatus(status: string): string {
-  return status
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
-function sortPurchasedTracks(
-  tracks: LibraryOwnedTrack[],
-  sortBy: PurchasedSort,
-): LibraryOwnedTrack[] {
-  const next = [...tracks];
-
-  if (sortBy === "alpha") {
-    next.sort((a, b) => a.title.localeCompare(b.title));
-    return next;
-  }
-
-  next.sort((a, b) =>
-    sortBy === "oldest"
-      ? a.acquiredAt - b.acquiredAt
-      : b.acquiredAt - a.acquiredAt,
-  );
-
-  return next;
-}
-
-function sortPurchasedAlbums(
-  albums: LibraryOwnedAlbum[],
-  sortBy: PurchasedSort,
-): LibraryOwnedAlbum[] {
-  const next = [...albums];
-
-  if (sortBy === "alpha") {
-    next.sort((a, b) => a.title.localeCompare(b.title));
-    return next;
-  }
-
-  next.sort((a, b) =>
-    sortBy === "oldest"
-      ? a.acquiredAt - b.acquiredAt
-      : b.acquiredAt - a.acquiredAt,
-  );
-
-  return next;
-}
-
-function getPurchasedSortLabel(sortBy: PurchasedSort): string {
-  if (sortBy === "oldest") return "Oldest Added";
-  if (sortBy === "alpha") return "Title A-Z";
-  return "Recently Added";
-}
 
 export default function AccountDestinationScreen() {
   const params = useLocalSearchParams<{ slug?: string }>();
@@ -446,7 +163,7 @@ export default function AccountDestinationScreen() {
     async function load() {
       setLoadingProfile(true);
       try {
-        const data = await fetchUserProfile(session.accessToken, session);
+        const data = await fetchUserProfile(session!.accessToken, session!);
         if (!isCancelled) {
           setProfile(data);
         }
@@ -612,7 +329,7 @@ export default function AccountDestinationScreen() {
           label: "Notifications",
           subtitle: "Keep activity, follows, and release updates visible.",
           icon: "notifications-outline",
-          onPress: () => openDestination("notifications"),
+          onPress: () => openRoute("/notifications"),
         }
       : {
           key: "signin",
@@ -712,59 +429,6 @@ export default function AccountDestinationScreen() {
   let content: ReactNode;
 
   switch (slug) {
-    case "profile":
-      if (!session) {
-        content = <GuestState />;
-      } else if (loadingProfile && !profile) {
-        content = (
-          <View style={{ gap: 12, paddingHorizontal: 20, paddingTop: 12 }}>
-            <Skeleton width={80} height={80} borderRadius={40} />
-            <Skeleton width="45%" height={20} borderRadius={8} />
-            <Skeleton width="30%" height={14} borderRadius={6} />
-          </View>
-        );
-      } else if (profile) {
-        content = (
-          <UserProfileView
-            profile={profile}
-            accessToken={session.accessToken}
-            session={session}
-            onUpdateProfile={(updated) => setProfile(updated as DashboardUserProfile)}
-            onUploadAvatar={handleUploadAvatar}
-            onUploadCover={handleUploadCover}
-          />
-        );
-      } else {
-        content = (
-          <View style={{ padding: 20, alignItems: "center" }}>
-            <Text style={{ color: tokens.colors.textSecondary }}>
-              Unable to load profile. Please try again later.
-            </Text>
-          </View>
-        );
-      }
-      break;
-
-    case "notifications":
-      content = session ? (
-        <NotificationsFeedPanel onOpenRoute={openRoute} />
-      ) : (
-        <View style={styles.notifEmptyGate}>
-          <View style={styles.notifEmptyIconWrap}>
-            <Ionicons
-              name="notifications-outline"
-              size={44}
-              color={tokens.colors.accent}
-            />
-          </View>
-          <Text style={styles.notifEmptyTitle}>Sign in to view notifications</Text>
-          <Text style={styles.notifEmptyBody}>
-            Sign in to get real-time activity from your MicBoxx profile.
-          </Text>
-        </View>
-      );
-      break;
-
     case "library":
       content = (
         <>
@@ -794,20 +458,21 @@ export default function AccountDestinationScreen() {
 
     case "purchases":
       content = session ? (
-        renderPurchasesPanel({
-          albums: libraryState.ownedAlbums,
-          tracks: libraryState.ownedTracks,
-          loading: libraryState.isLoading,
-          error: libraryState.error,
-          totalCount:
-            librarySummary.ownedAlbumCount + librarySummary.ownedTrackCount,
-          view: purchasedView,
-          onViewChange: setPurchasedView,
-          sortBy: purchasedSort,
-          onSortChange: setPurchasedSort,
-          layoutMode: purchasedLayout,
-          onLayoutModeChange: setPurchasedLayout,
-        })
+        <PurchasesPanel
+          albums={libraryState.ownedAlbums}
+          tracks={libraryState.ownedTracks}
+          loading={libraryState.isLoading}
+          error={libraryState.error}
+          totalCount={
+            librarySummary.ownedAlbumCount + librarySummary.ownedTrackCount
+          }
+          view={purchasedView}
+          onViewChange={setPurchasedView}
+          sortBy={purchasedSort}
+          onSortChange={setPurchasedSort}
+          layoutMode={purchasedLayout}
+          onLayoutModeChange={setPurchasedLayout}
+        />
       ) : (
         <GuestState message="Sign in to see tracks and albums you own." />
       );
@@ -815,16 +480,17 @@ export default function AccountDestinationScreen() {
 
     case "subscription":
       content = session ? (
-        renderSubscriptionPanel({
-          entitlement,
-          loading: entitlementLoading,
-          error:
+        <SubscriptionPanel
+          entitlement={entitlement}
+          loading={entitlementLoading}
+          error={
             entitlementError &&
             "message" in entitlementError &&
             typeof entitlementError.message === "string"
               ? entitlementError.message
-              : null,
-        })
+              : null
+          }
+        />
       ) : (
         <GuestState message="Sign in to see your current subscription level." />
       );
@@ -847,66 +513,36 @@ export default function AccountDestinationScreen() {
 
     case "settings-notifications":
       content = (
-        <>
-          <View style={styles.panel}>
-            <Text style={styles.sectionTitle}>Push notifications</Text>
-            <Text style={styles.description}>
-              Control how and when you receive push notifications on your MicBoxx account.
-            </Text>
-            <Text style={styles.preferenceStatus}>{settingsStatus}</Text>
-
-            <PreferenceRow
-              label="Push notifications"
-              subtitle={
-                canManagePushNotifications
-                  ? "Control notification delivery for this signed-in account."
-                  : "Sign in to manage notification delivery for your account."
-              }
-              value={preferences.pushNotifications}
-              onValueChange={() =>
-                void setPushNotificationsEnabled(!preferences.pushNotifications)
-              }
-              disabled={!canManagePushNotifications || preferencesHydrating}
-            />
-          </View>
-        </>
+        <SettingsNotificationsPanel
+          pushNotifications={preferences.pushNotifications}
+          onPushNotificationsChange={(val) =>
+            void setPushNotificationsEnabled(val)
+          }
+          canManagePushNotifications={canManagePushNotifications}
+          preferencesHydrating={preferencesHydrating}
+          settingsStatus={settingsStatus}
+        />
       );
       break;
 
     case "settings-playback":
       content = (
-        <>
-          <View style={styles.panel}>
-            <Text style={styles.sectionTitle}>Audio & Content Preferences</Text>
-            <Text style={styles.description}>
-              Playback preferences and explicit filters are saved locally on this device.
-            </Text>
-
-            <PreferenceRow
-              label="Autoplay previews"
-              subtitle="Saved on this device for preview and browsing behavior."
-              value={preferences.autoplayPreview}
-              onValueChange={() =>
-                void setAutoplayPreviewEnabled(!preferences.autoplayPreview)
-              }
-              disabled={preferencesHydrating}
-            />
-            <PreferenceRow
-              label="Filter explicit tracks"
-              subtitle="Saved on this device for account browsing and playback surfaces."
-              value={preferences.explicitFilter}
-              onValueChange={() =>
-                void setExplicitFilterEnabled(!preferences.explicitFilter)
-              }
-              disabled={preferencesHydrating}
-            />
-          </View>
-        </>
+        <SettingsPlaybackPanel
+          autoplayPreview={preferences.autoplayPreview}
+          onAutoplayPreviewChange={(val) =>
+            void setAutoplayPreviewEnabled(val)
+          }
+          explicitFilter={preferences.explicitFilter}
+          onExplicitFilterChange={(val) =>
+            void setExplicitFilterEnabled(val)
+          }
+          preferencesHydrating={preferencesHydrating}
+        />
       );
       break;
   }
 
-  const fallbackRoute = slug === "profile" ? "/(tabs)/home" : "/settings";
+  const fallbackRoute = "/settings";
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -915,13 +551,10 @@ export default function AccountDestinationScreen() {
       <DetailRouteHeader title={meta.title} fallbackRoute={fallbackRoute} />
 
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          slug === "notifications" && styles.scrollContentFill,
-        ]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {slug !== "notifications" && slug !== "profile" && slug !== "settings-notifications" && slug !== "settings-playback" && slug !== "subscription" && slug !== "help" && (
+        {slug !== "settings-notifications" && slug !== "settings-playback" && slug !== "subscription" && slug !== "help" && (
           <View style={styles.heroCard}>
             {slug !== "settings" && (
               <View style={styles.heroIconWrap}>
@@ -946,1012 +579,7 @@ export default function AccountDestinationScreen() {
   );
 }
 
-function GuestState({
-  message = "Sign in to unlock this destination with your MicBoxx account.",
-}: {
-  message?: string;
-}) {
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.sectionTitle}>Account required</Text>
-      <View style={styles.guestWrap}>
-        <Text style={styles.guestText}>{message}</Text>
-        <Pressable
-          onPress={() => router.push("/sign-in")}
-          style={({ pressed }: { pressed: boolean }) => [
-            styles.primaryButton,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Ionicons name="log-in-outline" size={18} color="#fff" />
-          <Text style={styles.primaryButtonLabel}>Sign In</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
 
-function renderPurchasesPanel({
-  albums,
-  tracks,
-  loading,
-  error,
-  totalCount,
-  view,
-  onViewChange,
-  sortBy,
-  onSortChange,
-  layoutMode,
-  onLayoutModeChange,
-}: {
-  albums: LibraryOwnedAlbum[];
-  tracks: LibraryOwnedTrack[];
-  loading: boolean;
-  error: string | null;
-  totalCount: number;
-  view: PurchasedView;
-  onViewChange: (view: PurchasedView) => void;
-  sortBy: PurchasedSort;
-  onSortChange: (sortBy: PurchasedSort) => void;
-  layoutMode: PurchasedLayout;
-  onLayoutModeChange: (layoutMode: PurchasedLayout) => void;
-}) {
-  if (loading) {
-    return (
-      <View style={styles.panel}>
-        <View style={{ gap: 12, paddingVertical: 8 }}>
-          {[1, 2, 3].map((i) => (
-            <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Skeleton width={44} height={44} borderRadius={6} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Skeleton width="50%" height={13} borderRadius={6} />
-                <Skeleton width="30%" height={11} borderRadius={6} />
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.panel}>
-        <Text style={styles.sectionTitle}>Unable to load purchases</Text>
-        <Text style={styles.description}>{error}</Text>
-      </View>
-    );
-  }
-
-  const sortedTracks = sortPurchasedTracks(tracks, sortBy);
-  const sortedAlbums = sortPurchasedAlbums(albums, sortBy);
-  const tabs: { id: PurchasedView; label: string; count: number }[] = [
-    { id: "tracks", label: "Tracks", count: tracks.length },
-    { id: "albums", label: "Albums", count: albums.length },
-  ];
-  const activeCount = view === "tracks" ? sortedTracks.length : sortedAlbums.length;
-  const isGridLayout = layoutMode === "grid";
-
-  return (
-    <View style={styles.purchasedPage}>
-      <View style={styles.purchasedTabs}>
-        {tabs.map((tab) => {
-          const selected = view === tab.id;
-
-          return (
-            <Pressable
-              key={tab.id}
-              onPress={() => onViewChange(tab.id)}
-              style={({ pressed }: { pressed: boolean }) => [
-                styles.purchasedTab,
-                selected && styles.purchasedTabActive,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.purchasedTabLabel,
-                  selected && styles.purchasedTabLabelActive,
-                ]}
-              >
-                {tab.label}
-              </Text>
-              <Text
-                style={[
-                  styles.purchasedTabCount,
-                  selected && styles.purchasedTabLabelActive,
-                ]}
-              >
-                {tab.count}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <View style={styles.purchasedToolbar}>
-        <View style={styles.purchasedTitleRow}>
-          <Text style={styles.purchasedViewTitle}>
-            {view === "tracks" ? "Tracks" : "Albums"}
-          </Text>
-          <View style={styles.countPill}>
-            <Text style={styles.countPillText}>{activeCount}</Text>
-          </View>
-        </View>
-
-        <View style={styles.purchasedControlRow}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.purchasedSortOptions}
-          >
-            {(["recent", "oldest", "alpha"] as const).map((option) => {
-              const selected = sortBy === option;
-
-              return (
-                <Pressable
-                  key={option}
-                  onPress={() => onSortChange(option)}
-                  style={({ pressed }: { pressed: boolean }) => [
-                    styles.purchasedSortChip,
-                    selected && styles.purchasedSortChipActive,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.purchasedSortLabel,
-                      selected && styles.purchasedSortLabelActive,
-                    ]}
-                  >
-                    {getPurchasedSortLabel(option)}
-                  </Text>
-                  {selected ? (
-                    <Ionicons
-                      name="checkmark"
-                      size={13}
-                      color={tokens.colors.accentLight}
-                    />
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          <View style={styles.purchasedLayoutToggle}>
-            <Pressable
-              onPress={() => onLayoutModeChange("list")}
-              style={({ pressed }: { pressed: boolean }) => [
-                styles.purchasedLayoutButton,
-                layoutMode === "list" && styles.purchasedLayoutButtonActive,
-                pressed && styles.pressed,
-              ]}
-              accessibilityLabel="Show list view"
-            >
-              <Ionicons
-                name="list-outline"
-                size={18}
-                color={
-                  layoutMode === "list"
-                    ? tokens.colors.accentLight
-                    : tokens.colors.textSecondary
-                }
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => onLayoutModeChange("grid")}
-              style={({ pressed }: { pressed: boolean }) => [
-                styles.purchasedLayoutButton,
-                layoutMode === "grid" && styles.purchasedLayoutButtonActive,
-                pressed && styles.pressed,
-              ]}
-              accessibilityLabel="Show grid view"
-            >
-              <Ionicons
-                name="grid-outline"
-                size={18}
-                color={
-                  layoutMode === "grid"
-                    ? tokens.colors.accentLight
-                    : tokens.colors.textSecondary
-                }
-              />
-            </Pressable>
-          </View>
-        </View>
-      </View>
-
-      {view === "tracks" ? (
-        sortedTracks.length > 0 ? (
-          isGridLayout ? (
-            <PurchasedGrid>
-              {sortedTracks.map((track) => (
-                <PurchasedGridCard
-                  key={`track-grid-${track.uuid || track.id}`}
-                  title={track.title}
-                  subtitle={track.artistName}
-                  meta={`Acquired ${formatShortDate(track.acquiredAt) ?? ""}`}
-                  artwork={track.artwork}
-                />
-              ))}
-            </PurchasedGrid>
-          ) : (
-            <View style={styles.purchasedList}>
-              {sortedTracks.map((track, index) => (
-                <PurchasedRow
-                  key={`track-${track.uuid || track.id}`}
-                  index={index + 1}
-                  title={track.title}
-                  subtitle={
-                    track.albumTitle
-                      ? `${track.artistName} · ${track.albumTitle}`
-                      : track.artistName
-                  }
-                  meta={`Purchased · ${formatShortDate(track.acquiredAt) ?? ""}`}
-                  artwork={track.artwork}
-                />
-              ))}
-            </View>
-          )
-        ) : (
-          <PurchasedEmptyState title="No purchased tracks yet" />
-        )
-      ) : sortedAlbums.length > 0 ? (
-        isGridLayout ? (
-          <PurchasedGrid>
-            {sortedAlbums.map((album) => (
-              <PurchasedGridCard
-                key={`album-grid-${album.uuid || album.id}`}
-                title={album.title}
-                subtitle={album.artistName}
-                meta={`Acquired ${formatShortDate(album.acquiredAt) ?? ""}`}
-                artwork={album.artwork}
-              />
-            ))}
-          </PurchasedGrid>
-        ) : (
-          <View style={styles.purchasedList}>
-            {sortedAlbums.map((album, index) => (
-              <PurchasedRow
-                key={`album-${album.uuid || album.id}`}
-                index={index + 1}
-                title={album.title}
-                subtitle={album.artistName}
-                meta={`Purchased · ${formatShortDate(album.acquiredAt) ?? ""}`}
-                artwork={album.artwork}
-              />
-            ))}
-          </View>
-        )
-      ) : (
-        <PurchasedEmptyState title="No purchased albums yet" />
-      )}
-    </View>
-  );
-}
-
-function PurchasedGrid({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  return <View style={styles.purchasedGrid}>{children}</View>;
-}
-
-function PurchasedRow({
-  index,
-  title,
-  subtitle,
-  meta,
-  artwork,
-}: {
-  index: number;
-  title: string;
-  subtitle: string;
-  meta: string;
-  artwork: string | null;
-}) {
-  return (
-    <View style={styles.purchasedRow}>
-      <Text style={styles.purchasedIndex}>{index}</Text>
-      <View style={styles.purchasedArtwork}>
-        {artwork ? (
-          <Image
-            source={{ uri: artwork }}
-            style={StyleSheet.absoluteFillObject}
-            contentFit="cover"
-          />
-        ) : (
-          <Text style={styles.purchasedArtworkText}>
-            {title.slice(0, 1).toUpperCase()}
-          </Text>
-        )}
-      </View>
-      <View style={styles.purchasedCopy}>
-        <Text numberOfLines={1} style={styles.purchasedTitle}>
-          {title}
-        </Text>
-        <Text numberOfLines={1} style={styles.purchasedSubtitle}>
-          {subtitle}
-        </Text>
-        <Text numberOfLines={1} style={styles.purchasedMeta}>
-          {meta.trim()}
-        </Text>
-      </View>
-      <View style={styles.ownedBadge}>
-        <Text style={styles.ownedBadgeText}>Owned</Text>
-      </View>
-    </View>
-  );
-}
-
-function PurchasedGridCard({
-  title,
-  subtitle,
-  meta,
-  artwork,
-}: {
-  title: string;
-  subtitle: string;
-  meta: string;
-  artwork: string | null;
-}) {
-  return (
-    <View style={styles.purchasedGridCard}>
-      <View style={styles.purchasedGridArtwork}>
-        {artwork ? (
-          <Image
-            source={{ uri: artwork }}
-            style={StyleSheet.absoluteFillObject}
-            contentFit="cover"
-          />
-        ) : (
-          <Text style={styles.purchasedArtworkText}>
-            {title.slice(0, 1).toUpperCase()}
-          </Text>
-        )}
-      </View>
-      <Text numberOfLines={1} style={styles.purchasedGridTitle}>
-        {title}
-      </Text>
-      <Text numberOfLines={1} style={styles.purchasedGridSubtitle}>
-        {subtitle}
-      </Text>
-      <Text numberOfLines={1} style={styles.purchasedGridMeta}>
-        {meta.trim()}
-      </Text>
-    </View>
-  );
-}
-
-function PurchasedEmptyState({ title }: { title: string }) {
-  return (
-    <View style={styles.purchasedEmptyState}>
-      <View style={styles.purchasedEmptyIconWrap}>
-        <Ionicons
-          name="musical-notes-outline"
-          size={34}
-          color={tokens.colors.textSecondary}
-        />
-      </View>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.description}>
-        {title.includes("tracks")
-          ? "Tracks you purchase will appear here."
-          : "Albums you purchase will appear here."}
-      </Text>
-    </View>
-  );
-}
-
-function renderSubscriptionPanel({
-  entitlement,
-  loading,
-  error,
-}: {
-  entitlement: EntitlementState | null | undefined;
-  loading: boolean;
-  error: string | null;
-}) {
-  if (loading) {
-    return (
-      <View style={styles.panel}>
-        <View style={{ gap: 10, paddingVertical: 8 }}>
-          <Skeleton width="50%" height={16} borderRadius={8} />
-          <Skeleton width="70%" height={12} borderRadius={6} />
-          <Skeleton width="40%" height={12} borderRadius={6} />
-        </View>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.panel}>
-        <Text style={styles.sectionTitle}>Unable to load subscription</Text>
-        <Text style={styles.description}>{error}</Text>
-      </View>
-    );
-  }
-
-  const entitlementStatus = resolveEntitlementStatus(entitlement);
-
-  if (!entitlement || entitlementStatus === "none") {
-    return (
-      <View style={styles.panel}>
-        <Text style={styles.sectionTitle}>No active subscription</Text>
-        <Text style={styles.description}>
-          Your account is using the default free listener access.
-        </Text>
-      </View>
-    );
-  }
-
-  const renewalDate = formatShortDate(
-    entitlement.period.currentPeriodEndsAt ?? entitlement.period.expiresAt,
-  );
-
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.sectionTitle}>Current subscription</Text>
-      <View style={styles.subscriptionCard}>
-        <View style={styles.subscriptionIconWrap}>
-          <Ionicons name="diamond-outline" size={24} color={tokens.colors.accent} />
-        </View>
-        <View style={styles.subscriptionCopy}>
-          <Text style={styles.subscriptionLevel}>{entitlement.plan.label}</Text>
-          <Text style={styles.subscriptionStatus}>
-            {formatSubscriptionStatus(entitlement.status)}
-          </Text>
-          {renewalDate ? (
-            <Text style={styles.subscriptionRenewal}>
-              {entitlementStatus === "lapsed" ? "Access ends " : "Renews "}
-              {renewalDate}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function SummaryPanel({
-  title,
-  description,
-  items,
-}: {
-  title: string;
-  description: string;
-  items: readonly SummaryItem[];
-}) {
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
-      <View style={styles.listWrap}>
-        {items.map((item) => (
-          <InfoRow key={item.key} item={item} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function ActionPanel({ title, items }: { title: string; items: ActionItem[] }) {
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.actionList}>
-        {items.map((item) => (
-          <Pressable
-            key={item.key}
-            onPress={item.onPress}
-            style={({ pressed }: { pressed: boolean }) => [
-              styles.actionRow,
-              item.tone === "accent" && styles.actionRowAccent,
-              item.tone === "danger" && styles.actionRowDanger,
-              pressed && styles.pressed,
-            ]}
-          >
-            <View
-              style={[
-                styles.actionIconWrap,
-                item.tone === "accent" && styles.actionIconWrapAccent,
-                item.tone === "danger" && styles.actionIconWrapDanger,
-              ]}
-            >
-              <Ionicons
-                name={item.icon}
-                size={18}
-                color={
-                  item.tone === "danger"
-                    ? tokens.colors.danger
-                    : tokens.colors.textPrimary
-                }
-              />
-            </View>
-
-            <View style={styles.actionCopy}>
-              <Text
-                style={[
-                  styles.actionLabel,
-                  item.tone === "danger" && styles.actionLabelDanger,
-                ]}
-              >
-                {item.label}
-              </Text>
-              <Text style={styles.actionSubtitle}>{item.subtitle}</Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={tokens.colors.textSecondary}
-            />
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function TrackPanel({
-  title,
-  subtitle,
-  tracks,
-  emptyText,
-  loading,
-  player,
-}: {
-  title: string;
-  subtitle: string;
-  tracks: PublicTrackSummary[];
-  emptyText: string;
-  loading: boolean;
-  player: PlayerSurface;
-}) {
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.description}>{subtitle}</Text>
-
-      {loading ? (
-        <View style={{ gap: 10, paddingVertical: 4 }}>
-          {[1, 2, 3].map((i) => (
-            <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Skeleton width={44} height={44} borderRadius={6} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Skeleton width="50%" height={13} borderRadius={6} />
-                <Skeleton width="30%" height={11} borderRadius={6} />
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : tracks.length ? (
-        <View style={styles.trackCard}>
-          {tracks.map((track, index) => {
-            const active = track.id === player.activeId;
-            const isLast = index === tracks.length - 1;
-            const nextActive = tracks[index + 1]?.id === player.activeId;
-
-            return (
-              <View key={track.id}>
-                <TrackRow
-                  track={track}
-                  active={active}
-                  playing={active && player.playing}
-                  onAction={() => player.handleAction(track, tracks)}
-                  progressValue={player.progressValue}
-                />
-                {!isLast && !active && !nextActive ? (
-                  <View style={styles.trackDivider} />
-                ) : null}
-              </View>
-            );
-          })}
-        </View>
-      ) : (
-        <Text style={styles.emptyInlineText}>{emptyText}</Text>
-      )}
-    </View>
-  );
-}
-
-function NotificationsFeedPanel({
-  onOpenRoute,
-}: {
-  onOpenRoute: (href: string) => void;
-}) {
-  const { items, loading, error, isReady, canRetry, retry } =
-    useNotifications(40);
-  const showLoadingSkeleton = loading && items.length === 0;
-  const showRetryState = Boolean(error && items.length === 0);
-  const showInlineRetry = Boolean(error && items.length > 0);
-
-  const statusText = useMemo(() => {
-    if (showLoadingSkeleton) {
-      return "Connecting to your activity feed...";
-    }
-
-    if (showRetryState) {
-      return "Live updates are paused until the connection recovers.";
-    }
-
-    if (!isReady && !error) {
-      return "Connecting to your activity feed...";
-    }
-
-    return null;
-  }, [showLoadingSkeleton, showRetryState, isReady, error]);
-
-  const showSimpleEmptyState = useMemo(
-    () =>
-      !showLoadingSkeleton &&
-      !showRetryState &&
-      !showInlineRetry &&
-      items.length === 0,
-    [showLoadingSkeleton, showRetryState, showInlineRetry, items.length],
-  );
-
-  const markRead = async (notification: NotificationItem) => {
-    if (notification.isRead) {
-      return;
-    }
-
-    if (notification.source === "room") {
-      await markRoomNotificationRead({
-        notificationId: notification.numericId,
-      });
-      return;
-    }
-
-    if (!isReady) {
-      return;
-    }
-
-    await updateDoc(
-      doc(getFirebaseClientDb(), "notifications", notification.id),
-      {
-        isRead: true,
-        readAt: serverTimestamp(),
-        seenAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      },
-    );
-  };
-
-  const handleNotificationPress = (notification: NotificationItem) => {
-    const route = resolveNotificationRoute(notification);
-    if (!route) {
-      return;
-    }
-
-    if (!notification.isRead) {
-      void markRead(notification);
-    }
-
-    onOpenRoute(route);
-  };
-
-  if (showSimpleEmptyState) {
-    return (
-      <View style={styles.notifEmptyGate}>
-        <View style={styles.notifEmptyIconWrap}>
-          <Ionicons
-            name="notifications-outline"
-            size={44}
-            color={tokens.colors.accent}
-          />
-        </View>
-        <Text style={styles.notifEmptyTitle}>No notifications yet</Text>
-        <Text style={styles.notifEmptyBody}>
-          When someone follows you, comments, or sends a message, it will show
-          up here.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.notificationFeed}>
-      {statusText ? (
-        <Text style={styles.preferenceStatus}>{statusText}</Text>
-      ) : null}
-
-      {showInlineRetry ? (
-        <View style={styles.notificationInlineBanner}>
-          <View style={styles.notificationInlineBannerCopy}>
-            <Text style={styles.notificationInlineBannerTitle}>
-              Live updates paused
-            </Text>
-            <Text style={styles.notificationInlineBannerText}>{error}</Text>
-          </View>
-          {canRetry ? (
-            <Pressable
-              onPress={retry}
-              style={({ pressed }: { pressed: boolean }) => [
-                styles.notificationInlineBannerButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.notificationInlineBannerButtonLabel}>
-                Retry
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-      ) : null}
-
-      {showLoadingSkeleton ? (
-        <NotificationsFeedSkeleton />
-      ) : showRetryState ? (
-        <NotificationStateCard
-          icon="cloud-offline-outline"
-          title="Notifications need another try"
-          description={error ?? "Live activity could not be refreshed."}
-          actionLabel={canRetry ? "Retry" : undefined}
-          onAction={canRetry ? retry : undefined}
-          tone="error"
-        />
-      ) : items.length ? (
-        <View style={styles.notificationList}>
-          {items.map((notification: NotificationItem) => {
-            const route = resolveNotificationRoute(notification);
-            const preview = notification.preview;
-            const timestampLabel = formatRelativeDate(notification.createdAt);
-            const iconMeta = getNotificationIconMeta(notification);
-
-            return (
-              <View
-                key={notification.id}
-                style={[
-                  styles.notificationRow,
-                  !notification.isRead && styles.notificationRowUnread,
-                ]}
-              >
-                <Pressable
-                  disabled={!route}
-                  onPress={() => handleNotificationPress(notification)}
-                  style={({ pressed }: { pressed: boolean }) => [
-                    styles.notificationBody,
-                    !route && styles.notificationBodyStatic,
-                    route && pressed && styles.pressed,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.notificationIconWrap,
-                      { backgroundColor: iconMeta.backgroundColor },
-                    ]}
-                  >
-                    {iconMeta.icon === "soundwave" ? (
-                      <SoundwaveTabIcon size={18} color={iconMeta.color} />
-                    ) : (
-                      <Ionicons
-                        name={iconMeta.icon}
-                        size={18}
-                        color={iconMeta.color}
-                      />
-                    )}
-                  </View>
-
-                  <View style={styles.notificationCopy}>
-                    <View style={styles.notificationHeadlineRow}>
-                      <Text
-                        style={[
-                          styles.notificationHeadline,
-                          !notification.isRead &&
-                            styles.notificationHeadlineUnread,
-                        ]}
-                      >
-                        {notification.label}
-                      </Text>
-                      <View style={styles.notificationHeadlineMeta}>
-                        <Text
-                          style={[
-                            styles.notificationTime,
-                            !notification.isRead &&
-                              styles.notificationTimeUnread,
-                          ]}
-                        >
-                          {timestampLabel}
-                        </Text>
-                        {!notification.isRead ? (
-                          <View style={styles.notificationUnreadDot} />
-                        ) : null}
-                      </View>
-                    </View>
-
-                    {preview ? (
-                      <Text
-                        style={styles.notificationPreview}
-                        numberOfLines={2}
-                      >
-                        {preview}
-                      </Text>
-                    ) : null}
-                  </View>
-                </Pressable>
-              </View>
-            );
-          })}
-        </View>
-      ) : (
-        <NotificationStateCard
-          icon="notifications-off-outline"
-          title="You're caught up"
-          description="New follows, track activity, comments, and direct messages will settle here as they happen."
-        />
-      )}
-    </View>
-  );
-}
-
-function NotificationsFeedSkeleton() {
-  const rows: [number, number][] = [
-    [220, 128],
-    [196, 148],
-    [236, 108],
-  ];
-
-  return (
-    <View style={styles.notificationList}>
-      {rows.map(([headlineWidth, previewWidth], index) => (
-        <View
-          key={`${headlineWidth}-${previewWidth}-${index}`}
-          style={styles.notificationSkeletonRow}
-        >
-          <View style={styles.notificationSkeletonBody}>
-            <ShimmerPlaceholder width={32} height={32} borderRadius={16} />
-            <View style={styles.notificationSkeletonCopy}>
-              <ShimmerPlaceholder
-                width={headlineWidth}
-                height={11}
-                borderRadius={999}
-              />
-              <ShimmerPlaceholder
-                width={previewWidth}
-                height={11}
-                borderRadius={999}
-                style={{ opacity: 0.62 }}
-              />
-            </View>
-          </View>
-          <ShimmerPlaceholder width={28} height={10} borderRadius={999} />
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function NotificationStateCard({
-  icon,
-  title,
-  description,
-  actionLabel,
-  onAction,
-  tone = "default",
-}: {
-  icon: IoniconName;
-  title: string;
-  description: string;
-  actionLabel?: string;
-  onAction?: () => void;
-  tone?: "default" | "error";
-}) {
-  const iconColor =
-    tone === "error" ? tokens.colors.danger : tokens.colors.textSecondary;
-
-  return (
-    <View
-      style={[
-        styles.notificationStateCard,
-        tone === "error" && styles.notificationStateCardError,
-      ]}
-    >
-      <View
-        style={[
-          styles.notificationStateIconWrap,
-          tone === "error" && styles.notificationStateIconWrapError,
-        ]}
-      >
-        <Ionicons name={icon} size={20} color={iconColor} />
-      </View>
-      <Text style={styles.notificationStateTitle}>{title}</Text>
-      <Text style={styles.notificationStateDescription}>{description}</Text>
-      {actionLabel && onAction ? (
-        <Pressable
-          onPress={onAction}
-          style={({ pressed }: { pressed: boolean }) => [
-            styles.notificationStateAction,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.notificationStateActionLabel}>{actionLabel}</Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
-function PreferenceRow({
-  label,
-  subtitle,
-  value,
-  onValueChange,
-  disabled = false,
-}: {
-  label: string;
-  subtitle: string;
-  value: boolean;
-  onValueChange: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <View
-      style={[styles.preferenceRow, disabled && styles.preferenceRowDisabled]}
-    >
-      <View style={styles.preferenceCopy}>
-        <Text
-          style={[
-            styles.preferenceLabel,
-            disabled && styles.preferenceLabelDisabled,
-          ]}
-        >
-          {label}
-        </Text>
-        <Text
-          style={[
-            styles.preferenceSubtitle,
-            disabled && styles.preferenceSubtitleDisabled,
-          ]}
-        >
-          {subtitle}
-        </Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        disabled={disabled}
-        trackColor={{
-          false: tokens.colors.borderSubtle,
-          true: tokens.colors.accentStrong,
-        }}
-        thumbColor={
-          value ? tokens.colors.accentLight : tokens.colors.textSecondary
-        }
-      />
-    </View>
-  );
-}
-
-function InfoRow({
-  item,
-  compact = false,
-}: {
-  key?: Key;
-  item: SummaryItem;
-  compact?: boolean;
-}) {
-  const iconColor =
-    item.tone === "accent"
-      ? tokens.colors.accent
-      : item.tone === "warning"
-        ? tokens.colors.warning
-        : tokens.colors.textSecondary;
-
-  return (
-    <View style={styles.listRow}>
-      <Ionicons name={item.icon} size={16} color={iconColor} />
-      <View style={styles.infoCopy}>
-        <Text style={styles.listLabel}>{item.label}</Text>
-        {!compact && item.subtitle ? (
-          <Text style={styles.listDetail}>{item.subtitle}</Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   safe: {

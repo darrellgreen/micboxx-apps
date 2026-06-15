@@ -41,10 +41,10 @@ export default function ProfileTab() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchUserProfile(session.accessToken, session);
+        const data = await fetchUserProfile(session!.accessToken, session!);
         if (!cancelled) {
           setProfile(data);
-          loadedForToken.current = session.accessToken;
+          loadedForToken.current = session!.accessToken;
         }
       } catch (err) {
         if (!cancelled) {

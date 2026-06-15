@@ -7,7 +7,7 @@ import * as Sentry from "@sentry/react-native";
 import { Stack, usePathname, Redirect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { Pressable, StyleSheet, Text, View, ActivityIndicator } from "react-native";
+import { Pressable, StyleSheet, Text, View, ActivityIndicator, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -79,12 +79,28 @@ const navigationTheme = {
   },
 };
 
-const CHROME_HIDDEN_ROUTES = ["/now-playing", "/sign-in", "/sign-up", "/sign-up-verify", "/auth/callback"];
+// Routes where the bottom chrome (tab bar + mini player) should be hidden.
+// "Hidden" means opacity:0 + non-interactive, NOT unmounted — so returning
+// from a modal like /now-playing doesn't pay a fresh-mount cost.
+const CHROME_HIDDEN_ROUTES = [
+  ...(Platform.OS === "ios" ? [] : ["/now-playing"]),
+  "/sign-in",
+  "/sign-up",
+  "/sign-up-verify",
+  "/auth/callback",
+];
 
 function PersistentTabBarGate() {
   const pathname = usePathname();
-  if (CHROME_HIDDEN_ROUTES.includes(pathname)) return null;
-  return <PersistentTabBar />;
+  const hidden = CHROME_HIDDEN_ROUTES.includes(pathname);
+  return (
+    <View
+      pointerEvents={hidden ? "none" : "auto"}
+      style={hidden ? s.chromeHidden : undefined}
+    >
+      <PersistentTabBar />
+    </View>
+  );
 }
 
 function MiniPlayerGate() {
@@ -93,14 +109,24 @@ function MiniPlayerGate() {
   const isRoomRoute = pathname.endsWith("/room");
   const isRoomOwnedQueue = playerQueue.context?.id?.startsWith("room:") === true;
 
+  // Only clear a room-owned queue when navigating away from the room screen.
+  // Stable ref avoids this effect re-firing on every clearQueue identity change.
+  const clearQueue = playerQueue.clearQueue;
   useEffect(() => {
     if (!isRoomRoute && isRoomOwnedQueue) {
-      void playerQueue.clearQueue();
+      void clearQueue();
     }
-  }, [isRoomOwnedQueue, isRoomRoute, playerQueue.clearQueue]);
+  }, [isRoomOwnedQueue, isRoomRoute, clearQueue]);
 
-  if (CHROME_HIDDEN_ROUTES.includes(pathname) || isRoomRoute || isRoomOwnedQueue) return null;
-  return <MiniPlayer />;
+  const hidden = CHROME_HIDDEN_ROUTES.includes(pathname) || isRoomRoute || isRoomOwnedQueue;
+  return (
+    <View
+      pointerEvents={hidden ? "none" : "auto"}
+      style={hidden ? s.chromeHidden : undefined}
+    >
+      <MiniPlayer />
+    </View>
+  );
 }
 
 export function ErrorBoundary({
@@ -122,6 +148,10 @@ export function ErrorBoundary({
     </SafeAreaView>
   );
 }
+
+const s = StyleSheet.create({
+  chromeHidden: { opacity: 0 },
+});
 
 const eb = StyleSheet.create({
   safe: { flex: 1, backgroundColor: tokens.colors.bgApp },

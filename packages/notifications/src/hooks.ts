@@ -210,14 +210,14 @@ export function useMicboxxUnreadNotificationCount({
       socialStatus !== "authenticated" ||
       !firebaseConfigured
     ) {
-      setSocialUnreadCount(0);
+      setSocialUnreadCount((prev) => (prev !== 0 ? 0 : prev));
       return;
     }
 
     const unsubscribe = adapter.subscribeToUnreadCount(
       firebaseUid,
       (count) => {
-        setSocialUnreadCount(count);
+        setSocialUnreadCount((prev) => (prev !== count ? count : prev));
       }
     );
 
@@ -226,7 +226,7 @@ export function useMicboxxUnreadNotificationCount({
 
   useEffect(() => {
     if (!accessToken) {
-      setRoomUnreadCount(0);
+      setRoomUnreadCount((prev) => (prev !== 0 ? 0 : prev));
       return;
     }
 
@@ -236,11 +236,11 @@ export function useMicboxxUnreadNotificationCount({
       try {
         const count = await adapter.fetchRoomUnreadCount({ accessToken });
         if (!cancelled) {
-          setRoomUnreadCount(count);
+          setRoomUnreadCount((prev) => (prev !== count ? count : prev));
         }
       } catch {
         if (!cancelled) {
-          setRoomUnreadCount(0);
+          setRoomUnreadCount((prev) => (prev !== 0 ? 0 : prev));
         }
       }
     };

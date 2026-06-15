@@ -47,11 +47,7 @@ export function ScreenHeader({
   const unreadNotificationCount = useUnreadNotificationCount();
   const handleRightPress =
     onRightPress ??
-    (() =>
-      router.push({
-        pathname: "/account/[slug]",
-        params: { slug: "notifications" },
-      }));
+    (() => router.push("/notifications"));
   const resolvedRightBadgeCount =
     typeof rightBadgeCount === "number"
       ? rightBadgeCount
