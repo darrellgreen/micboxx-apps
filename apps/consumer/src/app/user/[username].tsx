@@ -1,53 +1,37 @@
-import { Stack, useLocalSearchParams } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
-import { useEffect, useState } from "react";
-import {
-    Alert,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
-import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Stack, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TrackRow } from "@/components/discover";
-import {
-  BottomActionSheet,
-  type BottomActionSheetItem,
-  Skeleton,
-} from "@micboxx/ui";
+import { TrackRow } from '@/components/discover';
+import { BottomActionSheet, type BottomActionSheetItem, Skeleton } from '@micboxx/ui';
 import {
   DetailHeroCard,
   DetailStatusPanel,
   RelatedLaneSection,
-} from "@/features/catalog/components/detail-shared";
-import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
-import { ArtistHero } from "@/features/catalog/components/ArtistHero";
-import {
-    buildAlbumRelatedLane,
-    buildPlaylistRelatedLane,
-} from "@/features/catalog/detail-utils";
-import { joinMetaParts } from "@micboxx/utils";
-import { useDetailPlayback } from "@/features/catalog/hooks/useDetailPlayback";
-import { env } from "@/config/env";
-import { formatCompactNumber } from "@micboxx/api";
-import { useGetUserPageQuery } from "@micboxx/api";
-import { tokens } from "@micboxx/theme";
-import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { useUserFollowState } from "@/features/social/hooks/useUserFollowState";
+} from '@/features/catalog/components/detail-shared';
+import { DetailRouteHeader } from '@/components/navigation/DetailRouteHeader';
+import { ArtistHero } from '@/features/catalog/components/ArtistHero';
+import { buildAlbumRelatedLane, buildPlaylistRelatedLane } from '@/features/catalog/detail-utils';
+import { joinMetaParts } from '@micboxx/utils';
+import { useDetailPlayback } from '@/features/catalog/hooks/useDetailPlayback';
+import { env } from '@/config/env';
+import { formatCompactNumber } from '@micboxx/api';
+import { useGetUserPageQuery } from '@micboxx/api';
+import { tokens } from '@micboxx/theme';
+import { useNowPlaying } from '@/features/player/hooks/useNowPlaying';
+import { useUserFollowState } from '@/features/social/hooks/useUserFollowState';
 
 export default function UserDetailScreen() {
   const params = useLocalSearchParams<{ username?: string | string[] }>();
-  const username = Array.isArray(params.username)
-    ? params.username[0]
-    : params.username;
+  const username = Array.isArray(params.username) ? params.username[0] : params.username;
   const insets = useSafeAreaInsets();
   const progressValue = useSharedValue(0);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
-  const { data, isLoading, error } = useGetUserPageQuery(username ?? "", {
+  const { data, isLoading, error } = useGetUserPageQuery(username ?? '', {
     skip: !username,
   });
 
@@ -67,16 +51,17 @@ export default function UserDetailScreen() {
     initialFollowerCount: user?.counts.followers ?? 0,
     initialFollowingCount: user?.counts.following ?? 0,
   });
-  const { activeTrackId, isPlaying, playAll, playFromTrack } =
-    useDetailPlayback(data?.tracks ?? [], {
-      type: "artist",
+  const { activeTrackId, isPlaying, playAll, playFromTrack } = useDetailPlayback(
+    data?.tracks ?? [],
+    {
+      type: 'artist',
       slug: user?.username ?? username ?? null,
       title: user?.displayName ?? null,
-    });
+    },
+  );
   const { progressPercent } = useNowPlaying();
 
-  const topTrackGenre =
-    data?.tracks.find((track) => track.genre?.name)?.genre?.name ?? null;
+  const topTrackGenre = data?.tracks.find((track) => track.genre?.name)?.genre?.name ?? null;
 
   useEffect(() => {
     if (activeTrackId !== null) {
@@ -98,9 +83,9 @@ export default function UserDetailScreen() {
       return;
     }
 
-    Alert.alert("Follow unavailable", followError, [
+    Alert.alert('Follow unavailable', followError, [
       {
-        text: "OK",
+        text: 'OK',
         onPress: clearInteractionError,
       },
     ]);
@@ -113,7 +98,7 @@ export default function UserDetailScreen() {
 
     const artistPath = user.href ?? `/user/${encodeURIComponent(user.username)}`;
     const shareUrl = env.micboxxWebBaseUrl
-      ? `${env.micboxxWebBaseUrl.replace(/\/$/, "")}${artistPath}`
+      ? `${env.micboxxWebBaseUrl.replace(/\/$/, '')}${artistPath}`
       : null;
     const shareMessage = shareUrl
       ? `Check out ${user.displayName} on MicBoxx\n${shareUrl}`
@@ -133,27 +118,24 @@ export default function UserDetailScreen() {
         return;
       }
 
-      Alert.alert(
-        "Unable to share",
-        "Sharing is not available on this device right now.",
-      );
+      Alert.alert('Unable to share', 'Sharing is not available on this device right now.');
     }
   }
 
   const actionSheetItems: BottomActionSheetItem[] = [
     {
-      key: "share",
-      label: "Share profile",
-      icon: "share-social-outline",
+      key: 'share',
+      label: 'Share profile',
+      icon: 'share-social-outline',
       onPress: () => {
         void handleShareArtist();
       },
     },
   ];
 
-  if (isLoading) {
+  if (!data && isLoading) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <Stack.Screen options={{ headerShown: false }} />
         <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
           <Skeleton width="100%" height={220} borderRadius={0} />
@@ -161,7 +143,7 @@ export default function UserDetailScreen() {
             <Skeleton width={72} height={72} borderRadius={36} style={{ marginTop: -36 }} />
             <Skeleton width="40%" height={20} borderRadius={8} />
             <Skeleton width="25%" height={14} borderRadius={6} />
-            <View style={{ flexDirection: "row", gap: 20, marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', gap: 20, marginTop: 4 }}>
               {[1, 2, 3].map((i) => (
                 <View key={i} style={{ gap: 4 }}>
                   <Skeleton width={28} height={16} borderRadius={6} />
@@ -171,7 +153,7 @@ export default function UserDetailScreen() {
             </View>
             <View style={{ gap: 10, marginTop: 12 }}>
               {[1, 2, 3, 4, 5].map((i) => (
-                <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Skeleton width={44} height={44} borderRadius={6} />
                   <View style={{ flex: 1, gap: 6 }}>
                     <Skeleton width="50%" height={13} borderRadius={6} />
@@ -188,7 +170,7 @@ export default function UserDetailScreen() {
 
   if (!user || error) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <Stack.Screen options={{ headerShown: false }} />
         <ScrollView contentContainerStyle={styles.errorPage}>
           <DetailStatusPanel
@@ -201,7 +183,7 @@ export default function UserDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={[styles.headerOverlay, { top: insets.top + 8 }]}>
         <DetailRouteHeader title="Profile" fallbackRoute="/(tabs)/search" />
@@ -226,30 +208,27 @@ export default function UserDetailScreen() {
           followPending={followPending}
           stats={[
             {
-              key: "followers",
+              key: 'followers',
               label: `${formatCompactNumber(followerCount)} followers`,
               onPress: () =>
                 Alert.alert(
-                  "Followers",
-                  "Follower totals update here, but follower lists are not available on this screen.",
+                  'Followers',
+                  'Follower totals update here, but follower lists are not available on this screen.',
                 ),
             },
             {
-              key: "tracks",
+              key: 'tracks',
               label: `${formatCompactNumber(user.counts.tracks)} tracks`,
               onPress: () =>
-                Alert.alert(
-                  "Top tracks",
-                  "The top tracks list is shown below this hero.",
-                ),
+                Alert.alert('Top tracks', 'The top tracks list is shown below this hero.'),
             },
             {
-              key: "albums",
+              key: 'albums',
               label: `${formatCompactNumber(user.counts.albums)} albums`,
               onPress: () =>
                 Alert.alert(
-                  "Albums",
-                  "Albums for this profile are shown below when they are available.",
+                  'Albums',
+                  'Albums for this profile are shown below when they are available.',
                 ),
             },
           ]}
@@ -309,7 +288,7 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   headerOverlay: {
-    position: "absolute",
+    position: 'absolute',
     left: 0,
     right: 0,
     zIndex: 10,
@@ -334,7 +313,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: tokens.colors.textPrimary,
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: '800',
   },
   trackList: {
     gap: 8,

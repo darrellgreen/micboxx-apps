@@ -1,24 +1,27 @@
-import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { NewMusicAlbums, SectionHeader, TrackRow, TrendingArtists } from '@/components/discover';
+import { ScreenHeader } from '@/components/navigation/ScreenHeader';
 import {
-  NewMusicAlbums,
-  SectionHeader,
-  TrackRow,
-  TrendingArtists,
-} from "@/components/discover";
-import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { AnimatedPressable, Screen, Skeleton, EmptyState, ErrorState, Button, Surface, Heading, BodyText, Subtext } from "@micboxx/ui";
-import type {
-  PublicArtistSummary,
-  PublicTrackSummary
-} from "@micboxx/contracts";
-import type { PublicRoomSummary } from "@micboxx/contracts";
-import { useDiscoverPlayer } from "@/hooks/useDiscoverPlayer";
-import { hapticSelection } from "@micboxx/ui";
-import { useAppSelector } from "@/store/hooks";
+  AnimatedPressable,
+  Screen,
+  Skeleton,
+  EmptyState,
+  ErrorState,
+  Button,
+  Surface,
+  Heading,
+  BodyText,
+  Subtext,
+} from '@micboxx/ui';
+import type { PublicArtistSummary, PublicTrackSummary } from '@micboxx/contracts';
+import type { PublicRoomSummary } from '@micboxx/contracts';
+import { useDiscoverPlayer } from '@/hooks/useDiscoverPlayer';
+import { hapticSelection } from '@micboxx/ui';
+import { useAppSelector } from '@/store/hooks';
 import {
   useGetDiscoverPersonalizedQuery,
   useGetDiscoverTracksQuery,
@@ -26,8 +29,8 @@ import {
   useGetPopularTracksQuery,
   useGetPublicRoomsQuery,
   useGetRecentlyPlayedQuery,
-} from "@micboxx/api";
-import { tokens } from "@micboxx/theme";
+} from '@micboxx/api';
+import { tokens } from '@micboxx/theme';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -43,10 +46,7 @@ function roomKey(room: PublicRoomSummary): string {
   return room.release_identifier || `${room.release_ref_type}:${room.release_ref_id}`;
 }
 
-function dedupeRooms(
-  rooms: PublicRoomSummary[],
-  seen = new Set<string>(),
-): PublicRoomSummary[] {
+function dedupeRooms(rooms: PublicRoomSummary[], seen = new Set<string>()): PublicRoomSummary[] {
   const deduped: PublicRoomSummary[] = [];
   for (const room of rooms) {
     const key = roomKey(room);
@@ -64,12 +64,12 @@ function dedupeRooms(
 const LANE_LIMIT = 5;
 
 const LANE_TITLE_PARTS: Record<string, { bold: string; light: string }> = {
-  followed_artists: { bold: "Latest", light: "from artists you follow" },
-  for_you: { bold: "For", light: "You" },
-  editors_picks: { bold: "Editor's", light: "Picks" },
-  recently_played: { bold: "Continue", light: "Listening" },
-  most_popular: { bold: "Most", light: "Popular" },
-  new_music: { bold: "New", light: "Music" },
+  followed_artists: { bold: 'Latest', light: 'from artists you follow' },
+  for_you: { bold: 'For', light: 'You' },
+  editors_picks: { bold: "Editor's", light: 'Picks' },
+  recently_played: { bold: 'Continue', light: 'Listening' },
+  most_popular: { bold: 'Most', light: 'Popular' },
+  new_music: { bold: 'New', light: 'Music' },
 };
 
 function dedup(
@@ -86,10 +86,7 @@ function dedup(
   return result;
 }
 
-function uniqueArtists(
-  tracks: PublicTrackSummary[],
-  limit = 3,
-): PublicArtistSummary[] {
+function uniqueArtists(tracks: PublicTrackSummary[], limit = 3): PublicArtistSummary[] {
   const seen = new Set<number>();
   const result: PublicArtistSummary[] = [];
 
@@ -98,13 +95,11 @@ function uniqueArtists(
     seen.add(track.artist.id);
 
     const avatarUrl =
-      typeof track.artist.avatarUrl === "string" &&
-      track.artist.avatarUrl.trim().length > 0
+      typeof track.artist.avatarUrl === 'string' && track.artist.avatarUrl.trim().length > 0
         ? track.artist.avatarUrl.trim()
         : null;
     const coverUrl =
-      typeof track.artist.coverUrl === "string" &&
-      track.artist.coverUrl.trim().length > 0
+      typeof track.artist.coverUrl === 'string' && track.artist.coverUrl.trim().length > 0
         ? track.artist.coverUrl.trim()
         : null;
 
@@ -119,16 +114,8 @@ function uniqueArtists(
   return result;
 }
 
-function deriveTrendingArtistsFromLanes(
-  lanes: DiscoverLane[],
-  limit = 3,
-): PublicArtistSummary[] {
-  const preferredOrder = [
-    "trending_now",
-    "most_popular",
-    "new_music",
-    "editors_picks",
-  ];
+function deriveTrendingArtistsFromLanes(lanes: DiscoverLane[], limit = 3): PublicArtistSummary[] {
+  const preferredOrder = ['trending_now', 'most_popular', 'new_music', 'editors_picks'];
   const orderedLanes = [
     ...preferredOrder
       .map((key) => lanes.find((lane) => lane.key === key))
@@ -193,20 +180,17 @@ function LaneSection({
   lane: DiscoverLane;
   activeId: number | null;
   playing: boolean;
-  progressValue: ReturnType<typeof useDiscoverPlayer>["progressValue"];
-  onAction: (
-    track: PublicTrackSummary,
-    allTracks?: PublicTrackSummary[],
-  ) => void;
+  progressValue: ReturnType<typeof useDiscoverPlayer>['progressValue'];
+  onAction: (track: PublicTrackSummary, allTracks?: PublicTrackSummary[]) => void;
 }) {
   if (!lane.tracks.length) return null;
 
   const heading = LANE_TITLE_PARTS[lane.key] ?? {
-    bold: lane.title.split(" ")[0] ?? lane.title,
-    light: lane.title.split(" ").slice(1).join(" "),
+    bold: lane.title.split(' ')[0] ?? lane.title,
+    light: lane.title.split(' ').slice(1).join(' '),
   };
 
-  if (lane.key === "new_music") {
+  if (lane.key === 'new_music') {
     return (
       <>
         <SectionHeader bold={heading.bold} light={heading.light} />
@@ -261,10 +245,9 @@ function ReleaseRoomsSection({
         contentContainerStyle={s.roomsRail}
         renderItem={({ item }) => {
           const hasPresence =
-            typeof item.active_presence_count === "number"
-            && item.active_presence_count > 0;
+            typeof item.active_presence_count === 'number' && item.active_presence_count > 0;
           const meta = hasPresence
-            ? `${item.active_presence_count} ${item.active_presence_count === 1 ? "person" : "people"} here`
+            ? `${item.active_presence_count} ${item.active_presence_count === 1 ? 'person' : 'people'} here`
             : item.state_line;
 
           return (
@@ -282,9 +265,13 @@ function ReleaseRoomsSection({
                   </View>
                 )}
                 <View style={s.roomCardCopy}>
-                  <BodyText weight="semibold" numberOfLines={1}>{item.release_title}</BodyText>
+                  <BodyText weight="semibold" numberOfLines={1}>
+                    {item.release_title}
+                  </BodyText>
                   <Subtext numberOfLines={1}>{item.artist_name}</Subtext>
-                  <Subtext color="accent" numberOfLines={1} style={{ fontSize: 11, marginTop: 2 }}>{meta}</Subtext>
+                  <Subtext color="accent" numberOfLines={1} style={{ fontSize: 11, marginTop: 2 }}>
+                    {meta}
+                  </Subtext>
                 </View>
               </Surface>
             </Pressable>
@@ -299,9 +286,7 @@ function ReleaseRoomsSection({
 
 export default function HomeScreen() {
   const router = useRouter();
-  const accessToken = useAppSelector(
-    (st) => st.auth.session?.accessToken ?? null,
-  );
+  const accessToken = useAppSelector((st) => st.auth.session?.accessToken ?? null);
   const isLoggedIn = accessToken !== null;
 
   /* data */
@@ -311,10 +296,7 @@ export default function HomeScreen() {
     isFetching: personalizedFetching,
     error: personalizedError,
     refetch: refetchPersonalized,
-  } = useGetDiscoverPersonalizedQuery(
-    { accessToken },
-    { skip: !isLoggedIn },
-  );
+  } = useGetDiscoverPersonalizedQuery({ accessToken }, { skip: !isLoggedIn });
   const {
     data: discoverData,
     isLoading: discoverLoading,
@@ -342,7 +324,7 @@ export default function HomeScreen() {
     isFetching: roomsFetching,
     error: roomsError,
     refetch: refetchRooms,
-  } = useGetPublicRoomsQuery({ filter: "latest_activity", limit: 6 });
+  } = useGetPublicRoomsQuery({ filter: 'latest_activity', limit: 6 });
   const {
     data: recentData,
     isLoading: recentLoading,
@@ -375,10 +357,7 @@ export default function HomeScreen() {
     isLoggedIn,
   ]);
 
-  const releaseRooms = useMemo(
-    () => dedupeRooms(roomsData?.rooms ?? []),
-    [roomsData?.rooms],
-  );
+  const releaseRooms = useMemo(() => dedupeRooms(roomsData?.rooms ?? []), [roomsData?.rooms]);
 
   /* lanes */
   const lanes = useMemo<DiscoverLane[]>(() => {
@@ -395,8 +374,8 @@ export default function HomeScreen() {
       const followedDeduped = dedup(followedArtistTracks, seen, LANE_LIMIT);
       if (followedDeduped.length) {
         result.push({
-          key: "followed_artists",
-          title: "Latest from artists you follow",
+          key: 'followed_artists',
+          title: 'Latest from artists you follow',
           tracks: followedDeduped,
           isPersonalized: true,
           requiresAuth: true,
@@ -408,8 +387,8 @@ export default function HomeScreen() {
     const forYouDeduped = dedup(forYouTracks, seen, LANE_LIMIT);
     if (forYouDeduped.length) {
       result.push({
-        key: "for_you",
-        title: "For You",
+        key: 'for_you',
+        title: 'For You',
         tracks: forYouDeduped,
         isPersonalized: true,
         requiresAuth: true,
@@ -420,7 +399,7 @@ export default function HomeScreen() {
     const featuredDeduped = dedup(featuredData?.tracks ?? [], seen, LANE_LIMIT);
     if (featuredDeduped.length) {
       result.push({
-        key: "editors_picks",
+        key: 'editors_picks',
         title: "Editor's Picks",
         tracks: featuredDeduped,
       });
@@ -430,8 +409,8 @@ export default function HomeScreen() {
     const popularDeduped = dedup(popularData?.tracks ?? [], seen, LANE_LIMIT);
     if (popularDeduped.length) {
       result.push({
-        key: "most_popular",
-        title: "Most Popular",
+        key: 'most_popular',
+        title: 'Most Popular',
         tracks: popularDeduped,
       });
     }
@@ -440,8 +419,8 @@ export default function HomeScreen() {
     const newMusicDeduped = dedup(discoverTracks, seen, LANE_LIMIT);
     if (newMusicDeduped.length) {
       result.push({
-        key: "new_music",
-        title: "New Music",
+        key: 'new_music',
+        title: 'New Music',
         tracks: newMusicDeduped,
       });
     }
@@ -453,8 +432,8 @@ export default function HomeScreen() {
         const recentDeduped = dedup(recentTracks, new Set(), LANE_LIMIT);
         if (recentDeduped.length > 0) {
           result.push({
-            key: "recently_played",
-            title: "Recently Played",
+            key: 'recently_played',
+            title: 'Recently Played',
             tracks: recentDeduped,
             isPersonalized: true,
             requiresAuth: true,
@@ -477,41 +456,42 @@ export default function HomeScreen() {
   }, [lanes]);
 
   /* player */
-  const { activeId, playing, progressValue, handleAction } =
-    useDiscoverPlayer();
+  const { activeId, playing, progressValue, handleAction } = useDiscoverPlayer();
 
   /* ── FlatList sections ─────────────────────────────────────────────── */
   type HomeSection =
-    | { type: "rooms"; key: string; rooms: PublicRoomSummary[] }
-    | { type: "lane"; key: string; lane: DiscoverLane }
-    | { type: "newMusic"; key: string; tracks: PublicTrackSummary[] }
-    | { type: "trending"; key: string; artists: PublicArtistSummary[] };
+    | { type: 'rooms'; key: string; rooms: PublicRoomSummary[] }
+    | { type: 'lane'; key: string; lane: DiscoverLane }
+    | { type: 'newMusic'; key: string; tracks: PublicTrackSummary[] }
+    | { type: 'trending'; key: string; artists: PublicArtistSummary[] };
 
   const homeSections = useMemo<HomeSection[]>(() => {
     const result: HomeSection[] = [];
     if (releaseRooms.length > 0) {
-      result.push({ type: "rooms", key: "__releaseRooms", rooms: releaseRooms });
+      result.push({ type: 'rooms', key: '__releaseRooms', rooms: releaseRooms });
     }
     // Filter out recently_played from other lanes
-    const otherLanes = lanes.filter((lane) => lane.key !== "recently_played");
-    result.push(...otherLanes.map((lane) => ({
-      type: "lane" as const,
-      key: lane.key,
-      lane,
-    })));
+    const otherLanes = lanes.filter((lane) => lane.key !== 'recently_played');
+    result.push(
+      ...otherLanes.map((lane) => ({
+        type: 'lane' as const,
+        key: lane.key,
+        lane,
+      })),
+    );
     if (trendingArtists.length > 0) {
       result.push({
-        type: "trending",
-        key: "__trending",
+        type: 'trending',
+        key: '__trending',
         artists: trendingArtists,
       });
     }
     // Move recently_played (Continue Listening) to the absolute bottom of the page
-    const recentlyPlayedLane = lanes.find((lane) => lane.key === "recently_played");
+    const recentlyPlayedLane = lanes.find((lane) => lane.key === 'recently_played');
     if (recentlyPlayedLane) {
       result.push({
-        type: "lane" as const,
-        key: "recently_played",
+        type: 'lane' as const,
+        key: 'recently_played',
         lane: recentlyPlayedLane,
       });
     }
@@ -521,24 +501,24 @@ export default function HomeScreen() {
   const renderHomeItem = useCallback(
     ({ item, index }: { item: HomeSection; index: number }) => {
       switch (item.type) {
-        case "rooms":
+        case 'rooms':
           return (
             <View style={index > 0 ? s.laneGap : undefined}>
               <ReleaseRoomsSection
                 rooms={item.rooms}
                 onOpenAll={() => {
-                  router.push("/(tabs)/rooms" as never);
+                  router.push('/(tabs)/rooms' as never);
                 }}
                 onOpenRoom={(room) => {
                   router.push({
-                    pathname: "/album/[slug]/room",
+                    pathname: '/album/[slug]/room',
                     params: { slug: room.release_identifier },
                   } as never);
                 }}
               />
             </View>
           );
-        case "lane":
+        case 'lane':
           return (
             <View style={index > 0 ? s.laneGap : undefined}>
               <LaneSection
@@ -550,20 +530,18 @@ export default function HomeScreen() {
               />
             </View>
           );
-        case "newMusic":
+        case 'newMusic':
           return (
             <View style={s.laneGap}>
               <SectionHeader bold="New" light="Music" />
               <NewMusicAlbums tracks={item.tracks} />
             </View>
           );
-        case "trending":
+        case 'trending':
           return (
             <View style={s.laneGap}>
               <SectionHeader bold="Trending" light="Artists" />
-              <TrendingArtists
-                artists={item.artists}
-              />
+              <TrendingArtists artists={item.artists} />
             </View>
           );
       }
@@ -574,29 +552,26 @@ export default function HomeScreen() {
   const extractKey = useCallback((item: HomeSection) => item.key, []);
 
   /* loading / empty */
-  const hasAnyContent = homeSections.length > 0;
-  const isSettlingInitialData = Boolean(
-    !hasAnyContent &&
-      (personalizedLoading ||
-        personalizedFetching ||
-        discoverLoading ||
-        discoverFetching ||
-        featuredLoading ||
-        featuredFetching ||
-        popularLoading ||
-        popularFetching ||
-        roomsLoading ||
-        roomsFetching ||
-        (isLoggedIn && (recentLoading || recentFetching))),
-  );
+  // Wait for ALL initial loads to settle before rendering content so sections
+  // don't pop in one-by-one and shift the layout. isFetching is intentionally
+  // excluded — pull-to-refresh already has its own refreshing spinner.
+  const isSettlingInitialData =
+    discoverLoading ||
+    popularLoading ||
+    featuredLoading ||
+    roomsLoading ||
+    (isLoggedIn && (personalizedLoading || recentLoading));
+
+  const hasAnyContent = !isSettlingInitialData && homeSections.length > 0;
   const hasStartupError = Boolean(
+    !isSettlingInitialData &&
     !hasAnyContent &&
-      (personalizedError ||
-        discoverError ||
-        featuredError ||
-        popularError ||
-        roomsError ||
-        (isLoggedIn && recentError)),
+    (personalizedError ||
+      discoverError ||
+      featuredError ||
+      popularError ||
+      roomsError ||
+      (isLoggedIn && recentError)),
   );
 
   const hubHeader = <ScreenHeader leftIcon="menu" />;
@@ -606,7 +581,7 @@ export default function HomeScreen() {
       <Screen scroll={false} header={hubHeader}>
         {[1, 2].map((lane) => (
           <View key={lane} style={lane > 1 ? s.laneGap : undefined}>
-            <View style={{ flexDirection: "row", gap: 8, marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
               <Skeleton width={80} height={18} borderRadius={6} />
               <Skeleton width={60} height={18} borderRadius={6} />
             </View>
@@ -644,7 +619,13 @@ export default function HomeScreen() {
   }
 
   return (
-    <Screen scroll={false} noPaddingHorizontal noPaddingBottom contentContainerStyle={{ paddingTop: 0 }} header={hubHeader}>
+    <Screen
+      scroll={false}
+      noPaddingHorizontal
+      noPaddingBottom
+      contentContainerStyle={{ paddingTop: 0 }}
+      header={hubHeader}
+    >
       <FlatList
         data={homeSections}
         keyExtractor={extractKey}
@@ -667,14 +648,14 @@ const s = StyleSheet.create({
   scrollContent: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 160 },
   loadingWrap: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 16,
   },
   emptyText: {
     color: tokens.colors.textSecondary,
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   retryBtn: {
     paddingHorizontal: 24,
@@ -685,12 +666,12 @@ const s = StyleSheet.create({
   retryLabel: {
     color: tokens.colors.textPrimary,
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   roomsHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
   roomsShowAllBtn: {
@@ -698,10 +679,10 @@ const s = StyleSheet.create({
     paddingVertical: 4,
   },
   roomsShowAllLabel: {
-    color: "rgba(238,238,242,0.52)",
+    color: 'rgba(238,238,242,0.52)',
     fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
+    fontWeight: '700',
+    textTransform: 'uppercase',
     letterSpacing: 0.7,
   },
   roomsRail: {
@@ -711,25 +692,25 @@ const s = StyleSheet.create({
   roomCard: {
     width: 176,
     borderRadius: 12,
-    overflow: "hidden",
+    overflow: 'hidden',
     backgroundColor: tokens.colors.bgElevated,
     borderWidth: 1,
     borderColor: tokens.colors.borderSubtle,
   },
   roomArtwork: {
-    width: "100%",
+    width: '100%',
     height: 116,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   roomArtworkFallback: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   roomArtworkFallbackLabel: {
-    color: "rgba(238,238,242,0.65)",
+    color: 'rgba(238,238,242,0.65)',
     fontSize: 12,
-    fontWeight: "700",
-    textTransform: "uppercase",
+    fontWeight: '700',
+    textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
   roomCardCopy: {
@@ -740,12 +721,12 @@ const s = StyleSheet.create({
   roomCardTitle: {
     color: tokens.colors.textPrimary,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   roomCardArtist: {
     color: tokens.colors.textSecondary,
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   roomCardMeta: {
     color: tokens.colors.accentLight,
@@ -757,8 +738,8 @@ const s = StyleSheet.create({
     gap: 8,
   },
   skeletonRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,

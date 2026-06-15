@@ -1,85 +1,76 @@
-import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 
+import type { EntitlementState, PublicSubscriptionPlan } from '@micboxx/contracts';
+import type { DashboardPlaylist, DashboardPlaylistList } from '@micboxx/contracts';
 import type {
-    EntitlementState,
-    PublicSubscriptionPlan,
-} from "@micboxx/contracts";
+  DiscoverPersonalizedResponse,
+  ForYouResponse,
+  PublicAlbumPage,
+  PublicArtistPage,
+  PublicArtistSummary,
+  PublicPlaylistPage,
+  PublicSearchResults,
+  PublicTrackList,
+  PublicTrackPage,
+  PublicTrackSummary,
+} from '@micboxx/contracts';
 import type {
-    DashboardPlaylist,
-    DashboardPlaylistList,
-} from "@micboxx/contracts";
-import type {
-    DiscoverPersonalizedResponse,
-    ForYouResponse,
-    PublicAlbumPage,
-    PublicArtistPage,
-    PublicArtistSummary,
-    PublicPlaylistPage,
-    PublicSearchResults,
-    PublicTrackList,
-    PublicTrackPage,
-    PublicTrackSummary,
-} from "@micboxx/contracts";
-import type {
-    PublicRoomDiscoveryFilter,
-    PublicRoomList,
-    RoomActivityResponse,
-    RoomClockState,
-    RoomEntryResponse,
-    RoomPollsResponse,
-    RoomQuestionsResponse,
-    RoomReactionType,
-    RoomSupportSendResponse,
-    RoomSupportStatusResult,
-    RoomTimeMachineResponse,
-} from "@micboxx/contracts";
+  PublicRoomDiscoveryFilter,
+  PublicRoomList,
+  RoomActivityResponse,
+  RoomClockState,
+  RoomEntryResponse,
+  RoomPollsResponse,
+  RoomQuestionsResponse,
+  RoomReactionType,
+  RoomSupportSendResponse,
+  RoomSupportStatusResult,
+  RoomTimeMachineResponse,
+} from '@micboxx/contracts';
 import {
-    getAlbumPage,
-    getArtistPage,
-    getDiscoverTracks,
-    getFeaturedTracks,
-    getPlaylistPage,
-    getPopularArtists,
-    getPopularTracks,
-    getRecentlyPlayedTracks,
-    getTrackPage,
-    getTrendingArtists,
-    searchCatalog,
-} from "./features/catalog";
+  getAlbumPage,
+  getArtistPage,
+  getDiscoverTracks,
+  getFeaturedTracks,
+  getPlaylistPage,
+  getPopularArtists,
+  getPopularTracks,
+  getRecentlyPlayedTracks,
+  getTrackPage,
+  getTrendingArtists,
+  searchCatalog,
+} from './features/catalog';
 import {
-    getCurrentEntitlements,
-    getDashboardPlaylist,
-    getMyPlaylists,
-    getPublicSubscriptionPlans,
-} from "./features/dashboard";
+  getCurrentEntitlements,
+  getDashboardPlaylist,
+  getMyPlaylists,
+  getPublicSubscriptionPlans,
+} from './features/dashboard';
+import { getDiscoverPersonalized, getForYouRecommendations } from './features/recommendations';
 import {
-    getDiscoverPersonalized,
-    getForYouRecommendations,
-} from "./features/recommendations";
-import {
-    enterRoom,
-    getPublicRooms,
-    getRoomActivity,
-    getRoomClock,
-    getRoomPolls,
-    getRoomQuestions,
-    getRoomSupportStatus,
-    getRoomTimeMachine,
-    reportRoomChatMessage,
-    sendRoomChatMessage,
-    sendRoomReaction,
-    sendRoomSupport,
-    submitRoomQuestion,
-    voteRoomPoll,
-    voteRoomQuestion,
-} from "./features/rooms";
+  enterRoom,
+  getPublicRooms,
+  getRoomActivity,
+  getRoomClock,
+  getRoomPolls,
+  getRoomQuestions,
+  getRoomSupportStatus,
+  getRoomTimeMachine,
+  reportRoomChatMessage,
+  sendRoomChatMessage,
+  sendRoomReaction,
+  sendRoomSupport,
+  submitRoomQuestion,
+  voteRoomPoll,
+  voteRoomQuestion,
+} from './features/rooms';
 
 type MicboxxApiError = {
   message: string;
 };
 
 export const micboxxApi = createApi({
-  reducerPath: "micboxxApi",
+  reducerPath: 'micboxxApi',
   baseQuery: fakeBaseQuery<MicboxxApiError>(),
   endpoints: (builder) => ({
     getMyPlaylists: builder.query<
@@ -93,10 +84,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load your playlists.",
+              message: error instanceof Error ? error.message : 'Unable to load your playlists.',
             },
           };
         }
@@ -113,35 +101,29 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load your playlist.",
+              message: error instanceof Error ? error.message : 'Unable to load your playlist.',
             },
           };
         }
       },
     }),
-    getCurrentEntitlements: builder.query<
-      EntitlementState | null,
-      { accessToken?: string | null }
-    >({
-      async queryFn({ accessToken }) {
-        try {
-          const data = await getCurrentEntitlements(accessToken);
-          return { data };
-        } catch (error) {
-          return {
-            error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load current entitlements.",
-            },
-          };
-        }
+    getCurrentEntitlements: builder.query<EntitlementState | null, { accessToken?: string | null }>(
+      {
+        async queryFn({ accessToken }) {
+          try {
+            const data = await getCurrentEntitlements(accessToken);
+            return { data };
+          } catch (error) {
+            return {
+              error: {
+                message:
+                  error instanceof Error ? error.message : 'Unable to load current entitlements.',
+              },
+            };
+          }
+        },
       },
-    }),
+    ),
     getForYou: builder.query<ForYouResponse, { accessToken?: string | null }>({
       async queryFn({ accessToken }) {
         try {
@@ -150,10 +132,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load recommendations.",
+              message: error instanceof Error ? error.message : 'Unable to load recommendations.',
             },
           };
         }
@@ -173,7 +152,7 @@ export const micboxxApi = createApi({
               message:
                 error instanceof Error
                   ? error.message
-                  : "Unable to load personalized discover content.",
+                  : 'Unable to load personalized discover content.',
             },
           };
         }
@@ -187,10 +166,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load discover tracks.",
+              message: error instanceof Error ? error.message : 'Unable to load discover tracks.',
             },
           };
         }
@@ -204,10 +180,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load featured tracks.",
+              message: error instanceof Error ? error.message : 'Unable to load featured tracks.',
             },
           };
         }
@@ -221,10 +194,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load track.",
+              message: error instanceof Error ? error.message : 'Unable to load track.',
             },
           };
         }
@@ -238,16 +208,14 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load album.",
+              message: error instanceof Error ? error.message : 'Unable to load album.',
             },
           };
         }
       },
     }),
     getArtistPage: builder.query<PublicArtistPage, string>({
+      keepUnusedDataFor: 300,
       async queryFn(username) {
         try {
           const data = await getArtistPage(username);
@@ -255,10 +223,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load artist.",
+              message: error instanceof Error ? error.message : 'Unable to load artist.',
             },
           };
         }
@@ -272,10 +237,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load playlist.",
+              message: error instanceof Error ? error.message : 'Unable to load playlist.',
             },
           };
         }
@@ -289,10 +251,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to search catalog.",
+              message: error instanceof Error ? error.message : 'Unable to search catalog.',
             },
           };
         }
@@ -306,10 +265,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load popular tracks.",
+              message: error instanceof Error ? error.message : 'Unable to load popular tracks.',
             },
           };
         }
@@ -323,34 +279,26 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load popular artists.",
+              message: error instanceof Error ? error.message : 'Unable to load popular artists.',
             },
           };
         }
       },
     }),
-    getTrendingArtists: builder.query<{ artists: PublicArtistSummary[] }, void>(
-      {
-        async queryFn() {
-          try {
-            const data = await getTrendingArtists(3);
-            return { data };
-          } catch (error) {
-            return {
-              error: {
-                message:
-                  error instanceof Error
-                    ? error.message
-                    : "Unable to load trending artists.",
-              },
-            };
-          }
-        },
+    getTrendingArtists: builder.query<{ artists: PublicArtistSummary[] }, void>({
+      async queryFn() {
+        try {
+          const data = await getTrendingArtists(3);
+          return { data };
+        } catch (error) {
+          return {
+            error: {
+              message: error instanceof Error ? error.message : 'Unable to load trending artists.',
+            },
+          };
+        }
       },
-    ),
+    }),
     getRecentlyPlayed: builder.query<
       { tracks: PublicTrackSummary[] },
       { accessToken?: string | null }
@@ -363,9 +311,7 @@ export const micboxxApi = createApi({
           return {
             error: {
               message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load recently played tracks.",
+                error instanceof Error ? error.message : 'Unable to load recently played tracks.',
             },
           };
         }
@@ -380,9 +326,7 @@ export const micboxxApi = createApi({
           return {
             error: {
               message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load subscription plans.",
+                error instanceof Error ? error.message : 'Unable to load subscription plans.',
             },
           };
         }
@@ -399,10 +343,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load Rooms.",
+              message: error instanceof Error ? error.message : 'Unable to load Rooms.',
             },
           };
         }
@@ -423,8 +364,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error ? error.message : "Unable to enter Room.",
+              message: error instanceof Error ? error.message : 'Unable to enter Room.',
             },
           };
         }
@@ -438,8 +378,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error ? error.message : "Unable to load Room clock.",
+              message: error instanceof Error ? error.message : 'Unable to load Room clock.',
             },
           };
         }
@@ -451,7 +390,7 @@ export const micboxxApi = createApi({
         roomId: number | string;
         reactionId: string;
         reactionType: RoomReactionType;
-        actorVisibility?: "anonymous" | "visible";
+        actorVisibility?: 'anonymous' | 'visible';
         accessToken?: string | null;
       }
     >({
@@ -462,10 +401,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to send Room reaction.",
+              message: error instanceof Error ? error.message : 'Unable to send Room reaction.',
             },
           };
         }
@@ -482,10 +418,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to send Room message.",
+              message: error instanceof Error ? error.message : 'Unable to send Room message.',
             },
           };
         }
@@ -502,10 +435,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to report Room message.",
+              message: error instanceof Error ? error.message : 'Unable to report Room message.',
             },
           };
         }
@@ -519,10 +449,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load Room questions.",
+              message: error instanceof Error ? error.message : 'Unable to load Room questions.',
             },
           };
         }
@@ -539,10 +466,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to submit Room question.",
+              message: error instanceof Error ? error.message : 'Unable to submit Room question.',
             },
           };
         }
@@ -559,10 +483,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to vote for Room question.",
+              message: error instanceof Error ? error.message : 'Unable to vote for Room question.',
             },
           };
         }
@@ -576,17 +497,13 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error ? error.message : "Unable to load Room polls.",
+              message: error instanceof Error ? error.message : 'Unable to load Room polls.',
             },
           };
         }
       },
     }),
-    voteRoomPoll: builder.mutation<
-      RoomPollsResponse,
-      Parameters<typeof voteRoomPoll>[0]
-    >({
+    voteRoomPoll: builder.mutation<RoomPollsResponse, Parameters<typeof voteRoomPoll>[0]>({
       async queryFn(input) {
         try {
           const data = await voteRoomPoll(input);
@@ -594,17 +511,13 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error ? error.message : "Unable to vote in Room poll.",
+              message: error instanceof Error ? error.message : 'Unable to vote in Room poll.',
             },
           };
         }
       },
     }),
-    getRoomActivity: builder.query<
-      RoomActivityResponse,
-      Parameters<typeof getRoomActivity>[0]
-    >({
+    getRoomActivity: builder.query<RoomActivityResponse, Parameters<typeof getRoomActivity>[0]>({
       async queryFn(input) {
         try {
           const data = await getRoomActivity(input);
@@ -612,10 +525,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load Room activity.",
+              message: error instanceof Error ? error.message : 'Unable to load Room activity.',
             },
           };
         }
@@ -629,10 +539,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load Room Time Machine.",
+              message: error instanceof Error ? error.message : 'Unable to load Room Time Machine.',
             },
           };
         }
@@ -649,10 +556,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to load Room support.",
+              message: error instanceof Error ? error.message : 'Unable to load Room support.',
             },
           };
         }
@@ -669,10 +573,7 @@ export const micboxxApi = createApi({
         } catch (error) {
           return {
             error: {
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unable to send Room support.",
+              message: error instanceof Error ? error.message : 'Unable to send Room support.',
             },
           };
         }

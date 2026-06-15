@@ -1,41 +1,48 @@
-import { collection, onSnapshot, query, where, type Unsubscribe } from "firebase/firestore";
-import { useEffect, useMemo, useState } from "react";
+import { collection, onSnapshot, query, where, type Unsubscribe } from 'firebase/firestore';
+import { useEffect, useMemo, useState } from 'react';
 
-import type { CommerceOrderHistoryEntry, CommerceOrderLinePayload } from "@micboxx/contracts";
-import type { PublicArtistPage, PublicTrackPage, PublicTrackSummary } from "@micboxx/contracts";
-import { env } from "@/config/env";
-import { getFirebaseClientDb, isFirebaseConfigured } from "@/config/firebase";
+import type { CommerceOrderHistoryEntry, CommerceOrderLinePayload } from '@micboxx/contracts';
+import type { PublicArtistPage, PublicTrackPage, PublicTrackSummary } from '@micboxx/contracts';
+import { env } from '@/config/env';
+import { getFirebaseClientDb, isFirebaseConfigured } from '@/config/firebase';
 import {
   getArtistPage,
   getMyPlaylists,
   getOrderHistory,
   getRecentlyPlayedTracks,
   getTrackPage,
-} from "@micboxx/api";
-import { normalizeMediaUrl } from "@micboxx/media";
-import type { LibraryFollowedArtist, LibraryPlaylist, LibraryRecentlyPlayedTrack, LibrarySavedTrack, LibraryState, LibrarySummary } from "@/features/library/libraryTypes";
+} from '@micboxx/api';
+import { normalizeMediaUrl } from '@micboxx/media';
+import type {
+  LibraryFollowedArtist,
+  LibraryPlaylist,
+  LibraryRecentlyPlayedTrack,
+  LibrarySavedTrack,
+  LibraryState,
+  LibrarySummary,
+} from '@/features/library/libraryTypes';
 
 function timestampMs(value: unknown): number {
   if (!value) return 0;
   if (value instanceof Date) return value.getTime();
-  if (typeof value === "object" && value !== null && "toMillis" in value) {
+  if (typeof value === 'object' && value !== null && 'toMillis' in value) {
     const fn = (value as { toMillis?: unknown }).toMillis;
-    if (typeof fn === "function") return fn.call(value) || 0;
+    if (typeof fn === 'function') return fn.call(value) || 0;
   }
-  return typeof value === "number" ? value : 0;
+  return typeof value === 'number' ? value : 0;
 }
 
 function seconds(value: string | number | null | undefined): number {
-  if (typeof value === "number") return value;
+  if (typeof value === 'number') return value;
   if (!value) return 0;
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : 0;
 }
 
-function lineKind(line: CommerceOrderLinePayload): "album" | "track" | null {
+function lineKind(line: CommerceOrderLinePayload): 'album' | 'track' | null {
   const key = `${line.sellableType}:${line.fulfillmentAdapter}:${line.sellableKey}`.toLowerCase();
-  if (key.includes("album")) return "album";
-  if (key.includes("track")) return "track";
+  if (key.includes('album')) return 'album';
+  if (key.includes('track')) return 'track';
   return null;
 }
 
@@ -47,10 +54,10 @@ function parseSnapshotTitle(snapshotTitle: string): {
 } {
   const normalized = snapshotTitle.trim();
   if (!normalized) {
-    return { title: "", artistName: null };
+    return { title: '', artistName: null };
   }
 
-  const separatorIndex = normalized.indexOf(" - ");
+  const separatorIndex = normalized.indexOf(' - ');
   if (separatorIndex <= 0) {
     return { title: normalized, artistName: null };
   }
@@ -79,40 +86,41 @@ function lineSnapshot(line: CommerceOrderLinePayload) {
 }
 
 function deriveOwned(orders: CommerceOrderHistoryEntry[]) {
-  const albums = new Map<string, LibraryState["ownedAlbums"][number]>();
-  const tracks = new Map<string, LibraryState["ownedTracks"][number]>();
+  const albums = new Map<string, LibraryState['ownedAlbums'][number]>();
+  const tracks = new Map<string, LibraryState['ownedTracks'][number]>();
 
   const completedOrders = orders.filter((order) => {
-    const status = order.status?.toLowerCase() ?? "";
-    return status === "paid" || status === "fulfilled" || status === "completed";
+    const status = order.status?.toLowerCase() ?? '';
+    return status === 'paid' || status === 'fulfilled' || status === 'completed';
   });
 
   completedOrders.forEach((order) => {
-    const acquiredAt = order.timestamps.fulfilledAt || order.timestamps.paidAt || order.timestamps.createdAt;
+    const acquiredAt =
+      order.timestamps.fulfilledAt || order.timestamps.paidAt || order.timestamps.createdAt;
     order.lines.forEach((line) => {
       const kind = lineKind(line);
-      const parsedSnapshot = parseSnapshotTitle(line.snapshotTitle || "");
+      const parsedSnapshot = parseSnapshotTitle(line.snapshotTitle || '');
       const snapshot = lineSnapshot(line);
 
-      if (kind === "album") {
+      if (kind === 'album') {
         albums.set(line.sellableUuid || line.sellableId, {
           id: String(line.sellableId),
           uuid: line.sellableUuid,
-          type: "album",
-          title: parsedSnapshot.title || "Untitled Album",
-          artistName: snapshot.artistName ?? parsedSnapshot.artistName ?? "Unknown Artist",
+          type: 'album',
+          title: parsedSnapshot.title || 'Untitled Album',
+          artistName: snapshot.artistName ?? parsedSnapshot.artistName ?? 'Unknown Artist',
           artwork: snapshot.artwork,
           acquiredAt,
           orderId: order.id,
         });
       }
-      if (kind === "track") {
+      if (kind === 'track') {
         tracks.set(line.sellableUuid || line.sellableId, {
           id: String(line.sellableId),
           uuid: line.sellableUuid,
-          type: "track",
-          title: parsedSnapshot.title || "Untitled Track",
-          artistName: snapshot.artistName ?? parsedSnapshot.artistName ?? "Unknown Artist",
+          type: 'track',
+          title: parsedSnapshot.title || 'Untitled Track',
+          artistName: snapshot.artistName ?? parsedSnapshot.artistName ?? 'Unknown Artist',
           albumTitle: snapshot.albumTitle,
           artwork: snapshot.artwork,
           acquiredAt,
@@ -133,9 +141,9 @@ function trackToRecent(track: PublicTrackSummary): LibraryRecentlyPlayedTrack {
     id: String(track.id),
     uuid: track.uuid,
     slug: track.slug,
-    type: "track",
+    type: 'track',
     title: track.title,
-    artistName: track.artist?.displayName ?? "Unknown artist",
+    artistName: track.artist?.displayName ?? 'Unknown artist',
     albumTitle: track.album?.title ?? null,
     artwork: track.artworkUrl,
     playedAt: 0,
@@ -147,10 +155,10 @@ function trackPageToSaved(page: PublicTrackPage, savedAt: number): LibrarySavedT
   return {
     id: String(page.track.id),
     uuid: page.track.uuid,
-    type: "track",
+    type: 'track',
     title: page.track.title,
-    artistId: page.track.artist ? String(page.track.artist.id) : "",
-    artistName: page.track.artist?.displayName ?? "Unknown artist",
+    artistId: page.track.artist ? String(page.track.artist.id) : '',
+    artistName: page.track.artist?.displayName ?? 'Unknown artist',
     albumId: page.track.album ? String(page.track.album.id) : null,
     albumTitle: page.track.album?.title ?? null,
     artwork: page.track.artworkUrl,
@@ -183,7 +191,7 @@ export function useLibraryDomains(accessToken: string | null, userUuid: string |
     isLoading: Boolean(accessToken),
     error: null,
     // UNVERIFIED_ROUTE: no backend/Firestore saved-albums source is verified for mobile.
-    unavailableDomains: ["Saved albums"],
+    unavailableDomains: ['Saved albums'],
   });
 
   useEffect(() => {
@@ -193,7 +201,17 @@ export function useLibraryDomains(accessToken: string | null, userUuid: string |
     }
 
     let cancelled = false;
-    setState((current) => ({ ...current, isLoading: true, error: null }));
+    // Only show the skeleton when we have no data yet. If we already have data
+    // (e.g. a JWT refresh changed accessToken), silently re-fetch in the background
+    // so the screen doesn't flash a loading state on every token rotation.
+    setState((current) => ({
+      ...current,
+      isLoading:
+        current.ownedAlbums.length === 0 &&
+        current.playlists.length === 0 &&
+        current.recentlyPlayedTracks.length === 0,
+      error: null,
+    }));
 
     Promise.all([
       getOrderHistory(100, accessToken).then(deriveOwned),
@@ -229,7 +247,7 @@ export function useLibraryDomains(accessToken: string | null, userUuid: string |
         setState((current) => ({
           ...current,
           isLoading: false,
-          error: error instanceof Error ? error.message : "Unable to load your library.",
+          error: error instanceof Error ? error.message : 'Unable to load your library.',
         }));
       });
 
@@ -251,20 +269,26 @@ export function useLibraryDomains(accessToken: string | null, userUuid: string |
     let followDocs: { followeeUid: string; createdAt: number }[] = [];
 
     const applySaved = () => {
-      const deduped = new Map<string, { trackId: string; trackHref: string | null; createdAt: number }>();
+      const deduped = new Map<
+        string,
+        { trackId: string; trackHref: string | null; createdAt: number }
+      >();
       [...savedDocs, ...likedDocs].forEach((docValue) => {
         if (!deduped.has(docValue.trackId)) deduped.set(docValue.trackId, docValue);
       });
 
-      void Promise.all(Array.from(deduped.values()).map(async (docValue) => {
-        const identifier = docValue.trackHref?.match(/^\/track\/([^/?#]+)/)?.[1] ?? docValue.trackId;
-        try {
-          const page = await getTrackPage(decodeURIComponent(identifier));
-          return trackPageToSaved(page, docValue.createdAt);
-        } catch {
-          return null;
-        }
-      })).then((tracks) => {
+      void Promise.all(
+        Array.from(deduped.values()).map(async (docValue) => {
+          const identifier =
+            docValue.trackHref?.match(/^\/track\/([^/?#]+)/)?.[1] ?? docValue.trackId;
+          try {
+            const page = await getTrackPage(decodeURIComponent(identifier));
+            return trackPageToSaved(page, docValue.createdAt);
+          } catch {
+            return null;
+          }
+        }),
+      ).then((tracks) => {
         setState((current) => ({
           ...current,
           savedTracks: tracks
@@ -275,14 +299,16 @@ export function useLibraryDomains(accessToken: string | null, userUuid: string |
     };
 
     const applyFollows = () => {
-      void Promise.all(followDocs.map(async (docValue) => {
-        try {
-          const page = await getArtistPage(docValue.followeeUid);
-          return artistPageToFollowed(page, docValue.createdAt);
-        } catch {
-          return null;
-        }
-      })).then((artists) => {
+      void Promise.all(
+        followDocs.map(async (docValue) => {
+          try {
+            const page = await getArtistPage(docValue.followeeUid);
+            return artistPageToFollowed(page, docValue.createdAt);
+          } catch {
+            return null;
+          }
+        }),
+      ).then((artists) => {
         setState((current) => ({
           ...current,
           followedArtists: artists
@@ -294,59 +320,89 @@ export function useLibraryDomains(accessToken: string | null, userUuid: string |
 
     if (!userUuid) return;
 
-    const favoritesQuery = query(collection(db, "trackFavorites"), where("ownerUid", "==", userUuid));
-    const likesQuery = query(collection(db, "trackLikes"), where("ownerUid", "==", userUuid));
-    const followsQuery = query(collection(db, "follows"), where("followerUid", "==", userUuid));
+    const favoritesQuery = query(
+      collection(db, 'trackFavorites'),
+      where('ownerUid', '==', userUuid),
+    );
+    const likesQuery = query(collection(db, 'trackLikes'), where('ownerUid', '==', userUuid));
+    const followsQuery = query(collection(db, 'follows'), where('followerUid', '==', userUuid));
 
-    unsubs.push(onSnapshot(favoritesQuery, (snapshot) => {
-      savedDocs = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-          trackId: typeof data.trackId === "string" ? data.trackId : "",
-          trackHref: typeof data.trackHref === "string" ? data.trackHref : null,
-          createdAt: timestampMs(data.createdAt),
-        };
-      }).filter((item) => item.trackId.length > 0);
-      applySaved();
-    }, () => undefined));
+    unsubs.push(
+      onSnapshot(
+        favoritesQuery,
+        (snapshot) => {
+          savedDocs = snapshot.docs
+            .map((docSnap) => {
+              const data = docSnap.data();
+              return {
+                trackId: typeof data.trackId === 'string' ? data.trackId : '',
+                trackHref: typeof data.trackHref === 'string' ? data.trackHref : null,
+                createdAt: timestampMs(data.createdAt),
+              };
+            })
+            .filter((item) => item.trackId.length > 0);
+          applySaved();
+        },
+        () => undefined,
+      ),
+    );
 
-    unsubs.push(onSnapshot(likesQuery, (snapshot) => {
-      likedDocs = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-          trackId: typeof data.trackId === "string" ? data.trackId : "",
-          trackHref: typeof data.trackHref === "string" ? data.trackHref : null,
-          createdAt: timestampMs(data.createdAt),
-        };
-      }).filter((item) => item.trackId.length > 0);
-      applySaved();
-    }, () => undefined));
+    unsubs.push(
+      onSnapshot(
+        likesQuery,
+        (snapshot) => {
+          likedDocs = snapshot.docs
+            .map((docSnap) => {
+              const data = docSnap.data();
+              return {
+                trackId: typeof data.trackId === 'string' ? data.trackId : '',
+                trackHref: typeof data.trackHref === 'string' ? data.trackHref : null,
+                createdAt: timestampMs(data.createdAt),
+              };
+            })
+            .filter((item) => item.trackId.length > 0);
+          applySaved();
+        },
+        () => undefined,
+      ),
+    );
 
-    unsubs.push(onSnapshot(followsQuery, (snapshot) => {
-      followDocs = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-          followeeUid: typeof data.followeeUid === "string" ? data.followeeUid : "",
-          createdAt: timestampMs(data.createdAt),
-        };
-      }).filter((item) => item.followeeUid.length > 0);
-      applyFollows();
-    }, () => undefined));
+    unsubs.push(
+      onSnapshot(
+        followsQuery,
+        (snapshot) => {
+          followDocs = snapshot.docs
+            .map((docSnap) => {
+              const data = docSnap.data();
+              return {
+                followeeUid: typeof data.followeeUid === 'string' ? data.followeeUid : '',
+                createdAt: timestampMs(data.createdAt),
+              };
+            })
+            .filter((item) => item.followeeUid.length > 0);
+          applyFollows();
+        },
+        () => undefined,
+      ),
+    );
 
     return () => {
       unsubs.forEach((unsubscribe) => unsubscribe());
     };
   }, [accessToken, userUuid]);
 
-  const summary: LibrarySummary = useMemo(() => ({
-    ownedAlbumCount: state.ownedAlbums.length,
-    ownedTrackCount: state.ownedTracks.length,
-    savedAlbumCount: state.savedAlbums.length,
-    savedTrackCount: state.savedTracks.length,
-    followedArtistCount: state.followedArtists.length,
-    playlistCount: state.playlists.length,
-    recentlyPlayedCount: state.recentlyPlayedTracks.length + state.recentlyPlayedAlbums.length,
-  }), [state]);
+  const summary: LibrarySummary = useMemo(
+    () => ({
+      ownedAlbumCount: state.ownedAlbums.length,
+      ownedTrackCount: state.ownedTracks.length,
+      savedAlbumCount: state.savedAlbums.length,
+      savedTrackCount: state.savedTracks.length,
+      followedArtistCount: state.followedArtists.length,
+      playlistCount: state.playlists.length,
+      recentlyPlayedCount: state.recentlyPlayedTracks.length + state.recentlyPlayedAlbums.length,
+    }),
+    [state],
+  );
 
   return { state, summary };
 }

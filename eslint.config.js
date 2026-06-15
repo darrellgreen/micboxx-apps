@@ -1,2 +1,11 @@
 const baseConfig = require('./eslint-base.config.js');
-module.exports = baseConfig;
+const importPlugin = require('eslint-plugin-import');
+
+module.exports = [
+  ...baseConfig,
+  {
+    plugins: {
+      import: importPlugin,
+    },
+  },
+];
