@@ -1,51 +1,51 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AppState, type AppStateStatus } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 
-import { env } from "@/config/env";
-import type { PublicTrackSummary } from "@micboxx/contracts";
+import { env } from '@/config/env';
+import type { PublicTrackSummary } from '@micboxx/contracts';
 import type {
-    MobileRoomStateSnapshot,
-    RoomActivityResponse,
-    RoomCapabilities,
-    RoomChatMessage,
-    RoomClockState,
-    RoomEntryResponse,
-    RoomPollPayload,
-    RoomPollProjection,
-    RoomQnaQuestion,
-    RoomReactionType,
-    RoomRelease,
-    RoomState,
-    RoomSupportBalance,
-    RoomTimeMachineResponse,
-} from "@micboxx/contracts";
-import { useAuth } from "@/features/auth/provider";
-import { usePlayerControls } from "@/features/player/hooks/usePlayerControls";
-import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
-import { mapTrackListToPlayerItems } from "@/features/player/mapper/playerItemMapper";
+  MobileRoomStateSnapshot,
+  RoomActivityResponse,
+  RoomCapabilities,
+  RoomChatMessage,
+  RoomClockState,
+  RoomEntryResponse,
+  RoomPollPayload,
+  RoomPollProjection,
+  RoomQnaQuestion,
+  RoomReactionType,
+  RoomRelease,
+  RoomState,
+  RoomSupportBalance,
+  RoomTimeMachineResponse,
+} from '@micboxx/contracts';
+import { useAuth } from '@/features/auth/provider';
+import { usePlayerControls } from '@/features/player/hooks/usePlayerControls';
+import { usePlayerQueue } from '@/features/player/hooks/usePlayerQueue';
+import { mapTrackListToPlayerItems } from '@/features/player/mapper/playerItemMapper';
 import {
-    enterRoom,
-    getRoomActivity,
-    getRoomClock,
-    getRoomPolls,
-    getRoomQuestions,
-    getRoomSupportStatus,
-    getRoomTimeMachine,
-    sendRoomChatMessage,
-    sendRoomPresenceHeartbeat,
-    sendRoomReaction,
-    sendRoomSupport,
-    submitRoomQuestion,
-    voteRoomPoll,
-    voteRoomQuestion,
-    ApiError,
-    apiFetch,
-} from "@micboxx/api";
+  enterRoom,
+  getRoomActivity,
+  getRoomClock,
+  getRoomPolls,
+  getRoomQuestions,
+  getRoomSupportStatus,
+  getRoomTimeMachine,
+  sendRoomChatMessage,
+  sendRoomPresenceHeartbeat,
+  sendRoomReaction,
+  sendRoomSupport,
+  submitRoomQuestion,
+  voteRoomPoll,
+  voteRoomQuestion,
+  ApiError,
+  apiFetch,
+} from '@micboxx/api';
 import {
-    isRoomMuteActive,
-    subscribeToMobileRoomState,
-} from "@/features/rooms/firebase/roomListeners";
-import { useAppSelector } from "@/store/hooks";
+  isRoomMuteActive,
+  subscribeToMobileRoomState,
+} from '@/features/rooms/firebase/roomListeners';
+import { useAppSelector } from '@/store/hooks';
 
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 25_000;
 const PRESENCE_HEARTBEAT_BACKOFF_STEPS_MS = [5_000, 10_000, 20_000, 40_000] as const;
@@ -60,15 +60,18 @@ function isLikelyNetworkError(error: unknown): boolean {
 
   const message = error.message.toLowerCase();
   return (
-    message.includes("network request failed")
-    || message.includes("failed to fetch")
-    || message.includes("networkerror")
-    || message.includes("load failed")
+    message.includes('network request failed') ||
+    message.includes('failed to fetch') ||
+    message.includes('networkerror') ||
+    message.includes('load failed')
   );
 }
 
 function isRetriablePresenceHeartbeatError(error: unknown): boolean {
-  if (error instanceof ApiError && (error.status === 502 || error.status === 503 || error.status === 504)) {
+  if (
+    error instanceof ApiError &&
+    (error.status === 502 || error.status === 503 || error.status === 504)
+  ) {
     return true;
   }
 
@@ -76,13 +79,16 @@ function isRetriablePresenceHeartbeatError(error: unknown): boolean {
 }
 
 function getPresenceHeartbeatBackoffDelay(failureCount: number): number {
-  const index = Math.max(0, Math.min(failureCount - 1, PRESENCE_HEARTBEAT_BACKOFF_STEPS_MS.length - 1));
+  const index = Math.max(
+    0,
+    Math.min(failureCount - 1, PRESENCE_HEARTBEAT_BACKOFF_STEPS_MS.length - 1),
+  );
   return PRESENCE_HEARTBEAT_BACKOFF_STEPS_MS[index];
 }
 
 function normalizeRoomErrorMessage(error: unknown, fallback: string): string {
   if (isLikelyNetworkError(error)) {
-    return "Connection issue. Trying to reconnect...";
+    return 'Connection issue. Trying to reconnect...';
   }
 
   if (error instanceof Error && error.message.trim().length > 0) {
@@ -97,7 +103,7 @@ function createSessionId() {
     return mobileRoomSessionId;
   }
 
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     mobileRoomSessionId = crypto.randomUUID();
     return mobileRoomSessionId;
   }
@@ -130,7 +136,7 @@ function toQuestion(question: {
   text: string;
   answer_text?: string | null;
   votes: number;
-  status: RoomQnaQuestion["status"];
+  status: RoomQnaQuestion['status'];
   visibility?: string;
   created_at: number;
   answered_at: number | null;
@@ -140,10 +146,10 @@ function toQuestion(question: {
     id: question.id,
     authorDisplayName: question.author_display_name,
     text: question.text,
-    answerText: typeof question.answer_text === "string" ? question.answer_text : null,
+    answerText: typeof question.answer_text === 'string' ? question.answer_text : null,
     votes: question.votes,
     status: question.status,
-    visibility: question.visibility === "public" ? "public" : "private",
+    visibility: question.visibility === 'public' ? 'public' : 'private',
     createdAt: question.created_at,
     answeredAt: question.answered_at,
     activeAt: question.active_at,
@@ -151,7 +157,10 @@ function toQuestion(question: {
 }
 
 function isPublicQuestionVisible(question: RoomQnaQuestion) {
-  return question.visibility === "public" && (question.status === "new" || question.status === "answered");
+  return (
+    question.visibility === 'public' &&
+    (question.status === 'new' || question.status === 'answered')
+  );
 }
 
 function toClosedPollProjection(poll: RoomPollPayload): RoomPollProjection {
@@ -239,65 +248,69 @@ export function useMobileRoom(input: {
   const isCurrentUserMuted = isRoomMuteActive(snapshot.moderation);
   const isCurrentUserBlocked = snapshot.moderation?.isBlocked === true;
 
-  const syncPlaybackToClock = useCallback(async (
-    clock: RoomClockState | null,
-    entryOverride?: RoomEntryResponse,
-  ) => {
-    const syncEntry = entryOverride ?? roomEntry;
-    if (!clock || input.releaseTracks.length === 0 || !syncEntry?.release) {
-      return;
-    }
-
-    const trackEntry = clock.track_map.find((entry) => entry.index === clock.track_index)
-      ?? clock.track_map[clock.track_index]
-      ?? null;
-    const trackId = trackEntry?.track_id ? String(trackEntry.track_id) : null;
-    const playerItems = mapTrackListToPlayerItems(input.releaseTracks);
-    const startIndex = trackId
-      ? playerItems.findIndex((item) => item.id === trackId)
-      : Math.max(0, Math.min(clock.track_index, playerItems.length - 1));
-
-    if (startIndex < 0) {
-      return;
-    }
-
-    const syncKey = `${clock.server_time}:${clock.track_index}:${Math.floor(clock.track_position_seconds)}`;
-    if (lastSyncedClockRef.current === syncKey) {
-      return;
-    }
-    lastSyncedClockRef.current = syncKey;
-
-    const result = await replaceQueue({
-      items: playerItems,
-      startIndex,
-      context: {
-        type: "album",
-        slug: syncEntry.release.slug,
-        id: `room:${syncEntry.room.id}`,
-        title: syncEntry.release.title,
-      },
-      startPositionSec: Math.max(0, clock.track_position_seconds),
-      autoplay: true,
-    });
-
-    if (!result.ok) {
-      setInteractionError(result.error ?? "Unable to synchronize Room playback.");
-      return;
-    }
-  }, [input.releaseTracks, replaceQueue, roomEntry]);
-
-  const refreshClock = useCallback(async (options?: { syncPlayback?: boolean }) => {
-    if (!room?.id) return;
-    try {
-      const nextClock = await getRoomClock(room.id);
-      setClockState(nextClock);
-      if (options?.syncPlayback === true) {
-        await syncPlaybackToClock(nextClock);
+  const syncPlaybackToClock = useCallback(
+    async (clock: RoomClockState | null, entryOverride?: RoomEntryResponse) => {
+      const syncEntry = entryOverride ?? roomEntry;
+      if (!clock || input.releaseTracks.length === 0 || !syncEntry?.release) {
+        return;
       }
-    } catch (clockError) {
-      setInteractionError(normalizeRoomErrorMessage(clockError, "Unable to refresh Room clock."));
-    }
-  }, [room?.id, syncPlaybackToClock]);
+
+      const trackEntry =
+        clock.track_map.find((entry) => entry.index === clock.track_index) ??
+        clock.track_map[clock.track_index] ??
+        null;
+      const trackId = trackEntry?.track_id ? String(trackEntry.track_id) : null;
+      const playerItems = mapTrackListToPlayerItems(input.releaseTracks);
+      const startIndex = trackId
+        ? playerItems.findIndex((item) => item.id === trackId)
+        : Math.max(0, Math.min(clock.track_index, playerItems.length - 1));
+
+      if (startIndex < 0) {
+        return;
+      }
+
+      const syncKey = `${clock.server_time}:${clock.track_index}:${Math.floor(clock.track_position_seconds)}`;
+      if (lastSyncedClockRef.current === syncKey) {
+        return;
+      }
+      lastSyncedClockRef.current = syncKey;
+
+      const result = await replaceQueue({
+        items: playerItems,
+        startIndex,
+        context: {
+          type: 'album',
+          slug: syncEntry.release.slug,
+          id: `room:${syncEntry.room.id}`,
+          title: syncEntry.release.title,
+        },
+        startPositionSec: Math.max(0, clock.track_position_seconds),
+        autoplay: true,
+      });
+
+      if (!result.ok) {
+        setInteractionError(result.error ?? 'Unable to synchronize Room playback.');
+        return;
+      }
+    },
+    [input.releaseTracks, replaceQueue, roomEntry],
+  );
+
+  const refreshClock = useCallback(
+    async (options?: { syncPlayback?: boolean }) => {
+      if (!room?.id) return;
+      try {
+        const nextClock = await getRoomClock(room.id);
+        setClockState(nextClock);
+        if (options?.syncPlayback === true) {
+          await syncPlaybackToClock(nextClock);
+        }
+      } catch (clockError) {
+        setInteractionError(normalizeRoomErrorMessage(clockError, 'Unable to refresh Room clock.'));
+      }
+    },
+    [room?.id, syncPlaybackToClock],
+  );
 
   const refreshQuestions = useCallback(async () => {
     if (!room?.id || capabilities?.can_view_qna === false) return;
@@ -308,15 +321,17 @@ export function useMobileRoom(input: {
         qna: {
           enabled: response.qna?.enabled === true,
           activeQuestionId: response.qna?.active_question_id ?? null,
-          openCount: typeof response.qna?.open_count === "number" ? response.qna.open_count : 0,
-          answeredCount: typeof response.qna?.answered_count === "number" ? response.qna.answered_count : 0,
+          openCount: typeof response.qna?.open_count === 'number' ? response.qna.open_count : 0,
+          answeredCount:
+            typeof response.qna?.answered_count === 'number' ? response.qna.answered_count : 0,
         },
       }));
     }
     if (response.questions) {
       setSnapshot((current) => ({
         ...current,
-        questions: response.questions?.map(toQuestion).filter(isPublicQuestionVisible) ?? current.questions,
+        questions:
+          response.questions?.map(toQuestion).filter(isPublicQuestionVisible) ?? current.questions,
       }));
     }
   }, [capabilities?.can_view_qna, room?.id]);
@@ -334,34 +349,47 @@ export function useMobileRoom(input: {
     if (!room?.id) return;
 
     await Promise.all([
-      getRoomActivity({ roomId: room.id }).then(setActivity).catch(() => undefined),
+      getRoomActivity({ roomId: room.id })
+        .then(setActivity)
+        .catch(() => undefined),
       capabilities?.can_show_time_machine
-        ? getRoomTimeMachine(room.id).then(setTimeMachine).catch(() => undefined)
+        ? getRoomTimeMachine(room.id)
+            .then(setTimeMachine)
+            .catch(() => undefined)
         : Promise.resolve(),
       capabilities?.can_show_support
-        ? getRoomSupportStatus({ roomId: room.id, accessToken }).then((status) => {
-            setSupportBalance(status.support_balance);
-            setSnapshot((current) => ({
-              ...current,
-              supportStats: {
-                totalAmountCents: status.support_status.total_support_amount_cents,
-                backerCount: status.support_status.backer_count,
-                goalCents: status.support_status.support_goal_cents,
-              },
-            }));
-          }).catch(() => undefined)
+        ? getRoomSupportStatus({ roomId: room.id, accessToken })
+            .then((status) => {
+              setSupportBalance(status.support_balance);
+              setSnapshot((current) => ({
+                ...current,
+                supportStats: {
+                  totalAmountCents: status.support_status.total_support_amount_cents,
+                  backerCount: status.support_status.backer_count,
+                  goalCents: status.support_status.support_goal_cents,
+                },
+              }));
+            })
+            .catch(() => undefined)
         : Promise.resolve(),
       refreshQuestions().catch(() => undefined),
       refreshPolls().catch(() => undefined),
     ]);
-  }, [accessToken, capabilities?.can_show_support, capabilities?.can_show_time_machine, refreshPolls, refreshQuestions, room?.id]);
+  }, [
+    accessToken,
+    capabilities?.can_show_support,
+    capabilities?.can_show_time_machine,
+    refreshPolls,
+    refreshQuestions,
+    room?.id,
+  ]);
 
   const enter = useCallback(async () => {
     if (!input.releaseIdentifier) {
       return;
     }
 
-    const authScope = userUuid ? `user:${userUuid}` : "anonymous";
+    const authScope = userUuid ? `user:${userUuid}` : 'anonymous';
     const roomKey = `${input.releaseIdentifier}:${authScope}`;
 
     if (enteredRoomKeyRef.current === roomKey) {
@@ -381,32 +409,32 @@ export function useMobileRoom(input: {
       });
       setRoomEntry(entry);
       setClockState(entry.clock);
-      void apiFetch("/v1/public/events", {
-        method: "POST",
-        headers: { "content-type": "application/json", accept: "application/json" },
+      void apiFetch('/v1/public/events', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
         body: JSON.stringify({
-          eventType: "room_entry",
-          subjectType: "micboxx.room",
+          eventType: 'room_entry',
+          subjectType: 'micboxx.room',
           subjectId: entry.room.id,
           sessionId: sessionIdRef.current,
-          sourceType: "release_room",
+          sourceType: 'release_room',
           metadata: { release_identifier: input.releaseIdentifier },
         }),
         accessToken,
       }).catch(() => undefined);
       if (entry.capabilities.can_enter_room === false) {
-        setError("This Room is not currently available.");
+        setError('This Room is not currently available.');
       }
       await syncPlaybackToClock(entry.clock, entry);
     } catch (entryError) {
       enteredRoomKeyRef.current = null;
       const status = entryError instanceof ApiError ? entryError.status : null;
       if (status === 403) {
-        setError("You cannot enter this room.");
+        setError('You cannot enter this room.');
       } else if (status === 404) {
-        setError("This room is no longer available.");
+        setError('This room is no longer available.');
       } else {
-        setError(normalizeRoomErrorMessage(entryError, "Unable to enter Room."));
+        setError(normalizeRoomErrorMessage(entryError, 'Unable to enter Room.'));
       }
     } finally {
       setIsLoading(false);
@@ -416,6 +444,13 @@ export function useMobileRoom(input: {
   useEffect(() => {
     void enter();
   }, [enter]);
+
+  // Sync playback once both the room entry and release tracks are fully loaded
+  useEffect(() => {
+    if (roomEntry?.clock && input.releaseTracks.length > 0) {
+      void syncPlaybackToClock(roomEntry.clock, roomEntry);
+    }
+  }, [roomEntry, input.releaseTracks, syncPlaybackToClock]);
 
   useEffect(() => {
     if (!room?.id) return;
@@ -441,8 +476,8 @@ export function useMobileRoom(input: {
       return;
     }
 
-    if (snapshot.activeMoment.audioBehavior === "pause") {
-      if (playbackState === "playing") {
+    if (snapshot.activeMoment.audioBehavior === 'pause') {
+      if (playbackState === 'playing') {
         shouldResumeAfterMomentPauseRef.current = true;
         void pause();
       }
@@ -472,7 +507,7 @@ export function useMobileRoom(input: {
 
     const scheduleHeartbeat = (delayMs: number) => {
       clearPresenceHeartbeatTimer();
-      if (cancelled || AppState.currentState !== "active") {
+      if (cancelled || AppState.currentState !== 'active') {
         return;
       }
 
@@ -482,12 +517,12 @@ export function useMobileRoom(input: {
     };
 
     const heartbeat = async () => {
-      if (cancelled || AppState.currentState !== "active") return;
+      if (cancelled || AppState.currentState !== 'active') return;
       let heartbeatFailure: unknown = null;
       try {
         await sendRoomPresenceHeartbeat({
           roomId: room.id,
-          visibility: "visible",
+          visibility: 'visible',
           sessionId: sessionIdRef.current,
           accessToken,
         });
@@ -495,10 +530,12 @@ export function useMobileRoom(input: {
       } catch (heartbeatError) {
         heartbeatFailure = heartbeatError;
         if (!isRetriablePresenceHeartbeatError(heartbeatError)) {
-          setInteractionError(normalizeRoomErrorMessage(heartbeatError, "Unable to update Room presence."));
+          setInteractionError(
+            normalizeRoomErrorMessage(heartbeatError, 'Unable to update Room presence.'),
+          );
         }
       } finally {
-        if (cancelled || AppState.currentState !== "active") {
+        if (cancelled || AppState.currentState !== 'active') {
           return;
         }
 
@@ -512,9 +549,9 @@ export function useMobileRoom(input: {
       }
     };
 
-    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
       clearPresenceHeartbeatTimer();
-      if (!cancelled && nextState === "active") {
+      if (!cancelled && nextState === 'active') {
         consecutiveRetryableFailures = 0;
         void heartbeat();
       }
@@ -530,8 +567,9 @@ export function useMobileRoom(input: {
   }, [accessToken, capabilities?.can_show_presence, isCurrentUserBlocked, room?.id]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      const returningActive = /inactive|background/.test(appStateRef.current) && nextState === "active";
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const returningActive =
+        /inactive|background/.test(appStateRef.current) && nextState === 'active';
       appStateRef.current = nextState;
       if (returningActive) {
         void refreshClock({ syncPlayback: true });
@@ -551,7 +589,7 @@ export function useMobileRoom(input: {
     }
 
     const timer = setInterval(() => {
-      if (appStateRef.current === "active") {
+      if (appStateRef.current === 'active') {
         void refreshClock({ syncPlayback: false });
       }
     }, CLOCK_RESYNC_INTERVAL_MS);
@@ -559,147 +597,191 @@ export function useMobileRoom(input: {
     return () => clearInterval(timer);
   }, [refreshClock, room?.id]);
 
-  const sendChat = useCallback(async (messageText: string) => {
-    if (!room?.id) throw new Error("Room is not ready.");
-    if (!capabilities?.can_comment || isCurrentUserMuted || isCurrentUserBlocked) {
-      throw new Error(isCurrentUserMuted ? "You are muted in this Room for now." : "Chat is not available in this Room.");
-    }
-
-    const trimmed = messageText.trim();
-    if (!trimmed) return;
-    setIsSubmittingChat(true);
-    setInteractionError(null);
-    try {
-      await sendRoomChatMessage({
-        roomId: room.id,
-        messageText: trimmed,
-        releasePositionSeconds: clockState?.release_position_seconds ?? null,
-        trackRefId: clockState?.track_ref_id ?? null,
-        trackPositionSeconds: clockState?.track_position_seconds ?? null,
-        loopNumber: clockState?.loop_number ?? null,
-        accessToken,
-      });
-    } catch (chatError) {
-      const message = normalizeRoomErrorMessage(chatError, "Unable to send Room message.");
-      setInteractionError(message);
-      throw new Error(message);
-    } finally {
-      setIsSubmittingChat(false);
-    }
-  }, [accessToken, capabilities?.can_comment, clockState, isCurrentUserBlocked, isCurrentUserMuted, room?.id]);
-
-  const react = useCallback(async (reactionType: RoomReactionType) => {
-    if (!room?.id) throw new Error("Room is not ready.");
-    if (!capabilities?.can_react || isCurrentUserBlocked) {
-      throw new Error("Reactions are not available in this Room.");
-    }
-    try {
-      await sendRoomReaction({
-        roomId: room.id,
-        reactionId: createSessionId(),
-        reactionType,
-        actorVisibility: "anonymous",
-        accessToken,
-      });
-    } catch (reactionError) {
-      const message = normalizeRoomErrorMessage(reactionError, "Unable to send Room reaction.");
-      setInteractionError(message);
-      throw new Error(message);
-    }
-  }, [accessToken, capabilities?.can_react, isCurrentUserBlocked, room?.id]);
-
-  const submitQuestion = useCallback(async (text: string) => {
-    if (!room?.id) throw new Error("Room is not ready.");
-    if (
-      isCurrentUserBlocked ||
-      capabilities?.can_submit_qna_question === false ||
-      capabilities?.can_view_qna === false
-    ) {
-      throw new Error("Questions are not available in this Room.");
-    }
-    setIsSubmittingQuestion(true);
-    try {
-      const response = await submitRoomQuestion({ roomId: room.id, text: text.trim(), accessToken });
-      if (response.question) {
-        setSnapshot((current) => ({
-          ...current,
-          questions: [toQuestion(response.question!), ...current.questions].filter(isPublicQuestionVisible),
-        }));
+  const sendChat = useCallback(
+    async (messageText: string) => {
+      if (!room?.id) throw new Error('Room is not ready.');
+      if (!capabilities?.can_comment || isCurrentUserMuted || isCurrentUserBlocked) {
+        throw new Error(
+          isCurrentUserMuted
+            ? 'You are muted in this Room for now.'
+            : 'Chat is not available in this Room.',
+        );
       }
-    } catch (questionError) {
-      const message = normalizeRoomErrorMessage(questionError, "Unable to submit Room question.");
-      setInteractionError(message);
-      throw new Error(message);
-    } finally {
-      setIsSubmittingQuestion(false);
-    }
-  }, [accessToken, capabilities?.can_submit_qna_question, capabilities?.can_view_qna, isCurrentUserBlocked, room?.id]);
 
-  const voteQuestion = useCallback(async (questionId: string) => {
-    if (!room?.id) throw new Error("Room is not ready.");
-    if (isCurrentUserBlocked || capabilities?.can_view_qna === false) {
-      throw new Error("Questions are not available in this Room.");
-    }
-    try {
-      await voteRoomQuestion({ roomId: room.id, questionId, accessToken });
-    } catch (voteError) {
-      const message = normalizeRoomErrorMessage(voteError, "Unable to vote for Room question.");
-      setInteractionError(message);
-      throw new Error(message);
-    }
-  }, [accessToken, capabilities?.can_view_qna, isCurrentUserBlocked, room?.id]);
+      const trimmed = messageText.trim();
+      if (!trimmed) return;
+      setIsSubmittingChat(true);
+      setInteractionError(null);
+      try {
+        await sendRoomChatMessage({
+          roomId: room.id,
+          messageText: trimmed,
+          releasePositionSeconds: clockState?.release_position_seconds ?? null,
+          trackRefId: clockState?.track_ref_id ?? null,
+          trackPositionSeconds: clockState?.track_position_seconds ?? null,
+          loopNumber: clockState?.loop_number ?? null,
+          accessToken,
+        });
+      } catch (chatError) {
+        const message = normalizeRoomErrorMessage(chatError, 'Unable to send Room message.');
+        setInteractionError(message);
+        throw new Error(message);
+      } finally {
+        setIsSubmittingChat(false);
+      }
+    },
+    [
+      accessToken,
+      capabilities?.can_comment,
+      clockState,
+      isCurrentUserBlocked,
+      isCurrentUserMuted,
+      room?.id,
+    ],
+  );
 
-  const votePoll = useCallback(async (pollId: string, optionId: string) => {
-    if (!room?.id) throw new Error("Room is not ready.");
-    if (isCurrentUserBlocked || capabilities?.can_view_qna === false) {
-      throw new Error("Polls are not available in this Room.");
-    }
-    try {
-      await voteRoomPoll({ roomId: room.id, pollId, optionId, accessToken });
-    } catch (voteError) {
-      const message = normalizeRoomErrorMessage(voteError, "Unable to vote in Room poll.");
-      setInteractionError(message);
-      throw new Error(message);
-    }
-  }, [accessToken, capabilities?.can_view_qna, isCurrentUserBlocked, room?.id]);
+  const react = useCallback(
+    async (reactionType: RoomReactionType) => {
+      if (!room?.id) throw new Error('Room is not ready.');
+      if (!capabilities?.can_react || isCurrentUserBlocked) {
+        throw new Error('Reactions are not available in this Room.');
+      }
+      try {
+        await sendRoomReaction({
+          roomId: room.id,
+          reactionId: createSessionId(),
+          reactionType,
+          actorVisibility: 'anonymous',
+          accessToken,
+        });
+      } catch (reactionError) {
+        const message = normalizeRoomErrorMessage(reactionError, 'Unable to send Room reaction.');
+        setInteractionError(message);
+        throw new Error(message);
+      }
+    },
+    [accessToken, capabilities?.can_react, isCurrentUserBlocked, room?.id],
+  );
 
-  const sendSupportFromBalance = useCallback(async (amountCents: number) => {
-    if (!room?.id) throw new Error("Room is not ready.");
-    if (isCurrentUserBlocked || !capabilities?.can_send_support) {
-      throw new Error("Support is not available in this Room.");
-    }
-    try {
-      const result = await sendRoomSupport({
-        roomId: room.id,
-        amountCents,
-        paymentMethod: "user_support_balance",
-        publicName: true,
-        showAmount: true,
-        accessToken,
-      });
-      void apiFetch("/v1/public/events", {
-        method: "POST",
-        headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({
-          eventType: "support_send",
-          subjectType: "micboxx.room",
-          subjectId: room.id,
-          sessionId: sessionIdRef.current,
-          sourceType: "release_room",
-          metadata: { amount_cents: amountCents, payment_method: "user_support_balance" },
-        }),
-        accessToken,
-      }).catch(() => undefined);
-      return result;
-    } catch (supportError) {
-      const message = normalizeRoomErrorMessage(supportError, "Unable to send Room support.");
-      setInteractionError(message);
-      throw new Error(message);
-    }
-  }, [accessToken, capabilities?.can_send_support, isCurrentUserBlocked, room?.id]);
+  const submitQuestion = useCallback(
+    async (text: string) => {
+      if (!room?.id) throw new Error('Room is not ready.');
+      if (
+        isCurrentUserBlocked ||
+        capabilities?.can_submit_qna_question === false ||
+        capabilities?.can_view_qna === false
+      ) {
+        throw new Error('Questions are not available in this Room.');
+      }
+      setIsSubmittingQuestion(true);
+      try {
+        const response = await submitRoomQuestion({
+          roomId: room.id,
+          text: text.trim(),
+          accessToken,
+        });
+        if (response.question) {
+          setSnapshot((current) => ({
+            ...current,
+            questions: [toQuestion(response.question!), ...current.questions].filter(
+              isPublicQuestionVisible,
+            ),
+          }));
+        }
+      } catch (questionError) {
+        const message = normalizeRoomErrorMessage(questionError, 'Unable to submit Room question.');
+        setInteractionError(message);
+        throw new Error(message);
+      } finally {
+        setIsSubmittingQuestion(false);
+      }
+    },
+    [
+      accessToken,
+      capabilities?.can_submit_qna_question,
+      capabilities?.can_view_qna,
+      isCurrentUserBlocked,
+      room?.id,
+    ],
+  );
+
+  const voteQuestion = useCallback(
+    async (questionId: string) => {
+      if (!room?.id) throw new Error('Room is not ready.');
+      if (isCurrentUserBlocked || capabilities?.can_view_qna === false) {
+        throw new Error('Questions are not available in this Room.');
+      }
+      try {
+        await voteRoomQuestion({ roomId: room.id, questionId, accessToken });
+      } catch (voteError) {
+        const message = normalizeRoomErrorMessage(voteError, 'Unable to vote for Room question.');
+        setInteractionError(message);
+        throw new Error(message);
+      }
+    },
+    [accessToken, capabilities?.can_view_qna, isCurrentUserBlocked, room?.id],
+  );
+
+  const votePoll = useCallback(
+    async (pollId: string, optionId: string) => {
+      if (!room?.id) throw new Error('Room is not ready.');
+      if (isCurrentUserBlocked || capabilities?.can_view_qna === false) {
+        throw new Error('Polls are not available in this Room.');
+      }
+      try {
+        await voteRoomPoll({ roomId: room.id, pollId, optionId, accessToken });
+      } catch (voteError) {
+        const message = normalizeRoomErrorMessage(voteError, 'Unable to vote in Room poll.');
+        setInteractionError(message);
+        throw new Error(message);
+      }
+    },
+    [accessToken, capabilities?.can_view_qna, isCurrentUserBlocked, room?.id],
+  );
+
+  const sendSupportFromBalance = useCallback(
+    async (amountCents: number) => {
+      if (!room?.id) throw new Error('Room is not ready.');
+      if (isCurrentUserBlocked || !capabilities?.can_send_support) {
+        throw new Error('Support is not available in this Room.');
+      }
+      try {
+        const result = await sendRoomSupport({
+          roomId: room.id,
+          amountCents,
+          paymentMethod: 'user_support_balance',
+          publicName: true,
+          showAmount: true,
+          accessToken,
+        });
+        void apiFetch('/v1/public/events', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify({
+            eventType: 'support_send',
+            subjectType: 'micboxx.room',
+            subjectId: room.id,
+            sessionId: sessionIdRef.current,
+            sourceType: 'release_room',
+            metadata: { amount_cents: amountCents, payment_method: 'user_support_balance' },
+          }),
+          accessToken,
+        }).catch(() => undefined);
+        return result;
+      } catch (supportError) {
+        const message = normalizeRoomErrorMessage(supportError, 'Unable to send Room support.');
+        setInteractionError(message);
+        throw new Error(message);
+      }
+    },
+    [accessToken, capabilities?.can_send_support, isCurrentUserBlocked, room?.id],
+  );
 
   const roomChat = useMemo(
-    () => snapshot.chat.filter((message): message is RoomChatMessage => message.visibility === "public"),
+    () =>
+      snapshot.chat.filter(
+        (message): message is RoomChatMessage => message.visibility === 'public',
+      ),
     [snapshot.chat],
   );
 
@@ -716,7 +798,7 @@ export function useMobileRoom(input: {
     qna: snapshot.qna,
     questions: snapshot.questions.filter(isPublicQuestionVisible),
     activePoll: snapshot.activePoll,
-    closedPolls: snapshot.polls.filter((poll) => poll.status === "closed"),
+    closedPolls: snapshot.polls.filter((poll) => poll.status === 'closed'),
     supportStats: snapshot.supportStats,
     supportBalance,
     artistPresence: snapshot.artistPresence,

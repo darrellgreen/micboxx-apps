@@ -383,10 +383,23 @@ export default function PlanScreen() {
     return !isAnnualPlan(p);
   });
 
+  async function refreshSubscriptionSurfaces() {
+    await Promise.allSettled([refetchEntitlement(), bootstrap.refetch()]);
+  }
+
   async function handleRestore() {
     setIsRestoring(true);
-    await restorePurchases();
-    setIsRestoring(false);
+    try {
+      const restored = await restorePurchases();
+      if (restored) {
+        await refreshSubscriptionSurfaces();
+        Alert.alert('Purchases restored', 'Your subscription has been restored.');
+      } else {
+        Alert.alert('No purchases found', 'We could not find an active subscription to restore.');
+      }
+    } finally {
+      setIsRestoring(false);
+    }
   }
 
   async function handleUpgrade(storeProductId: string | null | undefined) {
@@ -397,7 +410,7 @@ export default function PlanScreen() {
     if (result.cancelled) {
       Alert.alert('Purchase cancelled', 'No changes were made to your subscription.');
     } else if (result.purchased) {
-      await Promise.allSettled([refetchEntitlement(), bootstrap.refetch()]);
+      await refreshSubscriptionSurfaces();
       Alert.alert('Subscription updated', 'Your plan is active.');
     }
   }

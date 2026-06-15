@@ -250,7 +250,7 @@ function RoomCard({ room, onPress }: { room: PublicRoomSummary; onPress: () => v
         <Image source={{ uri: room.artwork_url }} style={styles.cardBackdrop} contentFit="cover" />
       ) : null}
       {/* BlurView applies real native blur over the artwork, same as CSS blur-2xl */}
-      <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFillObject} />
       {/* Transparent at top so blurred art color shows, darkens to near-black at bottom */}
       <LinearGradient
         colors={['transparent', 'rgba(8,9,11,0.65)', '#08090b']}

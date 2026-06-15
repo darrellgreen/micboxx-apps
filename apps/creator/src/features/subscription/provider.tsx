@@ -142,7 +142,9 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
           Purchases.setLogLevel(LOG_LEVEL.DEBUG);
         }
 
-        configureRevenueCatLogging();
+        if (__DEV__) {
+          configureRevenueCatLogging();
+        }
         Purchases.configure({ apiKey: REVENUECAT_API_KEY });
 
         // Load current customer info and offerings in parallel.
