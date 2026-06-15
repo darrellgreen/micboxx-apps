@@ -15,6 +15,8 @@ import { trackPlayerAdapter } from '@/features/player/engine/adapter';
 import { apiFetch } from '@micboxx/api';
 import type { EngineTrack } from '@micboxx/contracts';
 import {
+  beginPlaybackLoad,
+  clearPlaybackSession,
   resetPlayerState,
   setCurrentIndex,
   setCurrentItem,
@@ -313,22 +315,20 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   const clearQueue = useCallback(async (): Promise<PlayerActionResult> => {
     activeLoadIdRef.current++;
     controlledLoadRef.current = null;
+    // Clear visible UI state synchronously so the mini player disappears
+    // immediately — before the native engine and storage finish resetting.
+    dispatch(clearPlaybackSession());
     try {
       await trackPlayerAdapter.reset();
-      await clearPersistedQueue();
-      await clearPersistedPlaybackSession();
-      applyQueueState(emptyQueueState);
-      dispatch(resetPlayerState());
+      await Promise.all([clearPersistedQueue(), clearPersistedPlaybackSession()]);
       return { ok: true };
     } catch (error) {
-      applyQueueState(emptyQueueState);
-      dispatch(resetPlayerState());
       return {
         ok: false,
         error: error instanceof Error ? error.message : 'Unable to clear queue.',
       };
     }
-  }, [applyQueueState, dispatch]);
+  }, [dispatch]);
 
   const loadAuthorizedQueue = useCallback(
     async (payload: StartPlaybackPayload, loadId: number): Promise<PlayerActionResult> => {
@@ -376,14 +376,10 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         return { ok: false, error: 'Playback load cancelled.' };
       }
 
-      controlledLoadRef.current = {
-        loadId,
-        trackId: requestedItem.id,
-      };
-      applyQueueState(queue);
-      dispatch(setPosition(emptyPlaybackPosition));
-      dispatch(setPlaybackState('loading'));
-      dispatch(setError(null));
+      // Atomic: queue, currentItem, playbackState, position and error all land
+      // in a single Redux dispatch so no intermediate render shows the old track.
+      controlledLoadRef.current = { loadId, trackId: requestedItem.id };
+      dispatch(beginPlaybackLoad({ queue, requestedItem }));
 
       try {
         await trackPlayerAdapter.loadQueue(
@@ -408,10 +404,16 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         } else {
           await trackPlayerAdapter.pause();
         }
-      } finally {
+        // controlledLoadRef is intentionally NOT cleared here. It is cleared
+        // in the active-track-changed handler once the native engine confirms
+        // the expected track. Clearing it here would expose the window between
+        // play() returning and the native event arriving to spurious null events.
+      } catch (e) {
+        // On error, release the guard so future events are not silently dropped.
         if (controlledLoadRef.current?.loadId === loadId) {
           controlledLoadRef.current = null;
         }
+        throw e;
       }
 
       emitAnalytics('playbackSourceSelected', {
@@ -573,26 +575,29 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
             break;
           case 'active-track-changed': {
             const controlledLoad = controlledLoadRef.current;
-            const loadingRequestedTrack =
-              currentState.nowPlaying.playbackState === 'loading' &&
-              currentState.nowPlaying.currentItem !== null;
-            if (!event.trackId && (controlledLoad || loadingRequestedTrack)) {
+            if (controlledLoad) {
+              // While a controlled load is in progress, only the expected track
+              // ID is allowed to advance state. All other events (null, stale
+              // IDs from the previous queue) are silently ignored so they cannot
+              // overwrite the UI with old or absent content.
+              if (event.trackId === controlledLoad.trackId) {
+                const nextIndex = getQueueIndexByTrackId(currentState.queue, event.trackId);
+                if (nextIndex >= 0) {
+                  dispatch(setCurrentIndex(nextIndex));
+                  void syncMetadata(currentState.queue.items[nextIndex] ?? null);
+                }
+                controlledLoadRef.current = null;
+              }
               break;
             }
 
+            // No controlled load — normal unguarded handling.
             const nextIndex = getQueueIndexByTrackId(currentState.queue, event.trackId);
             if (nextIndex >= 0) {
               dispatch(setCurrentIndex(nextIndex));
               void syncMetadata(currentState.queue.items[nextIndex] ?? null);
-              if (controlledLoad?.trackId === event.trackId) {
-                controlledLoadRef.current = null;
-              }
             } else {
-              // Ignore spurious unmatched track events from the native engine
-              // while we are explicitly loading a new queue.
-              if (!controlledLoad) {
-                dispatch(setCurrentItem(null));
-              }
+              dispatch(setCurrentItem(null));
             }
             break;
           }
@@ -632,6 +637,9 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
             void trackPlayerAdapter.pause();
             break;
           case 'playback-error':
+            // Release the controlled-load guard on error so future events
+            // are not permanently silenced.
+            controlledLoadRef.current = null;
             dispatch(setError(event.message));
             break;
         }

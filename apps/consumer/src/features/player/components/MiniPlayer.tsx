@@ -1,5 +1,5 @@
 import { useSegments } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, State } from 'react-native-gesture-handler';
 import Animated, {
@@ -20,6 +20,7 @@ import { PlayerProgressCompact } from '@/features/player/components/PlayerProgre
 import { usePlaybackController } from '@/features/player/hooks/usePlaybackController';
 import { selectDisplaySubtitle } from '@/features/player/selectors';
 import { useAppSelector } from '@/store/hooks';
+import type { PlayerItem } from '@micboxx/contracts';
 import { usePlayerSheet } from '../context/PlayerSheetContext';
 import { AnimatedPressable } from '@micboxx/ui';
 import { hapticLight, hapticSuccess } from '@micboxx/ui';
@@ -54,35 +55,27 @@ export function MiniPlayer() {
 
   const canRenderMiniPlayer = playerInitialized && !playerRestoring;
 
-  // Keep reference of the last active track only for deliberate fade-out after
-  // a real session ends. The provider keeps currentItem stable during track
-  // switches, so this fallback is no longer used for loading gaps.
-  const lastTrack = useRef(currentItem);
-  if (canRenderMiniPlayer && currentItem) {
-    lastTrack.current = currentItem;
-  }
-  const displayItem = canRenderMiniPlayer ? (currentItem ?? lastTrack.current) : null;
+  // exitItem holds the previous track only during an active swipe-to-dismiss
+  // fling animation. It is the sole content source while the card flies off
+  // screen after the user confirms dismissal. It must never serve as a generic
+  // "keep old track visible" fallback — that is the pattern this replaces.
+  const [exitItem, setExitItem] = useState<PlayerItem | null>(null);
 
-  // Declarative visibility animation based on active track existence
+  // Safe JS-thread snapshot so gesture callbacks can read the current item
+  // without stale closure captures.
+  const displayItemRef = useRef<PlayerItem | null>(null);
+
+  const displayItem = canRenderMiniPlayer ? (currentItem ?? exitItem) : null;
+  displayItemRef.current = displayItem;
+
+  // Declarative visibility animation based on active track existence.
+  // No delay — transient nulls during track switches no longer occur because
+  // beginPlaybackLoad sets currentItem atomically before the native engine fires.
   const isPlayerActive = canRenderMiniPlayer && currentItem !== null;
   const visibility = useSharedValue(isPlayerActive ? 1 : 0);
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    if (isPlayerActive) {
-      visibility.value = withTiming(1, { duration: 200 });
-    } else {
-      // Delay the hide animation slightly (e.g. 150ms) to allow transient null states
-      // during track transitions to resolve without animating the mini-player away and back.
-      timeoutId = setTimeout(() => {
-        visibility.value = withTiming(0, { duration: 200 });
-      }, 150);
-    }
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
+    visibility.value = withTiming(isPlayerActive ? 1 : 0, { duration: 200 });
   }, [isPlayerActive, visibility]);
 
   // Only add tab-bar clearance when we're actually inside the (tabs) group.
@@ -92,35 +85,42 @@ export function MiniPlayer() {
 
   const translateX = useSharedValue(0);
 
-  // Instantly reset translation when a new track starts playing
+  // When a new track starts, cancel any in-progress dismiss animation and
+  // reset horizontal translation so the new track card enters cleanly.
   useEffect(() => {
     if (currentItem) {
       translateX.value = 0;
+      setExitItem(null);
     }
   }, [currentItem, translateX]);
-
-  function handleDismissSession() {
-    void playback.dismissSession();
-  }
 
   function openNowPlaying() {
     hapticLight();
     expand({ slug: displayItem?.slug });
   }
 
+  function beginDismiss() {
+    // Capture the item being dismissed as the explicit exit snapshot, then
+    // clear the real session. exitItem keeps content visible during the fling;
+    // it is NOT a generic fallback and cannot be reactivated by later events.
+    setExitItem(displayItemRef.current);
+    void playback.dismissSession();
+  }
+
+  function clearExitItem() {
+    setExitItem(null);
+  }
+
   const dismissHapticFired = useSharedValue(false);
 
   const pan = Gesture.Pan()
-    // Only recognise after 10 px of horizontal movement …
     .activeOffsetX([-10, 10])
-    // … and immediately fail if the user is clearly scrolling vertically.
     .failOffsetY([-15, 15])
     .onStart(() => {
       dismissHapticFired.value = false;
     })
     .onUpdate((e) => {
       translateX.value = e.translationX;
-      // Fire haptic once when user crosses the dismiss threshold
       if (!dismissHapticFired.value && Math.abs(e.translationX) > DISMISS_THRESHOLD) {
         dismissHapticFired.value = true;
         runOnJS(hapticSuccess)();
@@ -131,18 +131,20 @@ export function MiniPlayer() {
       const pastVelocity = Math.abs(e.velocityX) > DISMISS_VELOCITY;
 
       if (pastDistance || pastVelocity) {
-        // Dismiss the playback session (stops audio, clears queue and persisted state)
-        runOnJS(handleDismissSession)();
+        // Capture exit snapshot and clear the session atomically on the JS thread.
+        runOnJS(beginDismiss)();
 
-        // Fling off screen in the direction of the swipe.
         const direction = translateX.value >= 0 ? 1 : -1;
-        translateX.value = withSpring(direction * 600, {
-          damping: 22,
-          stiffness: 180,
-          velocity: e.velocityX,
-        });
+        translateX.value = withSpring(
+          direction * 600,
+          { damping: 22, stiffness: 180, velocity: e.velocityX },
+          (finished) => {
+            // Card is off-screen — release the exit snapshot so the component
+            // unmounts cleanly. Also fires if the fling is interrupted.
+            if (finished) runOnJS(clearExitItem)();
+          },
+        );
       } else {
-        // Not far enough — ease back to centre without bounce.
         translateX.value = withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) });
       }
     });
@@ -224,7 +226,7 @@ export function MiniPlayer() {
 
   return (
     <View
-      pointerEvents={isExpandedState && !isDragging ? 'none' : 'box-none'}
+      pointerEvents={(isExpandedState && !isDragging) || exitItem !== null ? 'none' : 'box-none'}
       style={[styles.container, { bottom: bottomOffset }]}
     >
       <GestureDetector gesture={composed}>
