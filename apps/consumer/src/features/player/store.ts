@@ -3,7 +3,7 @@ import type {
   PlaybackPositionState,
   PlayerItem,
   PlayerQueueState,
-} from "@micboxx/contracts";
+} from '@micboxx/contracts';
 
 export interface PlayerProviderState {
   initialized: boolean;
@@ -13,15 +13,15 @@ export interface PlayerProviderState {
 }
 
 export type PlayerAction =
-  | { type: "initializing" }
-  | { type: "initialized" }
-  | { type: "set-restoring"; restoring: boolean }
-  | { type: "set-queue"; queue: PlayerQueueState }
-  | { type: "set-current-index"; currentIndex: number }
-  | { type: "set-current-item"; item: PlayerItem | null }
-  | { type: "set-playback-state"; playbackState: NowPlayingState["playbackState"] }
-  | { type: "set-position"; position: PlaybackPositionState }
-  | { type: "set-error"; error: string | null };
+  | { type: 'initializing' }
+  | { type: 'initialized' }
+  | { type: 'set-restoring'; restoring: boolean }
+  | { type: 'set-queue'; queue: PlayerQueueState }
+  | { type: 'set-current-index'; currentIndex: number }
+  | { type: 'set-current-item'; item: PlayerItem | null }
+  | { type: 'set-playback-state'; playbackState: NowPlayingState['playbackState'] }
+  | { type: 'set-position'; position: PlaybackPositionState }
+  | { type: 'set-error'; error: string | null };
 
 export const emptyPlaybackPosition: PlaybackPositionState = {
   positionSec: 0,
@@ -34,7 +34,7 @@ export const emptyQueueState: PlayerQueueState = {
   currentIndex: 0,
   context: null,
   shuffled: false,
-  repeatMode: "off",
+  repeatMode: 'off',
 };
 
 export const initialPlayerProviderState: PlayerProviderState = {
@@ -43,7 +43,8 @@ export const initialPlayerProviderState: PlayerProviderState = {
   queue: emptyQueueState,
   nowPlaying: {
     currentItem: null,
-    playbackState: "idle",
+    playbackState: 'idle',
+    playbackIntent: 'pause',
     position: emptyPlaybackPosition,
     volume: 1,
     rate: 1,
@@ -56,22 +57,22 @@ export function playerReducer(
   action: PlayerAction,
 ): PlayerProviderState {
   switch (action.type) {
-    case "initializing":
+    case 'initializing':
       return {
         ...state,
         restoring: true,
       };
-    case "initialized":
+    case 'initialized':
       return {
         ...state,
         initialized: true,
       };
-    case "set-restoring":
+    case 'set-restoring':
       return {
         ...state,
         restoring: action.restoring,
       };
-    case "set-queue":
+    case 'set-queue':
       return {
         ...state,
         queue: action.queue,
@@ -80,7 +81,7 @@ export function playerReducer(
           currentItem: action.queue.items[action.queue.currentIndex] ?? null,
         },
       };
-    case "set-current-index":
+    case 'set-current-index':
       return {
         ...state,
         queue: {
@@ -92,7 +93,7 @@ export function playerReducer(
           currentItem: state.queue.items[action.currentIndex] ?? null,
         },
       };
-    case "set-current-item":
+    case 'set-current-item':
       return {
         ...state,
         nowPlaying: {
@@ -100,7 +101,7 @@ export function playerReducer(
           currentItem: action.item,
         },
       };
-    case "set-playback-state":
+    case 'set-playback-state':
       return {
         ...state,
         nowPlaying: {
@@ -108,7 +109,7 @@ export function playerReducer(
           playbackState: action.playbackState,
         },
       };
-    case "set-position":
+    case 'set-position':
       return {
         ...state,
         nowPlaying: {
@@ -116,13 +117,13 @@ export function playerReducer(
           position: action.position,
         },
       };
-    case "set-error":
+    case 'set-error':
       return {
         ...state,
         nowPlaying: {
           ...state.nowPlaying,
           error: action.error,
-          playbackState: action.error ? "error" : state.nowPlaying.playbackState,
+          playbackState: action.error ? 'error' : state.nowPlaying.playbackState,
         },
       };
     default:

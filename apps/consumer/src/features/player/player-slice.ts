@@ -7,6 +7,7 @@ import {
 } from '@/features/player/store';
 import type {
   NowPlayingState,
+  PlaybackIntent,
   PlaybackPositionState,
   PlayerItem,
   PlayerQueueState,
@@ -15,6 +16,7 @@ import type {
 interface BeginPlaybackLoadPayload {
   queue: PlayerQueueState;
   requestedItem: PlayerItem;
+  playbackIntent: PlaybackIntent;
 }
 
 export interface PlayerSliceState {
@@ -66,6 +68,7 @@ const playerSlice = createSlice({
       state.queue = emptyQueueState;
       state.nowPlaying.currentItem = null;
       state.nowPlaying.playbackState = 'idle';
+      state.nowPlaying.playbackIntent = 'pause';
       state.nowPlaying.position = emptyPlaybackPosition;
       state.nowPlaying.error = null;
     },
@@ -75,6 +78,7 @@ const playerSlice = createSlice({
       state.queue = emptyQueueState;
       state.nowPlaying.currentItem = null;
       state.nowPlaying.playbackState = 'idle';
+      state.nowPlaying.playbackIntent = 'pause';
       state.nowPlaying.position = emptyPlaybackPosition;
       state.nowPlaying.error = null;
     },
@@ -84,6 +88,7 @@ const playerSlice = createSlice({
       state.queue = action.payload.queue;
       state.nowPlaying.currentItem = action.payload.requestedItem;
       state.nowPlaying.playbackState = 'loading';
+      state.nowPlaying.playbackIntent = action.payload.playbackIntent;
       state.nowPlaying.position = emptyPlaybackPosition;
       state.nowPlaying.error = null;
     },

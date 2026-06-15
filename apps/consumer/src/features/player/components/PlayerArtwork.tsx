@@ -1,27 +1,20 @@
-import { Image } from "expo-image";
-import { StyleSheet, View } from "react-native";
+import { Image } from 'expo-image';
+import { StyleSheet, View } from 'react-native';
 
-import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
-import { tokens } from "@micboxx/theme";
+import { useNowPlaying } from '@/features/player/hooks/useNowPlaying';
+import { tokens } from '@micboxx/theme';
 
 export function PlayerArtwork({ size = 48 }: { size?: number }) {
   const { currentItem } = useNowPlaying();
 
+  const radius = size / 5;
+
   return (
-    <View
-      style={[
-        styles.frame,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 3.2,
-        },
-      ]}
-    >
+    <View style={[styles.frame, { width: size, height: size, borderRadius: radius }]}>
       {currentItem?.artworkUrl ? (
         <Image
           source={{ uri: currentItem.artworkUrl }}
-          style={StyleSheet.absoluteFillObject}
+          style={[StyleSheet.absoluteFillObject, { borderRadius: radius }]}
           contentFit="cover"
           transition={180}
         />
@@ -34,9 +27,7 @@ export function PlayerArtwork({ size = 48 }: { size?: number }) {
 
 const styles = StyleSheet.create({
   frame: {
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
+    overflow: 'hidden',
     backgroundColor: tokens.colors.bgElevated,
   },
   placeholder: {

@@ -1,14 +1,12 @@
-import { shouldUseLocalWebFixtures } from "@/config/env";
-import { selectProgressPercent } from "@/features/player/selectors";
-import { useAppSelector } from "@/store/hooks";
+import { shouldUseLocalWebFixtures } from '@/config/env';
+import { selectProgressPercent } from '@/features/player/selectors';
+import { useAppSelector } from '@/store/hooks';
 
 export function useNowPlaying() {
   const state = useAppSelector((rootState) => rootState.player);
   const currentItem = state.nowPlaying.currentItem;
   const fixtureDurationSec =
-    shouldUseLocalWebFixtures() && currentItem?.durationSec
-      ? currentItem.durationSec
-      : null;
+    shouldUseLocalWebFixtures() && currentItem?.durationSec ? currentItem.durationSec : null;
   const durationSec = fixtureDurationSec ?? state.nowPlaying.position.durationSec;
   const positionSec = fixtureDurationSec
     ? Math.min(state.nowPlaying.position.positionSec, fixtureDurationSec)
@@ -22,6 +20,7 @@ export function useNowPlaying() {
   return {
     currentItem,
     playbackState: state.nowPlaying.playbackState,
+    playbackIntent: state.nowPlaying.playbackIntent,
     position: {
       ...state.nowPlaying.position,
       positionSec,

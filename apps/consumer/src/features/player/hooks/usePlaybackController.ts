@@ -1,21 +1,21 @@
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
 import type {
   PublicTrack,
   PublicTrackSummary,
   QueueContext,
   PlayerActionResult,
-} from "@micboxx/contracts";
-import { useNowPlaying } from "./useNowPlaying";
-import { usePlayerControls } from "./usePlayerControls";
-import { usePlayerQueue } from "./usePlayerQueue";
-import { mapTrackListToPlayerItems } from "../mapper/playerItemMapper";
+} from '@micboxx/contracts';
+import { useNowPlaying } from './useNowPlaying';
+import { usePlayerControls } from './usePlayerControls';
+import { usePlayerQueue } from './usePlayerQueue';
+import { mapTrackListToPlayerItems } from '../mapper/playerItemMapper';
 
 type MappableTrack = PublicTrack | PublicTrackSummary;
 
 interface PlayOrToggleOptions {
   /** What to do if the requested track is already active. Default: "toggle" */
-  ifCurrent?: "toggle" | "noop";
+  ifCurrent?: 'toggle' | 'noop';
 }
 
 /**
@@ -30,14 +30,14 @@ interface PlayOrToggleOptions {
  *   UI components  →  usePlaybackController()  →  player hooks  →  PlayerProvider  →  native engine
  */
 export function usePlaybackController() {
-  const { currentItem, playbackState, position, progressPercent } =
-    useNowPlaying();
-  const { play, pause, seekTo, skipNext, skipPrevious, setRepeatMode } =
-    usePlayerControls();
+  const { currentItem, playbackState, playbackIntent, position, progressPercent } = useNowPlaying();
+  const { play, pause, seekTo, skipNext, skipPrevious, setRepeatMode } = usePlayerControls();
   const { startPlayback, clearQueue } = usePlayerQueue();
 
   const isPlaying =
-    playbackState === "playing" || playbackState === "buffering";
+    playbackState === 'playing' ||
+    playbackState === 'buffering' ||
+    (playbackState === 'loading' && playbackIntent === 'play');
 
   /* ── Intent: toggle play / pause ────────────────────────────────────────── */
 
@@ -66,19 +66,18 @@ export function usePlaybackController() {
       allTracks?: MappableTrack[],
       options?: PlayOrToggleOptions,
     ): Promise<PlayerActionResult> => {
-      const ifCurrent = options?.ifCurrent ?? "toggle";
+      const ifCurrent = options?.ifCurrent ?? 'toggle';
 
       // Same track is already active
       if (currentItem && currentItem.id === String(track.id)) {
-        if (ifCurrent === "toggle") {
+        if (ifCurrent === 'toggle') {
           return await togglePlayPause();
         }
         return { ok: true }; // noop
       }
 
       // New track — build queue and start playback
-      const tracksToMap =
-        allTracks && allTracks.length > 0 ? allTracks : [track];
+      const tracksToMap = allTracks && allTracks.length > 0 ? allTracks : [track];
       const items = mapTrackListToPlayerItems(tracksToMap);
       const startIndex = tracksToMap.findIndex((t) => t.id === track.id);
 
