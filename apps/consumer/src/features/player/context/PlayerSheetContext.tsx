@@ -6,8 +6,10 @@ export interface PlayerSheetContextValue {
   expand: (options?: { slug?: string }) => void;
   collapse: () => void;
   startDrag: (options?: { slug?: string }) => void;
+  finishDrag: () => void;
   activeSlug: string | null;
   isExpandedState: boolean; // Helper state for mounting and pointerEvents
+  isDragging: boolean;
   setIsExpandedState: (val: boolean) => void;
   setActiveSlug: (val: string | null) => void;
 }
@@ -17,6 +19,7 @@ const PlayerSheetContext = createContext<PlayerSheetContextValue | null>(null);
 export function PlayerSheetProvider({ children }: { children: React.ReactNode }) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [isExpandedState, setIsExpandedState] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const progress = useSharedValue(0);
 
   const expand = useCallback((options?: { slug?: string }) => {
@@ -25,11 +28,13 @@ export function PlayerSheetProvider({ children }: { children: React.ReactNode })
     } else {
       setActiveSlug(null);
     }
+    setIsDragging(false);
     setIsExpandedState(true);
     progress.value = withTiming(1, { duration: 240 });
   }, [progress]);
 
   const collapse = useCallback(() => {
+    setIsDragging(false);
     progress.value = withTiming(0, { duration: 220 }, (finished) => {
       if (finished || progress.value <= 0.01) {
         runOnJS(setIsExpandedState)(false);
@@ -45,8 +50,13 @@ export function PlayerSheetProvider({ children }: { children: React.ReactNode })
       setActiveSlug(null);
     }
     setIsExpandedState(true);
+    setIsDragging(true);
     progress.value = 0;
   }, [progress]);
+
+  const finishDrag = useCallback(() => {
+    setIsDragging(false);
+  }, []);
 
   return (
     <PlayerSheetContext.Provider
@@ -55,8 +65,10 @@ export function PlayerSheetProvider({ children }: { children: React.ReactNode })
         expand,
         collapse,
         startDrag,
+        finishDrag,
         activeSlug,
         isExpandedState,
+        isDragging,
         setIsExpandedState,
         setActiveSlug,
       }}

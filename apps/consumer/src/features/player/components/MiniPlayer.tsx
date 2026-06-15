@@ -1,9 +1,11 @@
 import { useSegments } from "expo-router";
 import { useEffect, useRef } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Gesture, GestureDetector, State } from "react-native-gesture-handler";
 import Animated, {
     Easing,
+    Extrapolation,
+    interpolate,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
@@ -24,6 +26,9 @@ import { tokens } from "@micboxx/theme";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+// Drag distance to fully open the sheet. Shorter = more responsive to a thumb swipe.
+const EXPAND_DISTANCE = 320;
+
 // The player card is left:12 + right:12 = 24 px of total horizontal margin, so
 // it nearly spans the full screen.  Dismiss once the card has travelled ~45 % of
 // the screen width — at that point its leading edge is roughly at the screen
@@ -41,7 +46,7 @@ export function MiniPlayer() {
   const segments = useSegments();
   const playback = usePlaybackController();
   const { currentItem, isPlaying } = playback;
-  const { expand, collapse, progress, isExpandedState, startDrag } = usePlayerSheet();
+  const { expand, collapse, progress, isExpandedState, isDragging, startDrag, finishDrag } = usePlayerSheet();
 
   // Keep reference of the last active track to render card data while fading out
   const lastTrack = useRef(currentItem);
@@ -64,15 +69,13 @@ export function MiniPlayer() {
   const isInTabs = segments[0] === "(tabs)";
 
   const translateX = useSharedValue(0);
-  const pullUp = useSharedValue(0);
 
-  // Instantly reset translation offsets when a new track starts playing
+  // Instantly reset translation when a new track starts playing
   useEffect(() => {
     if (currentItem) {
       translateX.value = 0;
-      pullUp.value = 0;
     }
-  }, [currentItem, translateX, pullUp]);
+  }, [currentItem, translateX]);
 
   function handleDismissSession() {
     void playback.dismissSession();
@@ -125,37 +128,39 @@ export function MiniPlayer() {
     });
 
   const swipeUp = Gesture.Pan()
-    .activeOffsetY(-8) // more sensitive for immediate tracking
+    .activeOffsetY(-8)
     .failOffsetX([-15, 15])
     .onStart(() => {
-      pullUp.value = 0;
+      // startDrag: sets isExpandedState=true, resets progress=0, mounts sheet off-screen
       runOnJS(startDrag)({ slug: displayItem?.slug });
     })
     .onUpdate((e) => {
-      pullUp.value = Math.max(0, -e.translationY);
-      // Map swipe translation directly to the sheet's expansion progress
-      const dragProgress = -e.translationY / SCREEN_HEIGHT;
-      progress.value = Math.max(0, Math.min(1, dragProgress));
+      // progress directly follows the finger — sheet physically tracks the drag
+      progress.value = Math.max(0, Math.min(1, -e.translationY / EXPAND_DISTANCE));
     })
     .onEnd((e) => {
-      const dragProgress = -e.translationY / SCREEN_HEIGHT;
-      const pastDistance = e.translationY < -100 || dragProgress > 0.2;
-      const pastVelocity = e.velocityY < -400;
-
-      if (pastDistance || pastVelocity) {
+      const shouldExpand = progress.value > 0.35 || e.velocityY < -700;
+      if (shouldExpand) {
         runOnJS(hapticLight)();
-        runOnJS(expand)({ slug: displayItem?.slug });
-        pullUp.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
+        // isExpandedState already true from startDrag — just snap progress to 1
+        progress.value = withTiming(
+          1,
+          { duration: 220, easing: Easing.out(Easing.cubic) },
+          (finished) => {
+            if (finished) {
+              runOnJS(finishDrag)();
+            }
+          },
+        );
       } else {
+        // collapse handles progress→0 animation + setIsExpandedState(false)
         runOnJS(collapse)();
-        pullUp.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
       }
     })
     .onFinalize((e) => {
-      // If the gesture was cancelled or failed after it started, we must collapse
-      if (e.state === 1 || e.state === 3) {
+      // Gesture cancelled or interrupted — collapse the sheet
+      if (e.state === State.CANCELLED || e.state === State.FAILED) {
         runOnJS(collapse)();
-        pullUp.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
       }
     });
 
@@ -163,35 +168,30 @@ export function MiniPlayer() {
   // receive taps inside the card while RNGH watches for swipe gestures.
   const composed = Gesture.Simultaneous(Gesture.Race(swipeUp, pan), Gesture.Native());
 
-  // Full opacity until FADE_START, then fades to 0 over the final stretch
-  // before the dismiss threshold so the card only visibly disappears when
-  // it's about to fly off. Also crossfades dynamically as the sheet expands.
   const animatedStyle = useAnimatedStyle(() => {
+    // Horizontal swipe-to-dismiss opacity
     const absX = Math.abs(translateX.value);
     const swipeOpacity =
       absX < FADE_START
         ? 1
-        : Math.max(
-            0,
-            1 - (absX - FADE_START) / (DISMISS_THRESHOLD - FADE_START),
-          );
-    // Combine swipe opacity, expanding sheet crossfade, and declarative active-track visibility
-    const opacity = swipeOpacity * (1 - progress.value) * visibility.value;
+        : Math.max(0, 1 - (absX - FADE_START) / (DISMISS_THRESHOLD - FADE_START));
 
-    // Pull up translation and scale (extremely subtle resistance and caps)
-    const pullDistance = pullUp.value;
-    const pullTranslateY = -Math.min(12, pullDistance * 0.12);
-    const pullScale = 1 + Math.min(0.015, pullDistance / 800);
+    // Mini player morphs into the full player as progress increases:
+    //   - fades out by progress 0.35 (well before sheet fully covers screen)
+    //   - lifts upward slightly and scales down to give a "merge" feel
+    const expandOpacity = interpolate(progress.value, [0, 0.35], [1, 0], Extrapolation.CLAMP);
+    const expandTranslateY = interpolate(progress.value, [0, 1], [0, -40]);
+    const expandScale = interpolate(progress.value, [0, 1], [1, 0.96]);
 
-    // Hide/reveal translation offset when player active state toggles
+    // Slide down when player becomes inactive
     const hideTranslateY = (1 - visibility.value) * 150;
 
     return {
-      opacity,
+      opacity: swipeOpacity * expandOpacity * visibility.value,
       transform: [
         { translateX: translateX.value },
-        { translateY: pullTranslateY + hideTranslateY },
-        { scale: pullScale },
+        { translateY: hideTranslateY + expandTranslateY },
+        { scale: expandScale },
       ],
     };
   });
@@ -205,7 +205,7 @@ export function MiniPlayer() {
 
   return (
     <View
-      pointerEvents={isExpandedState ? "none" : "box-none"}
+      pointerEvents={isExpandedState && !isDragging ? "none" : "box-none"}
       style={[styles.container, { bottom: bottomOffset }]}
     >
       <GestureDetector gesture={composed}>

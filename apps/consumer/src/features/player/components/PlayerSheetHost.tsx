@@ -14,7 +14,7 @@ import { NowPlayingPanel } from "./NowPlayingPanel";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export function PlayerSheetHost() {
-  const { progress, collapse, activeSlug, isExpandedState } = usePlayerSheet();
+  const { progress, collapse, activeSlug, isExpandedState, isDragging } = usePlayerSheet();
   const startProgress = useSharedValue(0);
 
   // Android hardware back button handling
@@ -70,15 +70,11 @@ export function PlayerSheetHost() {
     };
   });
 
-  if (!isExpandedState) {
-    return null;
-  }
-
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View
         style={[StyleSheet.absoluteFill, styles.container, animatedStyle]}
-        pointerEvents="auto"
+        pointerEvents={isExpandedState && !isDragging ? "auto" : "none"}
       >
         <NowPlayingPanel slug={activeSlug} onBack={collapse} />
       </Animated.View>
