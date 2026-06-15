@@ -57,14 +57,9 @@ export function MiniPlayer() {
   // Keep reference of the last active track only for deliberate fade-out after
   // a real session ends. The provider keeps currentItem stable during track
   // switches, so this fallback is no longer used for loading gaps.
-  const queueIsEmpty = useAppSelector((state) => state.player.queue.items.length === 0);
-  const lastTrack = useRef<typeof currentItem>(null);
-  if (canRenderMiniPlayer) {
-    if (currentItem) {
-      lastTrack.current = currentItem;
-    } else if (queueIsEmpty) {
-      lastTrack.current = null;
-    }
+  const lastTrack = useRef(currentItem);
+  if (canRenderMiniPlayer && currentItem) {
+    lastTrack.current = currentItem;
   }
   const displayItem = canRenderMiniPlayer ? (currentItem ?? lastTrack.current) : null;
 

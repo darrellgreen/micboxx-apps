@@ -542,6 +542,9 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
         switch (event.type) {
           case 'playback-state-changed':
+            if (controlledLoadRef.current) {
+              break;
+            }
             dispatch(setPlaybackState(event.state));
             if (event.state === 'playing') {
               wasPlayingBeforeInterruptionRef.current = true;
@@ -585,11 +588,18 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
                 controlledLoadRef.current = null;
               }
             } else {
-              dispatch(setCurrentItem(null));
+              // Ignore spurious unmatched track events from the native engine
+              // while we are explicitly loading a new queue.
+              if (!controlledLoad) {
+                dispatch(setCurrentItem(null));
+              }
             }
             break;
           }
           case 'position-changed':
+            if (controlledLoadRef.current) {
+              break;
+            }
             dispatch(setPosition(event.position));
             void checkQualifiedAndCompleted(event.position.positionSec, event.position.durationSec);
             break;
