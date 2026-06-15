@@ -104,11 +104,11 @@ export function useMicboxxNotifications({
       try {
         const response = await adapter.fetchRoomNotifications({
           maxItems,
-          accessToken: accessTokenRef.current,
+          accessToken,
         });
         if (!cancelled) {
           roomNotificationsCache = {
-            token: accessTokenRef.current ?? "",
+            token: accessToken ?? "",
             items: response.notifications,
           };
           roomItemsRef.current = response.notifications;
@@ -135,7 +135,7 @@ export function useMicboxxNotifications({
     return () => {
       cancelled = true;
     };
-  }, [hasDrupalSession, maxItems, reloadNonce, adapter]);
+  }, [hasDrupalSession, accessToken, maxItems, reloadNonce, adapter]);
 
   const items = useMemo<NotificationItem[]>(() => {
     return normalizeAndSortNotifications(socialItems, roomItems, maxItems);
@@ -210,9 +210,7 @@ export function useMicboxxUnreadNotificationCount({
       socialStatus !== "authenticated" ||
       !firebaseConfigured
     ) {
-      if (socialUnreadCount !== 0) {
-        setSocialUnreadCount(0);
-      }
+      setSocialUnreadCount((prev) => (prev !== 0 ? 0 : prev));
       return;
     }
 
@@ -224,13 +222,11 @@ export function useMicboxxUnreadNotificationCount({
     );
 
     return unsubscribe;
-  }, [firebaseConfigured, firebaseUid, socialStatus, adapter, socialUnreadCount]);
+  }, [firebaseConfigured, firebaseUid, socialStatus, adapter]);
 
   useEffect(() => {
     if (!accessToken) {
-      if (roomUnreadCount !== 0) {
-        setRoomUnreadCount(0);
-      }
+      setRoomUnreadCount((prev) => (prev !== 0 ? 0 : prev));
       return;
     }
 
@@ -254,7 +250,7 @@ export function useMicboxxUnreadNotificationCount({
     return () => {
       cancelled = true;
     };
-  }, [accessToken, adapter, roomUnreadCount]);
+  }, [accessToken, adapter]);
 
   return socialUnreadCount + roomUnreadCount;
 }

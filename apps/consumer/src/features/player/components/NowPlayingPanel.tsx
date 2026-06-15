@@ -75,6 +75,12 @@ export function NowPlayingPanel({ slug, onBack }: NowPlayingPanelProps) {
    * started so we can force progress to 0 until the engine catches up.
    */
   const justStartedIdRef = useRef<string | null>(null);
+  if (
+    justStartedIdRef.current !== null &&
+    (currentItem?.id !== justStartedIdRef.current || playbackState === "paused")
+  ) {
+    justStartedIdRef.current = null;
+  }
   const engineCaughtUp =
     justStartedIdRef.current !== null &&
     currentItem?.id === justStartedIdRef.current &&

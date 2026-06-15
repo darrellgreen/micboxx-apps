@@ -12,7 +12,7 @@ export default function NowPlayingScreen() {
 
   useEffect(() => {
     expand({ slug: slug ?? undefined });
-    router.back();
+    router.replace("/");
   }, [slug, expand, router]);
 
   return <View style={{ flex: 1, backgroundColor: tokens.colors.bgApp }} />;

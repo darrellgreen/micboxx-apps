@@ -52,8 +52,8 @@ export function PushProvider(): null {
 
     const previous = prevAccessToken.current;
 
-    if (accessToken && !previous) {
-      // Logged in: request permission + register this device's token.
+    if (accessToken && accessToken !== previous) {
+      // Logged in or token refreshed: register this device's token.
       void registerPushForSession(accessToken).catch(() => undefined);
     } else if (!accessToken && previous) {
       // Logged out: best-effort unregister with the token we still hold.

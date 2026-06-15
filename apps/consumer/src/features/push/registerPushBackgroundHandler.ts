@@ -9,7 +9,11 @@
  * and notification truth is reconciled by the existing polling on app open.
  */
 
-import messaging from "@react-native-firebase/messaging";
+import { getApp } from "@react-native-firebase/app";
+import {
+  getMessaging,
+  setBackgroundMessageHandler,
+} from "@react-native-firebase/messaging";
 import { Platform } from "react-native";
 
 let registered = false;
@@ -20,7 +24,7 @@ export function registerPushBackgroundHandler(): void {
   }
   registered = true;
   try {
-    messaging().setBackgroundMessageHandler(async () => {
+    setBackgroundMessageHandler(getMessaging(getApp()), async () => {
       // No-op: the OS displays the server-provided notification. State is
       // reconciled via GET /v1/rooms/notifications when the app is opened.
     });

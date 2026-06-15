@@ -74,7 +74,7 @@ export function PlayerSheetHost() {
     <GestureDetector gesture={gesture}>
       <Animated.View
         style={[StyleSheet.absoluteFill, styles.container, animatedStyle]}
-        pointerEvents={isExpandedState && !isDragging ? "auto" : "none"}
+        pointerEvents={isExpandedState || isDragging ? "auto" : "none"}
       >
         <NowPlayingPanel slug={activeSlug} onBack={collapse} />
       </Animated.View>

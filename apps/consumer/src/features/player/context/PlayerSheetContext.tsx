@@ -36,7 +36,7 @@ export function PlayerSheetProvider({ children }: { children: React.ReactNode })
   const collapse = useCallback(() => {
     setIsDragging(false);
     progress.value = withTiming(0, { duration: 220 }, (finished) => {
-      if (finished || progress.value <= 0.01) {
+      if (finished) {
         runOnJS(setIsExpandedState)(false);
         runOnJS(setActiveSlug)(null);
       }

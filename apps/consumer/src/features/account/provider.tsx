@@ -5,6 +5,7 @@ import {
     useEffect,
     useMemo,
     useState,
+    useRef,
     type PropsWithChildren,
 } from "react";
 
@@ -48,6 +49,11 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
   const [isSavingAccountPreferences, setIsSavingAccountPreferences] =
     useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const preferencesRef = useRef(preferences);
+  useEffect(() => {
+    preferencesRef.current = preferences;
+  }, [preferences]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -100,12 +106,13 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
 
   const setAutoplayPreviewEnabled = useCallback(
     async (enabled: boolean) => {
-      const previous = preferences;
+      const previous = preferencesRef.current;
       const next = {
-        ...preferences,
+        ...previous,
         autoplayPreview: enabled,
       };
 
+      preferencesRef.current = next;
       setPreferences(next);
       setIsSavingLocalPreferences(true);
       setError(null);
@@ -116,6 +123,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
           explicitFilter: next.explicitFilter,
         });
       } catch (nextError) {
+        preferencesRef.current = previous;
         setPreferences(previous);
         setError(
           nextError instanceof Error
@@ -126,17 +134,18 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
         setIsSavingLocalPreferences(false);
       }
     },
-    [preferences],
+    [],
   );
 
   const setExplicitFilterEnabled = useCallback(
     async (enabled: boolean) => {
-      const previous = preferences;
+      const previous = preferencesRef.current;
       const next = {
-        ...preferences,
+        ...previous,
         explicitFilter: enabled,
       };
 
+      preferencesRef.current = next;
       setPreferences(next);
       setIsSavingLocalPreferences(true);
       setError(null);
@@ -147,6 +156,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
           explicitFilter: next.explicitFilter,
         });
       } catch (nextError) {
+        preferencesRef.current = previous;
         setPreferences(previous);
         setError(
           nextError instanceof Error
@@ -157,7 +167,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
         setIsSavingLocalPreferences(false);
       }
     },
-    [preferences],
+    [],
   );
 
   const setPushNotificationsEnabled = useCallback(
@@ -167,12 +177,13 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      const previous = preferences;
+      const previous = preferencesRef.current;
       const next = {
-        ...preferences,
+        ...previous,
         pushNotifications: enabled,
       };
 
+      preferencesRef.current = next;
       setPreferences(next);
       setIsSavingAccountPreferences(true);
       setError(null);
@@ -182,6 +193,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
           pushNotifications: next.pushNotifications,
         });
       } catch (nextError) {
+        preferencesRef.current = previous;
         setPreferences(previous);
         setError(
           nextError instanceof Error
@@ -192,7 +204,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
         setIsSavingAccountPreferences(false);
       }
     },
-    [currentUserUuid, preferences],
+    [currentUserUuid],
   );
 
   const value = useMemo<AccountPreferencesContextValue>(

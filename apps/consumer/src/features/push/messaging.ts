@@ -6,7 +6,16 @@
  * additive enhancement and must never break the app if FCM is unavailable.
  */
 
-import messaging, {
+import { getApp } from "@react-native-firebase/app";
+import {
+  AuthorizationStatus,
+  getInitialNotification as getMessagingInitialNotification,
+  getMessaging,
+  getToken,
+  onMessage,
+  onNotificationOpenedApp,
+  onTokenRefresh,
+  requestPermission,
   type FirebaseMessagingTypes,
 } from "@react-native-firebase/messaging";
 import { Platform } from "react-native";
@@ -14,6 +23,10 @@ import { Platform } from "react-native";
 import type { PushPlatform } from "@micboxx/notifications";
 
 export type RemoteMessage = FirebaseMessagingTypes.RemoteMessage;
+
+function getMessagingInstance(): FirebaseMessagingTypes.Module {
+  return getMessaging(getApp());
+}
 
 /**
  * Returns the FCM platform for this device, or null where push is unsupported.
@@ -36,10 +49,10 @@ export async function requestPushPermission(): Promise<boolean> {
     return false;
   }
   try {
-    const status = await messaging().requestPermission();
+    const status = await requestPermission(getMessagingInstance());
     return (
-      status === messaging.AuthorizationStatus.AUTHORIZED ||
-      status === messaging.AuthorizationStatus.PROVISIONAL
+      status === AuthorizationStatus.AUTHORIZED ||
+      status === AuthorizationStatus.PROVISIONAL
     );
   } catch {
     return false;
@@ -54,7 +67,7 @@ export async function getFcmToken(): Promise<string | null> {
     return null;
   }
   try {
-    const token = await messaging().getToken();
+    const token = await getToken(getMessagingInstance());
     return token || null;
   } catch {
     return null;
@@ -69,7 +82,7 @@ export function onFcmTokenRefresh(cb: (token: string) => void): () => void {
     return () => undefined;
   }
   try {
-    return messaging().onTokenRefresh(cb);
+    return onTokenRefresh(getMessagingInstance(), cb);
   } catch {
     return () => undefined;
   }
@@ -85,7 +98,7 @@ export function onForegroundMessage(
     return () => undefined;
   }
   try {
-    return messaging().onMessage(async (message) => cb(message));
+    return onMessage(getMessagingInstance(), async (message) => cb(message));
   } catch {
     return () => undefined;
   }
@@ -101,7 +114,7 @@ export function onNotificationOpened(
     return () => undefined;
   }
   try {
-    return messaging().onNotificationOpenedApp((message) => {
+    return onNotificationOpenedApp(getMessagingInstance(), (message) => {
       if (message) {
         cb(message);
       }
@@ -119,7 +132,7 @@ export async function getInitialNotification(): Promise<RemoteMessage | null> {
     return null;
   }
   try {
-    return await messaging().getInitialNotification();
+    return await getMessagingInitialNotification(getMessagingInstance());
   } catch {
     return null;
   }

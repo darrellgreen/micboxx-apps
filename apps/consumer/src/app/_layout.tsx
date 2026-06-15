@@ -138,15 +138,6 @@ function MiniPlayerGate() {
   const isRoomRoute = pathname.endsWith("/room");
   const isRoomOwnedQueue = playerQueue.context?.id?.startsWith("room:") === true;
 
-  // Only clear a room-owned queue when navigating away from the room screen.
-  // Stable ref avoids this effect re-firing on every clearQueue identity change.
-  const clearQueue = playerQueue.clearQueue;
-  useEffect(() => {
-    if (!isRoomRoute && isRoomOwnedQueue) {
-      void clearQueue();
-    }
-  }, [isRoomOwnedQueue, isRoomRoute, clearQueue]);
-
   const isIOS = Platform.OS === "ios";
   const isNowPlaying = pathname === "/now-playing";
   const hidden =

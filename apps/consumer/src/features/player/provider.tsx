@@ -299,11 +299,15 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     await trackPlayerAdapter.setMetadata(item);
   }, []);
 
+  const activeLoadIdRef = useRef(0);
+  const inFlightPlaybackActionRef = useRef(false);
+
   const applyQueueState = useCallback((queue: PlayerQueueState) => {
     dispatch(setQueue(queue));
   }, [dispatch]);
 
   const clearQueue = useCallback(async (): Promise<PlayerActionResult> => {
+    activeLoadIdRef.current++;
     try {
       await trackPlayerAdapter.reset();
       await clearPersistedQueue();
@@ -322,10 +326,14 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   }, [applyQueueState, dispatch]);
 
   const loadAuthorizedQueue = useCallback(
-    async (payload: StartPlaybackPayload): Promise<PlayerActionResult> => {
+    async (payload: StartPlaybackPayload, loadId: number): Promise<PlayerActionResult> => {
       const requestedItem = payload.items[payload.startIndex] ?? null;
       if (!requestedItem) {
         return { ok: false, error: "No track was selected for playback." };
+      }
+
+      if (loadId !== activeLoadIdRef.current) {
+        return { ok: false, error: "Playback load cancelled." };
       }
 
       if (!requestedItem.authorization.allowed || !requestedItem.authorization.url) {
@@ -361,14 +369,27 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         repeatMode: stateRef.current.queue.repeatMode,
       };
 
+      if (loadId !== activeLoadIdRef.current) {
+        return { ok: false, error: "Playback load cancelled." };
+      }
+
       await trackPlayerAdapter.loadQueue(
         playableItems.map(toEngineTrack),
         nextStartIndex,
         payload.startPositionSec,
       );
+
+      if (loadId !== activeLoadIdRef.current) {
+        return { ok: false, error: "Playback load cancelled." };
+      }
+
       await trackPlayerAdapter.setRepeatMode(queue.repeatMode);
       applyQueueState(queue);
       await syncMetadata(playableItems[nextStartIndex] ?? null);
+
+      if (loadId !== activeLoadIdRef.current) {
+        return { ok: false, error: "Playback load cancelled." };
+      }
 
       if (payload.autoplay !== false) {
         await trackPlayerAdapter.play();
@@ -386,6 +407,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   );
 
   const restoreSession = useCallback(async (): Promise<void> => {
+    const loadId = ++activeLoadIdRef.current;
     dispatch(setRestoring(true));
 
     try {
@@ -393,6 +415,10 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         readPersistedQueue(),
         readPersistedPlaybackSession(),
       ]);
+
+      if (loadId !== activeLoadIdRef.current) {
+        return;
+      }
 
       if (
         !persistedQueue ||
@@ -428,6 +454,10 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         }),
       );
 
+      if (loadId !== activeLoadIdRef.current) {
+        return;
+      }
+
       const requestedIndex = Math.min(
         persistedQueue.currentIndex,
         restoredItems.length - 1,
@@ -446,7 +476,11 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         return;
       }
 
-      await loadAuthorizedQueue({
+      if (loadId !== activeLoadIdRef.current) {
+        return;
+      }
+
+      const result = await loadAuthorizedQueue({
         items: restoredItems,
         startIndex,
         context: persistedQueue.context,
@@ -455,10 +489,19 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
             ? persistedSession.lastKnownPositionSec
             : 0,
         autoplay: false,
-      });
-      dispatch(setPlaybackState("paused"));
+      }, loadId);
+
+      if (loadId !== activeLoadIdRef.current) {
+        return;
+      }
+
+      if (result.ok) {
+        dispatch(setPlaybackState("paused"));
+      }
     } finally {
-      dispatch(setRestoring(false));
+      if (loadId === activeLoadIdRef.current) {
+        dispatch(setRestoring(false));
+      }
     }
   }, [clearQueue, dispatch, loadAuthorizedQueue]);
 
@@ -626,6 +669,10 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   }, [isRoomQueue, sessionTrackId, playbackState]);
 
   const play = useCallback(async (): Promise<PlayerActionResult> => {
+    if (inFlightPlaybackActionRef.current) {
+      return { ok: true };
+    }
+    inFlightPlaybackActionRef.current = true;
     try {
       await trackPlayerAdapter.play();
       return { ok: true };
@@ -634,10 +681,16 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         ok: false,
         error: error instanceof Error ? error.message : "Unable to play.",
       };
+    } finally {
+      inFlightPlaybackActionRef.current = false;
     }
   }, []);
 
   const pause = useCallback(async (): Promise<PlayerActionResult> => {
+    if (inFlightPlaybackActionRef.current) {
+      return { ok: true };
+    }
+    inFlightPlaybackActionRef.current = true;
     try {
       await trackPlayerAdapter.pause();
       return { ok: true };
@@ -646,6 +699,8 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         ok: false,
         error: error instanceof Error ? error.message : "Unable to pause.",
       };
+    } finally {
+      inFlightPlaybackActionRef.current = false;
     }
   }, []);
 
@@ -755,8 +810,9 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
   const startPlayback = useCallback(
     async (payload: StartPlaybackPayload): Promise<PlayerActionResult> => {
+      const loadId = ++activeLoadIdRef.current;
       try {
-        return await loadAuthorizedQueue(payload);
+        return await loadAuthorizedQueue(payload, loadId);
       } catch (error) {
         return {
           ok: false,
@@ -772,8 +828,9 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
   const replaceQueue = useCallback(
     async (payload: ReplaceQueuePayload): Promise<PlayerActionResult> => {
+      const loadId = ++activeLoadIdRef.current;
       try {
-        return await loadAuthorizedQueue(payload);
+        return await loadAuthorizedQueue(payload, loadId);
       } catch (error) {
         return {
           ok: false,
