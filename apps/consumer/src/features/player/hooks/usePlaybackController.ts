@@ -37,7 +37,7 @@ export function usePlaybackController() {
   const isPlaying =
     playbackState === 'playing' ||
     playbackState === 'buffering' ||
-    (playbackState === 'loading' && playbackIntent === 'play');
+    ((playbackState === 'loading' || playbackState === 'ready') && playbackIntent === 'play');
 
   /* ── Intent: toggle play / pause ────────────────────────────────────────── */
 

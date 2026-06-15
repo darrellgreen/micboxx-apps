@@ -3,16 +3,11 @@
  * purchase restoration, and entitlement helpers.
  */
 
-import Purchases, { type CustomerInfo } from "react-native-purchases";
-import RevenueCatUI, {
-  PAYWALL_RESULT,
-} from "react-native-purchases-ui";
-import { useCallback } from "react";
+import Purchases, { type CustomerInfo } from 'react-native-purchases';
+import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { useCallback } from 'react';
 
-import {
-  ENTITLEMENT_PRO,
-  useSubscription,
-} from "@/features/subscription/provider";
+import { ENTITLEMENT_PRO, useSubscription } from '@/features/subscription/provider';
 
 // ─── paywall ─────────────────────────────────────────────────────────────────
 
@@ -42,14 +37,12 @@ export function usePresentPaywall() {
       await refreshCustomerInfo();
 
       const info = await Purchases.getCustomerInfo();
-      const purchased =
-        result === PAYWALL_RESULT.PURCHASED ||
-        result === PAYWALL_RESULT.RESTORED;
+      const purchased = result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
 
       return { purchased, customerInfo: info };
     } catch (err) {
       if (__DEV__) {
-        console.warn("[RevenueCat] presentPaywall error:", err);
+        console.warn('[RevenueCat] presentPaywall error:', err);
       }
       return { purchased: false, customerInfo: null };
     }
@@ -76,14 +69,12 @@ export function usePresentPaywallIfNeeded() {
       await refreshCustomerInfo();
 
       const info = await Purchases.getCustomerInfo();
-      const purchased =
-        result === PAYWALL_RESULT.PURCHASED ||
-        result === PAYWALL_RESULT.RESTORED;
+      const purchased = result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
 
       return { purchased, customerInfo: info };
     } catch (err) {
       if (__DEV__) {
-        console.warn("[RevenueCat] presentPaywallIfNeeded error:", err);
+        console.warn('[RevenueCat] presentPaywallIfNeeded error:', err);
       }
       return { purchased: false, customerInfo: null };
     }
@@ -101,29 +92,44 @@ export function usePresentPaywallIfNeeded() {
 export function usePurchasePlan() {
   const { currentOffering, refreshCustomerInfo } = useSubscription();
 
-  return useCallback(async (storeProductId: string): Promise<PresentPaywallResult> => {
-    try {
-      const pkg = currentOffering?.availablePackages.find(
-        (p) => p.product?.identifier === storeProductId,
-      );
+  return useCallback(
+    async (storeProductId: string): Promise<PresentPaywallResult> => {
+      try {
+        const offering = currentOffering ?? (await Purchases.getOfferings()).current ?? null;
+        const pkg = offering?.availablePackages.find(
+          (p) => p.product?.identifier === storeProductId || p.identifier === storeProductId,
+        );
 
-      if (!pkg) {
+        if (!pkg) {
+          if (__DEV__) {
+            console.warn(
+              '[RevenueCat] package not found for storeProductId; presenting paywall:',
+              storeProductId,
+            );
+          }
+          const result = await RevenueCatUI.presentPaywall({
+            offering: offering ?? undefined,
+          });
+          await refreshCustomerInfo();
+          const info = await Purchases.getCustomerInfo();
+          return {
+            purchased: result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED,
+            customerInfo: info,
+          };
+        }
+
+        const { customerInfo: info } = await Purchases.purchasePackage(pkg);
+        await refreshCustomerInfo();
+        return { purchased: true, customerInfo: info };
+      } catch (err) {
         if (__DEV__) {
-          console.warn("[RevenueCat] package not found for storeProductId:", storeProductId);
+          console.warn('[RevenueCat] purchasePlan error:', err);
         }
         return { purchased: false, customerInfo: null };
       }
-
-      const { customerInfo: info } = await Purchases.purchasePackage(pkg);
-      await refreshCustomerInfo();
-      return { purchased: true, customerInfo: info };
-    } catch (err) {
-      if (__DEV__) {
-        console.warn("[RevenueCat] purchasePlan error:", err);
-      }
-      return { purchased: false, customerInfo: null };
-    }
-  }, [currentOffering, refreshCustomerInfo]);
+    },
+    [currentOffering, refreshCustomerInfo],
+  );
 }
 
 // ─── customer center ──────────────────────────────────────────────────────────
@@ -147,7 +153,7 @@ export function usePresentCustomerCenter() {
       await refreshCustomerInfo();
     } catch (err) {
       if (__DEV__) {
-        console.warn("[RevenueCat] presentCustomerCenter error:", err);
+        console.warn('[RevenueCat] presentCustomerCenter error:', err);
       }
     }
   }, [refreshCustomerInfo]);
@@ -173,7 +179,7 @@ export function useRestorePurchases() {
       return info.entitlements.active[ENTITLEMENT_PRO] !== undefined;
     } catch (err) {
       if (__DEV__) {
-        console.warn("[RevenueCat] restorePurchases error:", err);
+        console.warn('[RevenueCat] restorePurchases error:', err);
       }
       return false;
     }

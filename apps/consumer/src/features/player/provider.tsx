@@ -379,7 +379,13 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       // Atomic: queue, currentItem, playbackState, position and error all land
       // in a single Redux dispatch so no intermediate render shows the old track.
       controlledLoadRef.current = { loadId, trackId: requestedItem.id };
-      dispatch(beginPlaybackLoad({ queue, requestedItem }));
+      dispatch(
+        beginPlaybackLoad({
+          queue,
+          requestedItem,
+          playbackIntent: payload.autoplay === false ? 'pause' : 'play',
+        }),
+      );
 
       try {
         await trackPlayerAdapter.loadQueue(
@@ -545,7 +551,15 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         switch (event.type) {
           case 'playback-state-changed':
             if (controlledLoadRef.current) {
-              break;
+              // Hold the guard until the engine reaches an actively-playing
+              // state. This prevents stale 'ready' or 'paused' events from a
+              // previous load — which can arrive after active-track-changed for
+              // the new track — from flickering the play/pause button.
+              if (event.state === 'playing' || event.state === 'buffering') {
+                controlledLoadRef.current = null;
+              } else {
+                break;
+              }
             }
             dispatch(setPlaybackState(event.state));
             if (event.state === 'playing') {
@@ -580,14 +594,11 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
               // ID is allowed to advance state. All other events (null, stale
               // IDs from the previous queue) are silently ignored so they cannot
               // overwrite the UI with old or absent content.
-              if (event.trackId === controlledLoad.trackId) {
-                const nextIndex = getQueueIndexByTrackId(currentState.queue, event.trackId);
-                if (nextIndex >= 0) {
-                  dispatch(setCurrentIndex(nextIndex));
-                  void syncMetadata(currentState.queue.items[nextIndex] ?? null);
-                }
-                controlledLoadRef.current = null;
-              }
+              // During a controlled load, active-track-changed is ignored entirely.
+              // beginPlaybackLoad already set queue/currentItem/currentIndex atomically,
+              // so there is nothing to update here. The guard stays up until
+              // playback-state-changed: 'playing'/'buffering' arrives, blocking all
+              // stale events from previous loads regardless of track ID.
               break;
             }
 
@@ -596,7 +607,12 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
             if (nextIndex >= 0) {
               dispatch(setCurrentIndex(nextIndex));
               void syncMetadata(currentState.queue.items[nextIndex] ?? null);
-            } else {
+            } else if (currentState.queue.items.length === 0) {
+              // Only clear the item when the queue is genuinely empty (session
+              // was deliberately cleared). Stale null events from engine track
+              // resets during track switches must not touch currentItem — they
+              // arrive after 'playing' drops the guard and would briefly hide
+              // the mini player, triggering a spurious slide-in animation.
               dispatch(setCurrentItem(null));
             }
             break;
@@ -722,6 +738,12 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     if (inFlightPlaybackActionRef.current) {
       return { ok: true };
     }
+    // Drop the controlled-load guard before calling the adapter. Stale events
+    // from a previous load arrive within milliseconds of engine reset — long
+    // before a human can tap pause — so releasing here is safe. Without this,
+    // a pause during the loading→playing window blocks the 'paused' state event
+    // and the icon never updates.
+    controlledLoadRef.current = null;
     inFlightPlaybackActionRef.current = true;
     try {
       await trackPlayerAdapter.pause();

@@ -1,40 +1,48 @@
-import { useEffect } from "react";
-import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
+import { useEffect, useRef } from 'react';
+import { cancelAnimation, Easing, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import type { PublicTrackSummary } from "@micboxx/contracts";
-import { usePlaybackController } from "@/features/player/hooks/usePlaybackController";
+import type { PublicTrackSummary } from '@micboxx/contracts';
+import { usePlaybackController } from '@/features/player/hooks/usePlaybackController';
 
 export function useDiscoverPlayer() {
   const playback = usePlaybackController();
 
-  const activeId = playback.currentItem
-    ? Number(playback.currentItem.id)
-    : null;
+  const activeId = playback.currentItem ? Number(playback.currentItem.id) : null;
 
-  /* Animated progress value for the ring on TrackRow PlayButton */
   const progressValue = useSharedValue(0);
+  const previousActiveIdRef = useRef<number | null>(null);
 
-  /* Keep the shared value in sync with global progress */
   useEffect(() => {
-    if (activeId !== null) {
-      progressValue.value = withTiming(playback.progressPercent, {
-        duration: 240,
-        easing: Easing.linear,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- progressValue is a stable Reanimated SharedValue ref
-  }, [activeId, playback.progressPercent]);
+    const activeTrackChanged = previousActiveIdRef.current !== activeId;
 
-  const handleAction = (
-    track: PublicTrackSummary,
-    allTracks?: PublicTrackSummary[],
-  ) => {
-    void playback.playOrToggleTrack(
-      track,
-      { type: "recommendation" },
-      allTracks,
-    );
+    previousActiveIdRef.current = activeId;
+
+    /*
+     * Never carry an existing track's progress or animation into
+     * a newly selected track.
+     */
+    if (activeTrackChanged || activeId === null) {
+      cancelAnimation(progressValue);
+      progressValue.value = 0;
+      return;
+    }
+
+    const nextProgress = Math.min(1, Math.max(0, playback.progressPercent));
+
+    progressValue.value = withTiming(nextProgress, {
+      duration: 120,
+      easing: Easing.linear,
+    });
+  }, [activeId, playback.progressPercent, progressValue]);
+
+  const handleAction = (track: PublicTrackSummary, allTracks?: PublicTrackSummary[]) => {
+    void playback.playOrToggleTrack(track, { type: 'recommendation' }, allTracks);
   };
 
-  return { activeId, playing: playback.isPlaying, progressValue, handleAction };
+  return {
+    activeId,
+    playing: playback.isPlaying,
+    progressValue,
+    handleAction,
+  };
 }
