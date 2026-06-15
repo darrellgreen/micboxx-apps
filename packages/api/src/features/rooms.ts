@@ -1,24 +1,25 @@
-import { getMicboxxApiConfig } from "../config";
+import { getMicboxxApiConfig } from '../config';
 import type {
-    PublicRoomDiscoveryFilter,
-    PublicRoomList,
-    RoomActivityResponse,
-    RoomClockResponse,
-    RoomClockState,
-    RoomEntryResponse,
-    RoomLiveVideoTokenResponse,
-    RoomPollsResponse,
-    RoomQuestionsResponse,
-    RoomReactionType,
-    RoomSupportPaymentMethod,
-    RoomSupportSendResponse,
-    RoomSupportStatusResult,
-    RoomTimeMachineResponse,
-} from "@micboxx/contracts";
-import { ApiError, apiFetch } from "../client";
+  PublicRoomDiscoveryFilter,
+  PublicRoomList,
+  RoomActivityResponse,
+  RoomClockResponse,
+  RoomClockState,
+  RoomEntryResponse,
+  RoomLiveVideoTokenResponse,
+  RoomPollsResponse,
+  RoomQuestionsResponse,
+  RoomReactionType,
+  RoomSupportPaymentMethod,
+  RoomSupportSendResponse,
+  RoomSupportStatusResult,
+  RoomTimeMachineResponse,
+  PublicRoomSummary,
+} from '@micboxx/contracts';
+import { ApiError, apiFetch } from '../client';
 
 function createClientMessageId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
   }
 
@@ -27,23 +28,23 @@ function createClientMessageId(): string {
 
 function resolveWebProxyBaseUrl(): string {
   const config = getMicboxxApiConfig();
-  const configured = config.webBaseUrl?.trim() ?? "";
+  const configured = config.webBaseUrl?.trim() ?? '';
   if (!configured) {
-    return "";
+    return '';
   }
 
   try {
     const webUrl = new URL(configured);
     const drupalUrl = new URL(config.baseUrl);
-    const webIsLoopback = webUrl.hostname === "localhost" || webUrl.hostname === "127.0.0.1";
-    const drupalIsLan = drupalUrl.hostname !== "localhost" && drupalUrl.hostname !== "127.0.0.1";
+    const webIsLoopback = webUrl.hostname === 'localhost' || webUrl.hostname === '127.0.0.1';
+    const drupalIsLan = drupalUrl.hostname !== 'localhost' && drupalUrl.hostname !== '127.0.0.1';
 
     if (!webIsLoopback || !drupalIsLan) {
       return configured;
     }
 
     webUrl.hostname = drupalUrl.hostname;
-    return webUrl.toString().replace(/\/$/, "");
+    return webUrl.toString().replace(/\/$/, '');
   } catch {
     return configured;
   }
@@ -54,7 +55,7 @@ function normalizeClockTrackMap(value: unknown) {
     return value;
   }
 
-  if (value && typeof value === "object") {
+  if (value && typeof value === 'object') {
     const record = value as { tracks?: unknown };
     if (Array.isArray(record.tracks)) {
       return record.tracks;
@@ -64,16 +65,14 @@ function normalizeClockTrackMap(value: unknown) {
   return [];
 }
 
-export function normalizeRoomClockState(
-  value: RoomClockState | null,
-): RoomClockState | null {
+export function normalizeRoomClockState(value: RoomClockState | null): RoomClockState | null {
   if (!value) {
     return null;
   }
 
   return {
     ...value,
-    track_map: normalizeClockTrackMap(value.track_map) as RoomClockState["track_map"],
+    track_map: normalizeClockTrackMap(value.track_map) as RoomClockState['track_map'],
   };
 }
 
@@ -86,10 +85,7 @@ async function getAccessToken(
     const sessionToken = await config.getToken();
     return sessionToken ?? accessToken ?? null;
   } catch (error) {
-    if (
-      options?.allowAnonymousOnExpiredSession &&
-      config.isAuthSessionExpiredError?.(error)
-    ) {
+    if (options?.allowAnonymousOnExpiredSession && config.isAuthSessionExpiredError?.(error)) {
       return null;
     }
     throw error;
@@ -101,8 +97,8 @@ export async function enterRoom(input: {
   sessionId: string;
   accessToken?: string | null;
 }): Promise<RoomEntryResponse> {
-  const data = await apiFetch<RoomEntryResponse>("/v1/rooms/enter", {
-    method: "POST",
+  const data = await apiFetch<RoomEntryResponse>('/v1/rooms/enter', {
+    method: 'POST',
     accessToken: await getAccessToken(input.accessToken, {
       allowAnonymousOnExpiredSession: true,
     }),
@@ -131,10 +127,10 @@ export async function getPublicRooms(options?: {
   artist?: string | null;
 }): Promise<PublicRoomList> {
   const params = new URLSearchParams();
-  params.set("filter", options?.filter ?? "latest_activity");
-  params.set("limit", String(options?.limit ?? 12));
+  params.set('filter', options?.filter ?? 'latest_activity');
+  params.set('limit', String(options?.limit ?? 12));
   if (options?.artist) {
-    params.set("artist", options.artist);
+    params.set('artist', options.artist);
   }
 
   return apiFetch<PublicRoomList>(`/v1/public/rooms?${params.toString()}`);
@@ -152,29 +148,28 @@ export async function getMyRoomHistory(options?: {
   accessToken?: string | null;
 }): Promise<RoomHistoryResponse> {
   const params = new URLSearchParams();
-  params.set("limit", String(options?.limit ?? 20));
-  return apiFetch<RoomHistoryResponse>(
-    `/v1/dashboard/room-history?${params.toString()}`,
-    { accessToken: await getAccessToken(options?.accessToken) },
-  );
+  params.set('limit', String(options?.limit ?? 20));
+  return apiFetch<RoomHistoryResponse>(`/v1/dashboard/room-history?${params.toString()}`, {
+    accessToken: await getAccessToken(options?.accessToken),
+  });
 }
 
 export async function sendRoomReaction(input: {
   roomId: number | string;
   reactionId: string;
   reactionType: RoomReactionType;
-  actorVisibility?: "anonymous" | "visible";
+  actorVisibility?: 'anonymous' | 'visible';
   accessToken?: string | null;
 }): Promise<Record<string, never>> {
   return apiFetch<Record<string, never>>(
     `/v1/rooms/${encodeURIComponent(String(input.roomId))}/reactions`,
     {
-      method: "POST",
+      method: 'POST',
       accessToken: await getAccessToken(input.accessToken),
       body: JSON.stringify({
         reaction_id: input.reactionId,
         reaction_type: input.reactionType,
-        actor_visibility: input.actorVisibility ?? "anonymous",
+        actor_visibility: input.actorVisibility ?? 'anonymous',
       }),
     },
   );
@@ -205,25 +200,19 @@ export async function sendRoomChatMessage(input: {
 
   const webProxyBaseUrl = resolveWebProxyBaseUrl();
   if (webProxyBaseUrl) {
-    return apiFetch<{ message_id?: string }>(
-      `/api/public/rooms/${roomId}/chat/messages`,
-      {
-        method: "POST",
-        accessToken,
-        baseUrl: webProxyBaseUrl,
-        body: JSON.stringify(requestBody),
-      },
-    );
+    return apiFetch<{ message_id?: string }>(`/api/public/rooms/${roomId}/chat/messages`, {
+      method: 'POST',
+      accessToken,
+      baseUrl: webProxyBaseUrl,
+      body: JSON.stringify(requestBody),
+    });
   }
 
-  return apiFetch<{ message_id?: string }>(
-    `/v1/rooms/${roomId}/chat/messages`,
-    {
-      method: "POST",
-      accessToken,
-      body: JSON.stringify(requestBody),
-    },
-  );
+  return apiFetch<{ message_id?: string }>(`/v1/rooms/${roomId}/chat/messages`, {
+    method: 'POST',
+    accessToken,
+    body: JSON.stringify(requestBody),
+  });
 }
 
 export async function reportRoomChatMessage(input: {
@@ -236,7 +225,7 @@ export async function reportRoomChatMessage(input: {
   return apiFetch<Record<string, never>>(
     `/v1/rooms/${encodeURIComponent(String(input.roomId))}/chat/messages/${encodeURIComponent(input.messageId)}/report`,
     {
-      method: "POST",
+      method: 'POST',
       accessToken: await getAccessToken(input.accessToken),
       body: JSON.stringify({
         reason_key: input.reasonKey,
@@ -260,7 +249,7 @@ export async function submitRoomQuestion(input: {
   return apiFetch<RoomQuestionsResponse>(
     `/v1/rooms/${encodeURIComponent(String(input.roomId))}/questions`,
     {
-      method: "POST",
+      method: 'POST',
       accessToken: await getAccessToken(input.accessToken),
       body: JSON.stringify({ text: input.text }),
     },
@@ -275,7 +264,7 @@ export async function voteRoomQuestion(input: {
   return apiFetch<RoomQuestionsResponse>(
     `/v1/rooms/${encodeURIComponent(String(input.roomId))}/questions/${encodeURIComponent(input.questionId)}/vote`,
     {
-      method: "POST",
+      method: 'POST',
       accessToken: await getAccessToken(input.accessToken),
       body: JSON.stringify({}),
     },
@@ -283,14 +272,12 @@ export async function voteRoomQuestion(input: {
 }
 
 export async function getRoomPolls(roomId: number | string): Promise<RoomPollsResponse> {
-  return apiFetch<RoomPollsResponse>(
-    `/v1/rooms/${encodeURIComponent(String(roomId))}/polls`,
-  );
+  return apiFetch<RoomPollsResponse>(`/v1/rooms/${encodeURIComponent(String(roomId))}/polls`);
 }
 
 // UNVERIFIED_ROUTE: typed only; consumer mobile does not expose poll creation.
 export async function createRoomPollStub(): Promise<never> {
-  throw new ApiError("Room poll creation is not available in the consumer app.", 501);
+  throw new ApiError('Room poll creation is not available in the consumer app.', 501);
 }
 
 export async function voteRoomPoll(input: {
@@ -302,7 +289,7 @@ export async function voteRoomPoll(input: {
   return apiFetch<RoomPollsResponse>(
     `/v1/rooms/${encodeURIComponent(String(input.roomId))}/polls/${encodeURIComponent(input.pollId)}/vote`,
     {
-      method: "POST",
+      method: 'POST',
       accessToken: await getAccessToken(input.accessToken),
       body: JSON.stringify({ option_id: input.optionId }),
     },
@@ -315,9 +302,9 @@ export async function getRoomActivity(input: {
   sinceEventId?: number | null;
 }): Promise<RoomActivityResponse> {
   const params = new URLSearchParams();
-  params.set("limit", String(input.limit ?? 20));
+  params.set('limit', String(input.limit ?? 20));
   if (input.sinceEventId && input.sinceEventId > 0) {
-    params.set("since_event_id", String(input.sinceEventId));
+    params.set('since_event_id', String(input.sinceEventId));
   }
 
   const data = await apiFetch<{ room_activity: RoomActivityResponse }>(
@@ -351,13 +338,13 @@ export type RoomNotificationsResponse = {
 };
 
 export function isRoomRewardNotification(
-  notification: Pick<RoomNotification, "notification_type">,
+  notification: Pick<RoomNotification, 'notification_type'>,
 ): boolean {
-  if (notification.notification_type === "room_reward_awarded") {
+  if (notification.notification_type === 'room_reward_awarded') {
     return true;
   }
 
-  return notification.notification_type.startsWith("room_reward_");
+  return notification.notification_type.startsWith('room_reward_');
 }
 
 export async function getRoomNotifications(input?: {
@@ -365,7 +352,7 @@ export async function getRoomNotifications(input?: {
   accessToken?: string | null;
 }): Promise<RoomNotificationsResponse> {
   const params = new URLSearchParams();
-  params.set("limit", String(input?.limit ?? 12));
+  params.set('limit', String(input?.limit ?? 12));
   const accessToken = await getAccessToken(input?.accessToken);
   const webProxyBaseUrl = resolveWebProxyBaseUrl();
 
@@ -387,12 +374,9 @@ export async function getRoomNotifications(input?: {
     }
   }
 
-  return apiFetch<RoomNotificationsResponse>(
-    `/v1/rooms/notifications?${params.toString()}`,
-    {
-      accessToken,
-    },
-  );
+  return apiFetch<RoomNotificationsResponse>(`/v1/rooms/notifications?${params.toString()}`, {
+    accessToken,
+  });
 }
 
 export async function markRoomNotificationRead(input: {
@@ -407,20 +391,17 @@ export async function markRoomNotificationRead(input: {
     return apiFetch<Record<string, never>>(
       `/api/public/rooms/notifications/${notificationId}/read`,
       {
-        method: "POST",
+        method: 'POST',
         accessToken,
         baseUrl: webProxyBaseUrl,
       },
     );
   }
 
-  return apiFetch<Record<string, never>>(
-    `/v1/rooms/notifications/${notificationId}/read`,
-    {
-      method: "POST",
-      accessToken,
-    },
-  );
+  return apiFetch<Record<string, never>>(`/v1/rooms/notifications/${notificationId}/read`, {
+    method: 'POST',
+    accessToken,
+  });
 }
 
 export async function getRoomTimeMachine(
@@ -462,13 +443,13 @@ export async function sendRoomSupport(input: {
   return apiFetch<RoomSupportSendResponse>(
     `/v1/rooms/${encodeURIComponent(String(input.roomId))}/support/send`,
     {
-      method: "POST",
+      method: 'POST',
       accessToken: await getAccessToken(input.accessToken),
       body: JSON.stringify({
         amount_cents: input.amountCents,
         public_name: input.publicName,
         show_amount: input.showAmount,
-        support_note: input.note?.trim() ?? "",
+        support_note: input.note?.trim() ?? '',
         payment_method: input.paymentMethod,
         client_support_id: crypto.randomUUID(),
         ...(input.successUrl ? { success_url: input.successUrl } : {}),
@@ -481,7 +462,7 @@ export async function sendRoomSupport(input: {
 function getWebBridgeBaseUrl(): string {
   const resolved = resolveWebProxyBaseUrl();
   if (!resolved) {
-    throw new ApiError("Missing EXPO_PUBLIC_MICBOXX_WEB_BASE_URL.", 500);
+    throw new ApiError('Missing EXPO_PUBLIC_MICBOXX_WEB_BASE_URL.', 500);
   }
 
   return resolved;
@@ -490,12 +471,12 @@ function getWebBridgeBaseUrl(): string {
 // UNVERIFIED_ROUTE: Drupal /v1 presence heartbeat is absent; use verified web bridge only.
 export async function sendRoomPresenceHeartbeat(input: {
   roomId: number | string;
-  visibility: "visible" | "anonymous" | "hidden";
+  visibility: 'visible' | 'anonymous' | 'hidden';
   sessionId: string;
   accessToken?: string | null;
 }): Promise<{
   ok: true;
-  actor_type: "user" | "anonymous";
+  actor_type: 'user' | 'anonymous';
   presence_doc_id: string;
   expires_at?: number;
   visibility: string;
@@ -506,10 +487,10 @@ export async function sendRoomPresenceHeartbeat(input: {
   const response = await fetch(
     `${getWebBridgeBaseUrl()}/api/public/rooms/${encodeURIComponent(String(input.roomId))}/presence/heartbeat`,
     {
-      method: "POST",
+      method: 'POST',
       headers: {
-        accept: "application/json",
-        "content-type": "application/json",
+        accept: 'application/json',
+        'content-type': 'application/json',
         ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
       },
       body: JSON.stringify({
@@ -521,7 +502,7 @@ export async function sendRoomPresenceHeartbeat(input: {
   const payload = (await response.json().catch(() => ({}))) as {
     data?: {
       ok: true;
-      actor_type: "user" | "anonymous";
+      actor_type: 'user' | 'anonymous';
       presence_doc_id: string;
       expires_at?: number;
       visibility: string;
@@ -547,14 +528,14 @@ export async function getRoomLiveVideoAudienceToken(input: {
   return apiFetch<RoomLiveVideoTokenResponse>(
     `/api/public/rooms/${encodeURIComponent(String(input.roomId))}/live-video/token`,
     {
-      method: "POST",
+      method: 'POST',
       baseUrl: getWebBridgeBaseUrl(),
       accessToken: await getAccessToken(input.accessToken, {
         allowAnonymousOnExpiredSession: true,
       }),
       body: JSON.stringify({
         momentId: input.momentId,
-        role: "audience",
+        role: 'audience',
       }),
     },
   );

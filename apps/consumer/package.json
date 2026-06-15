@@ -17,7 +17,8 @@
     "web:fixtures": "EXPO_PUBLIC_FORCE_FIXTURES=1 expo start --web --localhost",
     "verify:web": "EXPO_PUBLIC_FORCE_FIXTURES=1 expo start --web --localhost --port 3016",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "13.0.0",

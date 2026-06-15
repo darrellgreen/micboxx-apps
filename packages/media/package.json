@@ -23,5 +23,8 @@
     "@micboxx/ui": "*",
     "expo-image": "~3.0.11",
     "expo-linear-gradient": "~15.0.8"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }

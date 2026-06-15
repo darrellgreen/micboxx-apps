@@ -1,31 +1,31 @@
-import { useSegments } from "expo-router";
-import { useEffect, useRef } from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
-import { Gesture, GestureDetector, State } from "react-native-gesture-handler";
+import { useSegments } from 'expo-router';
+import { useEffect, useRef } from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Gesture, GestureDetector, State } from 'react-native-gesture-handler';
 import Animated, {
-    Easing,
-    Extrapolation,
-    interpolate,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+  Easing,
+  Extrapolation,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PlayerArtwork } from "@/features/player/components/PlayerArtwork";
-import { PlayerControls } from "@/features/player/components/PlayerControls";
-import { PlayerProgressCompact } from "@/features/player/components/PlayerProgress";
-import { usePlaybackController } from "@/features/player/hooks/usePlaybackController";
-import { selectDisplaySubtitle } from "@/features/player/selectors";
-import { useAppSelector } from "@/store/hooks";
-import { usePlayerSheet } from "../context/PlayerSheetContext";
-import { AnimatedPressable } from "@micboxx/ui";
-import { hapticLight, hapticSuccess } from "@micboxx/ui";
-import { tokens } from "@micboxx/theme";
+import { PlayerArtwork } from '@/features/player/components/PlayerArtwork';
+import { PlayerControls } from '@/features/player/components/PlayerControls';
+import { PlayerProgressCompact } from '@/features/player/components/PlayerProgress';
+import { usePlaybackController } from '@/features/player/hooks/usePlaybackController';
+import { selectDisplaySubtitle } from '@/features/player/selectors';
+import { useAppSelector } from '@/store/hooks';
+import { usePlayerSheet } from '../context/PlayerSheetContext';
+import { AnimatedPressable } from '@micboxx/ui';
+import { hapticLight, hapticSuccess } from '@micboxx/ui';
+import { tokens } from '@micboxx/theme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Drag distance to fully open the sheet. Shorter = more responsive to a thumb swipe.
 const EXPAND_DISTANCE = 320;
@@ -49,20 +49,19 @@ export function MiniPlayer() {
   const { currentItem, isPlaying } = playback;
   const playerInitialized = useAppSelector((state) => state.player.initialized);
   const playerRestoring = useAppSelector((state) => state.player.restoring);
-  const { expand, collapse, progress, isExpandedState, isDragging, startDrag, finishDrag } = usePlayerSheet();
+  const { expand, collapse, progress, isExpandedState, isDragging, startDrag, finishDrag } =
+    usePlayerSheet();
 
   const canRenderMiniPlayer = playerInitialized && !playerRestoring;
 
   // Keep reference of the last active track only for deliberate fade-out after
-  // a real session ends. During startup/restore/loading churn, stale content
-  // should not flash over skeleton screens.
+  // a real session ends. The provider keeps currentItem stable during track
+  // switches, so this fallback is no longer used for loading gaps.
   const lastTrack = useRef(currentItem);
   if (canRenderMiniPlayer && currentItem) {
     lastTrack.current = currentItem;
   }
-  const displayItem = canRenderMiniPlayer
-    ? currentItem ?? lastTrack.current
-    : null;
+  const displayItem = canRenderMiniPlayer ? (currentItem ?? lastTrack.current) : null;
 
   // Declarative visibility animation based on active track existence
   const isPlayerActive = canRenderMiniPlayer && currentItem !== null;
@@ -89,7 +88,7 @@ export function MiniPlayer() {
   // Only add tab-bar clearance when we're actually inside the (tabs) group.
   // On modals and other stack screens there is no tab bar so the player sits
   // lower, flush with the safe-area bottom edge.
-  const isInTabs = segments[0] === "(tabs)";
+  const isInTabs = segments[0] === '(tabs)';
 
   const translateX = useSharedValue(0);
 
@@ -122,10 +121,7 @@ export function MiniPlayer() {
     .onUpdate((e) => {
       translateX.value = e.translationX;
       // Fire haptic once when user crosses the dismiss threshold
-      if (
-        !dismissHapticFired.value &&
-        Math.abs(e.translationX) > DISMISS_THRESHOLD
-      ) {
+      if (!dismissHapticFired.value && Math.abs(e.translationX) > DISMISS_THRESHOLD) {
         dismissHapticFired.value = true;
         runOnJS(hapticSuccess)();
       }
@@ -140,10 +136,11 @@ export function MiniPlayer() {
 
         // Fling off screen in the direction of the swipe.
         const direction = translateX.value >= 0 ? 1 : -1;
-        translateX.value = withSpring(
-          direction * 600,
-          { damping: 22, stiffness: 180, velocity: e.velocityX }
-        );
+        translateX.value = withSpring(direction * 600, {
+          damping: 22,
+          stiffness: 180,
+          velocity: e.velocityX,
+        });
       } else {
         // Not far enough — ease back to centre without bounce.
         translateX.value = withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) });
@@ -223,12 +220,11 @@ export function MiniPlayer() {
     return null;
   }
 
-  const bottomOffset =
-    insets.bottom + 60 + 8;
+  const bottomOffset = insets.bottom + 60 + 8;
 
   return (
     <View
-      pointerEvents={isExpandedState && !isDragging ? "none" : "box-none"}
+      pointerEvents={isExpandedState && !isDragging ? 'none' : 'box-none'}
       style={[styles.container, { bottom: bottomOffset }]}
     >
       <GestureDetector gesture={composed}>
@@ -274,12 +270,12 @@ export function MiniPlayer() {
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
+    position: 'absolute',
     left: 12,
     right: 12,
   },
   blur: {
-    overflow: "hidden",
+    overflow: 'hidden',
     borderRadius: tokens.radii.md,
     backgroundColor: tokens.colors.accentStrong,
     ...tokens.shadows.accent,
@@ -290,15 +286,15 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     gap: 6,
     minHeight: 74,
-    position: "relative",
+    position: 'relative',
   },
   detailsTouchTarget: {
     flex: 1,
     gap: 6,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
   copy: {
@@ -307,27 +303,27 @@ const styles = StyleSheet.create({
     paddingRight: 52, // Prevent copy text from overlapping absolutely positioned controls
   },
   controlsContainer: {
-    position: "absolute",
+    position: 'absolute',
     right: 12,
     top: 9,
     height: 44,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   kicker: {
-    color: "rgba(255,255,255,0.7)",
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 9,
-    fontWeight: "700",
+    fontWeight: '700',
     letterSpacing: 1.5,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   title: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   subtitle: {
-    color: "rgba(255,255,255,0.7)",
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 11,
   },
 });

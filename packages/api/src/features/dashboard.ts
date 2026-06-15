@@ -1,18 +1,17 @@
 import type {
-    DashboardPlaylist,
-    DashboardPlaylistList,
-    DashboardPlaylistOptions,
-    DashboardPlaylistTrackOption,
-} from "@micboxx/contracts";
+  DashboardPlaylist,
+  DashboardPlaylistList,
+  DashboardPlaylistOptions,
+  DashboardPlaylistTrackOption,
+} from '@micboxx/contracts';
 import type {
-    CommerceOrderHistoryEntry,
-    EntitlementState,
-    PublicSubscriptionPlan,
-} from "@micboxx/contracts";
-import { getMicboxxApiConfig } from "../config";
-import { apiFetch } from "../client";
-import { mockDiscoverTracks, mockSession } from "../mock-data";
-
+  CommerceOrderHistoryEntry,
+  EntitlementState,
+  PublicSubscriptionPlan,
+} from '@micboxx/contracts';
+import { getMicboxxApiConfig } from '../config';
+import { apiFetch } from '../client';
+import { mockDiscoverTracks, mockSession } from '../mock-data';
 
 export async function getMyPlaylists(
   page = 1,
@@ -23,7 +22,7 @@ export async function getMyPlaylists(
   const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
-    throw new Error("Sign in again to load your playlists.");
+    throw new Error('Sign in again to load your playlists.');
   }
 
   return apiFetch<DashboardPlaylistList>(
@@ -40,7 +39,7 @@ export async function getDashboardPlaylist(
   const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
-    throw new Error("Sign in again to load your playlist.");
+    throw new Error('Sign in again to load your playlist.');
   }
 
   const response = await apiFetch<{ playlist: DashboardPlaylist }>(
@@ -78,7 +77,7 @@ export async function getOrderHistory(
   const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
-    throw new Error("Sign in again to load your purchases.");
+    throw new Error('Sign in again to load your purchases.');
   }
 
   const normalizedLimit = Number.isFinite(limit)
@@ -92,9 +91,7 @@ export async function getOrderHistory(
   return response.orders ?? [];
 }
 
-export async function getPublicSubscriptionPlans(): Promise<
-  PublicSubscriptionPlan[]
-> {
+export async function getPublicSubscriptionPlans(): Promise<PublicSubscriptionPlan[]> {
   const response = await apiFetch<{ plans: PublicSubscriptionPlan[] }>(
     `/v1/public/commerce/subscription-plans`,
   );
@@ -108,22 +105,28 @@ function mapPublicTrackToOption(track: any): DashboardPlaylistTrackOption {
     title: track.title,
     slug: track.slug,
     duration: track.duration,
-    artist: track.artist ? {
-      id: track.artist.id,
-      displayName: track.artist.displayName,
-      verifiedBadge: track.artist.verifiedBadge,
-    } : null,
-    genre: track.genre ? {
-      id: track.genre.id,
-      name: track.genre.name,
-    } : null,
-    album: track.album ? {
-      id: track.album.id,
-      title: track.album.title,
-    } : null,
+    artist: track.artist
+      ? {
+          id: track.artist.id,
+          displayName: track.artist.displayName,
+          verifiedBadge: track.artist.verifiedBadge,
+        }
+      : null,
+    genre: track.genre
+      ? {
+          id: track.genre.id,
+          name: track.genre.name,
+        }
+      : null,
+    album: track.album
+      ? {
+          id: track.album.id,
+          title: track.album.title,
+        }
+      : null,
     status: {
       published: true,
-      processing: "ready",
+      processing: 'ready',
       ready: true,
       publicReady: true,
       reason: null,
@@ -158,13 +161,12 @@ export async function getPlaylistOptions(
   const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
-    throw new Error("Sign in again to load playlist options.");
+    throw new Error('Sign in again to load playlist options.');
   }
 
-  return apiFetch<DashboardPlaylistOptions>(
-    "/v1/dashboard/playlists/options",
-    { accessToken: liveAccessToken },
-  );
+  return apiFetch<DashboardPlaylistOptions>('/v1/dashboard/playlists/options', {
+    accessToken: liveAccessToken,
+  });
 }
 
 export async function createPlaylist(
@@ -172,9 +174,9 @@ export async function createPlaylist(
   accessToken?: string | null,
 ): Promise<DashboardPlaylist> {
   if (getMicboxxApiConfig().useFixtures) {
-    const title = (formData.get("title") as string) || "Mock Playlist";
-    const description = (formData.get("description") as string) || "";
-    const trackIds = formData.getAll("trackIds[]").map(Number);
+    const title = (formData.get('title') as string) || 'Mock Playlist';
+    const description = (formData.get('description') as string) || '';
+    const trackIds = formData.getAll('trackIds[]').map(Number);
     const mockId = Math.floor(Math.random() * 1000) + 200;
 
     const mockCreatedPlaylist: DashboardPlaylist = {
@@ -183,7 +185,7 @@ export async function createPlaylist(
       slug: `mock-playlist-${mockId}`,
       title,
       description,
-      artworkUrl: "https://i.pravatar.cc/120?u=mockplaylist",
+      artworkUrl: 'https://i.pravatar.cc/120?u=mockplaylist',
       publicHref: `/playlist/mock-playlist-${mockId}`,
       counts: {
         tracks: trackIds.length,
@@ -207,28 +209,36 @@ export async function createPlaylist(
           title: found?.title ?? `Mock Track ${id}`,
           slug: found?.slug ?? `mock-track-${id}`,
           duration: found?.duration ?? 240,
-          artist: found?.artist ? {
-            id: found.artist.id,
-            displayName: found.artist.displayName,
-          } : null,
-          genre: found?.genre ? {
-            id: found.genre.id,
-            name: found.genre.name,
-          } : null,
-          album: found?.album ? {
-            id: found.album.id,
-            title: found.album.title,
-          } : null,
+          artist: found?.artist
+            ? {
+                id: found.artist.id,
+                displayName: found.artist.displayName,
+              }
+            : null,
+          genre: found?.genre
+            ? {
+                id: found.genre.id,
+                name: found.genre.name,
+              }
+            : null,
+          album: found?.album
+            ? {
+                id: found.album.id,
+                title: found.album.title,
+              }
+            : null,
           artworkUrl: found?.artworkUrl ?? null,
           status: {
             published: true,
-            processing: "ready" as any,
+            processing: 'ready' as any,
             ready: true,
             publicReady: true,
             reason: null,
           },
           isPublicReady: true,
           publicHref: found?.href ?? null,
+          audioUrl: null,
+          demoAudioUrl: null,
           position: index + 1,
         };
       }),
@@ -254,17 +264,14 @@ export async function createPlaylist(
   const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
-    throw new Error("Sign in again to create a playlist.");
+    throw new Error('Sign in again to create a playlist.');
   }
 
-  const response = await apiFetch<{ playlist: DashboardPlaylist }>(
-    `/v1/dashboard/playlists`,
-    {
-      method: "POST",
-      body: formData,
-      accessToken: liveAccessToken,
-    },
-  );
+  const response = await apiFetch<{ playlist: DashboardPlaylist }>(`/v1/dashboard/playlists`, {
+    method: 'POST',
+    body: formData,
+    accessToken: liveAccessToken,
+  });
 
   return response.playlist;
 }
@@ -278,15 +285,14 @@ export async function addTrackToPlaylist(
   const liveAccessToken = sessionToken ?? accessToken ?? null;
 
   if (!liveAccessToken) {
-    throw new Error("Sign in again to update your playlist.");
+    throw new Error('Sign in again to update your playlist.');
   }
 
   if (getMicboxxApiConfig().useFixtures) return;
 
   await apiFetch(`/v1/dashboard/playlists/${playlistId}/members`, {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify({ trackId }),
     accessToken: liveAccessToken,
   });
 }
-

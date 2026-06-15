@@ -1,51 +1,49 @@
 import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    type PropsWithChildren,
-} from "react";
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  type PropsWithChildren,
+} from 'react';
 
-import { createServerPlayerAnalyticsSink } from "@/features/player/analytics";
-import { PLAYER_ANALYTICS_EVENTS } from "@micboxx/analytics";
-import { noopDownloadPlaybackResolver } from "@/features/player/downloads";
-import { trackPlayerAdapter } from "@/features/player/engine/adapter";
-import { apiFetch } from "@micboxx/api";
-import type { EngineTrack } from "@micboxx/contracts";
+import { createServerPlayerAnalyticsSink } from '@/features/player/analytics';
+import { PLAYER_ANALYTICS_EVENTS } from '@micboxx/analytics';
+import { noopDownloadPlaybackResolver } from '@/features/player/downloads';
+import { trackPlayerAdapter } from '@/features/player/engine/adapter';
+import { apiFetch } from '@micboxx/api';
+import type { EngineTrack } from '@micboxx/contracts';
 import {
-    resetPlayerState,
-    setCurrentIndex,
-    setCurrentItem,
-    setError,
-    setInitialized,
-    setInitializing,
-    setPlaybackState,
-    setPosition,
-    setQueue,
-    setRestoring,
-} from "@/features/player/player-slice";
+  resetPlayerState,
+  setCurrentIndex,
+  setCurrentItem,
+  setError,
+  setInitialized,
+  setInitializing,
+  setPlaybackState,
+  setPosition,
+  setQueue,
+  setRestoring,
+} from '@/features/player/player-slice';
 import {
-    clearPersistedPlaybackSession,
-    persistPlaybackSession,
-    readPersistedPlaybackSession,
-} from "@/features/player/storage/playbackSessionStorage";
+  clearPersistedPlaybackSession,
+  persistPlaybackSession,
+  readPersistedPlaybackSession,
+} from '@/features/player/storage/playbackSessionStorage';
 import {
-    clearPersistedQueue,
-    persistQueueState,
-    readPersistedQueue,
-} from "@/features/player/storage/queueStorage";
-import {
-    emptyQueueState,
-} from "@/features/player/store";
-import type { PlayerItem, PlayerQueueState } from "@micboxx/contracts";
+  clearPersistedQueue,
+  persistQueueState,
+  readPersistedQueue,
+} from '@/features/player/storage/queueStorage';
+import { emptyPlaybackPosition, emptyQueueState } from '@/features/player/store';
+import type { PlayerItem, PlayerQueueState } from '@micboxx/contracts';
 import type {
-    PlayerActionResult,
-    ReplaceQueuePayload,
-    StartPlaybackPayload,
-} from "@micboxx/contracts";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+  PlayerActionResult,
+  ReplaceQueuePayload,
+  StartPlaybackPayload,
+} from '@micboxx/contracts';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 interface PlayerProviderActions {
   initialize(): Promise<void>;
@@ -58,7 +56,7 @@ interface PlayerProviderActions {
   skipNext(): Promise<PlayerActionResult>;
   skipPrevious(): Promise<PlayerActionResult>;
   skipToIndex(index: number): Promise<PlayerActionResult>;
-  setRepeatMode(mode: "off" | "queue" | "track"): Promise<PlayerActionResult>;
+  setRepeatMode(mode: 'off' | 'queue' | 'track'): Promise<PlayerActionResult>;
   enqueue(items: PlayerItem[]): Promise<PlayerActionResult>;
   clearQueue(): Promise<PlayerActionResult>;
 }
@@ -72,7 +70,7 @@ const PlayerContext = createContext<PlayerProviderContextValue | null>(null);
 function toEngineTrack(item: PlayerItem): EngineTrack {
   return {
     id: item.id,
-    url: item.authorization.url ?? "",
+    url: item.authorization.url ?? '',
     title: item.title,
     artist: item.artistName,
     album: item.albumTitle ?? undefined,
@@ -81,10 +79,7 @@ function toEngineTrack(item: PlayerItem): EngineTrack {
   };
 }
 
-function getQueueIndexByTrackId(
-  queue: PlayerQueueState,
-  trackId: string | null,
-): number {
+function getQueueIndexByTrackId(queue: PlayerQueueState, trackId: string | null): number {
   if (!trackId) {
     return -1;
   }
@@ -93,7 +88,7 @@ function getQueueIndexByTrackId(
 }
 
 function isRoomOwnedQueue(queue: PlayerQueueState): boolean {
-  return Boolean(queue.context?.id?.startsWith("room:"));
+  return Boolean(queue.context?.id?.startsWith('room:'));
 }
 
 function usePlayerProviderValue(): PlayerProviderContextValue {
@@ -149,20 +144,20 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   const resolveSourceType = useCallback((): string => {
     const contextType = stateRef.current.queue.context?.type;
     switch (contextType) {
-      case "track":
-        return "public_track";
-      case "album":
-        return "album";
-      case "artist":
-        return "artist_profile";
-      case "playlist":
-        return "playlist";
-      case "recommendation":
-        return "discover";
-      case "search":
-        return "search";
+      case 'track':
+        return 'public_track';
+      case 'album':
+        return 'album';
+      case 'artist':
+        return 'artist_profile';
+      case 'playlist':
+        return 'playlist';
+      case 'recommendation':
+        return 'discover';
+      case 'search':
+        return 'search';
       default:
-        return "unknown";
+        return 'unknown';
     }
   }, []);
 
@@ -188,18 +183,18 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
     try {
       await apiFetch(`/v1/public/tracks/${trackId}/analytics/play`, {
-        method: "POST",
+        method: 'POST',
         accessToken: session?.accessToken ?? null,
       });
     } catch (err) {
       if (__DEV__) {
-        console.warn("[Analytics] recordTrackPlayback failed:", err);
+        console.warn('[Analytics] recordTrackPlayback failed:', err);
       }
     }
   }, [session?.accessToken]);
 
   const reportPlayEvent = useCallback(
-    async (eventType: "play_started" | "play_qualified" | "play_completed") => {
+    async (eventType: 'play_started' | 'play_qualified' | 'play_completed') => {
       const currentTrack = stateRef.current.nowPlaying.currentItem;
       if (!currentTrack) return;
 
@@ -209,7 +204,12 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         eventFlagsRef.current = { trackId, started: false, qualified: false, completed: false };
       }
 
-      const key = eventType === "play_started" ? "started" : eventType === "play_qualified" ? "qualified" : "completed";
+      const key =
+        eventType === 'play_started'
+          ? 'started'
+          : eventType === 'play_qualified'
+            ? 'qualified'
+            : 'completed';
       if (eventFlagsRef.current[key]) {
         return;
       }
@@ -218,16 +218,16 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
       try {
         await apiFetch(`/v1/public/tracks/${trackId}/analytics/event`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "content-type": "application/json",
-            accept: "application/json",
+            'content-type': 'application/json',
+            accept: 'application/json',
           },
           body: JSON.stringify({
             eventType,
             sourceType: resolveSourceType(),
             sourceRef: resolveSourceRef(),
-            sessionId: analyticsSessionIdRef.current ?? "unknown",
+            sessionId: analyticsSessionIdRef.current ?? 'unknown',
           }),
           accessToken: session?.accessToken ?? null,
         });
@@ -253,13 +253,13 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       if (!flags.qualified) {
         const qualifyThreshold = Math.max(5, Math.min(30, trackDuration * 0.25));
         if (currentTime >= qualifyThreshold) {
-          void reportPlayEvent("play_qualified");
+          void reportPlayEvent('play_qualified');
         }
       }
 
       // Completed: >= 90% of duration.
       if (!flags.completed && currentTime >= trackDuration * 0.9) {
-        void reportPlayEvent("play_completed");
+        void reportPlayEvent('play_completed');
       }
     },
     [reportPlayEvent],
@@ -267,8 +267,8 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
   const playerAnalyticsSinkRef = useRef(
     createServerPlayerAnalyticsSink(
-      () => stateRef.current ? sessionRef.current?.accessToken ?? null : null,
-      () => analyticsSessionIdRef.current ?? "unknown",
+      () => (stateRef.current ? (sessionRef.current?.accessToken ?? null) : null),
+      () => analyticsSessionIdRef.current ?? 'unknown',
     ),
   );
 
@@ -300,14 +300,19 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   }, []);
 
   const activeLoadIdRef = useRef(0);
+  const controlledLoadRef = useRef<{ loadId: number; trackId: string } | null>(null);
   const inFlightPlaybackActionRef = useRef(false);
 
-  const applyQueueState = useCallback((queue: PlayerQueueState) => {
-    dispatch(setQueue(queue));
-  }, [dispatch]);
+  const applyQueueState = useCallback(
+    (queue: PlayerQueueState) => {
+      dispatch(setQueue(queue));
+    },
+    [dispatch],
+  );
 
   const clearQueue = useCallback(async (): Promise<PlayerActionResult> => {
     activeLoadIdRef.current++;
+    controlledLoadRef.current = null;
     try {
       await trackPlayerAdapter.reset();
       await clearPersistedQueue();
@@ -320,7 +325,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       dispatch(resetPlayerState());
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unable to clear queue.",
+        error: error instanceof Error ? error.message : 'Unable to clear queue.',
       };
     }
   }, [applyQueueState, dispatch]);
@@ -329,35 +334,33 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     async (payload: StartPlaybackPayload, loadId: number): Promise<PlayerActionResult> => {
       const requestedItem = payload.items[payload.startIndex] ?? null;
       if (!requestedItem) {
-        return { ok: false, error: "No track was selected for playback." };
+        return { ok: false, error: 'No track was selected for playback.' };
       }
 
       if (loadId !== activeLoadIdRef.current) {
-        return { ok: false, error: "Playback load cancelled." };
+        return { ok: false, error: 'Playback load cancelled.' };
       }
 
       if (!requestedItem.authorization.allowed || !requestedItem.authorization.url) {
-        emitAnalytics("playbackBlocked", {
+        emitAnalytics('playbackBlocked', {
           trackId: requestedItem.id,
           sourceKind: requestedItem.authorization.sourceKind,
         });
         return {
           ok: false,
-          error: "This track is currently unavailable for playback.",
+          error: 'This track is currently unavailable for playback.',
         };
       }
 
       const playableItems = payload.items.filter(
         (item) => item.authorization.allowed && item.authorization.url,
       );
-      const nextStartIndex = playableItems.findIndex(
-        (item) => item.id === requestedItem.id,
-      );
+      const nextStartIndex = playableItems.findIndex((item) => item.id === requestedItem.id);
 
       if (nextStartIndex < 0) {
         return {
           ok: false,
-          error: "No playable tracks were found in the queue.",
+          error: 'No playable tracks were found in the queue.',
         };
       }
 
@@ -370,40 +373,54 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       };
 
       if (loadId !== activeLoadIdRef.current) {
-        return { ok: false, error: "Playback load cancelled." };
+        return { ok: false, error: 'Playback load cancelled.' };
       }
 
-      await trackPlayerAdapter.loadQueue(
-        playableItems.map(toEngineTrack),
-        nextStartIndex,
-        payload.startPositionSec,
-      );
-
-      if (loadId !== activeLoadIdRef.current) {
-        return { ok: false, error: "Playback load cancelled." };
-      }
-
-      await trackPlayerAdapter.setRepeatMode(queue.repeatMode);
+      controlledLoadRef.current = {
+        loadId,
+        trackId: requestedItem.id,
+      };
       applyQueueState(queue);
-      await syncMetadata(playableItems[nextStartIndex] ?? null);
+      dispatch(setPosition(emptyPlaybackPosition));
+      dispatch(setPlaybackState('loading'));
+      dispatch(setError(null));
 
-      if (loadId !== activeLoadIdRef.current) {
-        return { ok: false, error: "Playback load cancelled." };
+      try {
+        await trackPlayerAdapter.loadQueue(
+          playableItems.map(toEngineTrack),
+          nextStartIndex,
+          payload.startPositionSec,
+        );
+
+        if (loadId !== activeLoadIdRef.current) {
+          return { ok: false, error: 'Playback load cancelled.' };
+        }
+
+        await trackPlayerAdapter.setRepeatMode(queue.repeatMode);
+        await syncMetadata(playableItems[nextStartIndex] ?? null);
+
+        if (loadId !== activeLoadIdRef.current) {
+          return { ok: false, error: 'Playback load cancelled.' };
+        }
+
+        if (payload.autoplay !== false) {
+          await trackPlayerAdapter.play();
+        } else {
+          await trackPlayerAdapter.pause();
+        }
+      } finally {
+        if (controlledLoadRef.current?.loadId === loadId) {
+          controlledLoadRef.current = null;
+        }
       }
 
-      if (payload.autoplay !== false) {
-        await trackPlayerAdapter.play();
-      } else {
-        await trackPlayerAdapter.pause();
-      }
-
-      emitAnalytics("playbackSourceSelected", {
+      emitAnalytics('playbackSourceSelected', {
         trackId: playableItems[nextStartIndex]?.id ?? null,
         sourceKind: playableItems[nextStartIndex]?.authorization.sourceKind ?? null,
       });
       return { ok: true };
     },
-    [applyQueueState, emitAnalytics, syncMetadata],
+    [applyQueueState, dispatch, emitAnalytics, syncMetadata],
   );
 
   const restoreSession = useCallback(async (): Promise<void> => {
@@ -436,8 +453,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
       const restoredItems = await Promise.all(
         persistedQueue.items.map(async (item): Promise<PlayerItem> => {
-          const localCandidate =
-            await noopDownloadPlaybackResolver.resolveLocalCandidate(item);
+          const localCandidate = await noopDownloadPlaybackResolver.resolveLocalCandidate(item);
           if (!localCandidate.localFileUrl) {
             return item;
           }
@@ -447,7 +463,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
             authorization: {
               ...item.authorization,
               allowed: true,
-              sourceKind: "full",
+              sourceKind: 'full',
               url: localCandidate.localFileUrl,
             },
           };
@@ -458,10 +474,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         return;
       }
 
-      const requestedIndex = Math.min(
-        persistedQueue.currentIndex,
-        restoredItems.length - 1,
-      );
+      const requestedIndex = Math.min(persistedQueue.currentIndex, restoredItems.length - 1);
       const requestedItem = restoredItems[requestedIndex] ?? null;
       const fallbackIndex = restoredItems.findIndex(
         (item) => item.authorization.allowed && item.authorization.url,
@@ -480,23 +493,26 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
         return;
       }
 
-      const result = await loadAuthorizedQueue({
-        items: restoredItems,
-        startIndex,
-        context: persistedQueue.context,
-        startPositionSec:
-          persistedSession?.lastKnownTrackId === restoredItems[startIndex]?.id
-            ? persistedSession.lastKnownPositionSec
-            : 0,
-        autoplay: false,
-      }, loadId);
+      const result = await loadAuthorizedQueue(
+        {
+          items: restoredItems,
+          startIndex,
+          context: persistedQueue.context,
+          startPositionSec:
+            persistedSession?.lastKnownTrackId === restoredItems[startIndex]?.id
+              ? persistedSession.lastKnownPositionSec
+              : 0,
+          autoplay: false,
+        },
+        loadId,
+      );
 
       if (loadId !== activeLoadIdRef.current) {
         return;
       }
 
       if (result.ok) {
-        dispatch(setPlaybackState("paused"));
+        dispatch(setPlaybackState('paused'));
       }
     } finally {
       if (loadId === activeLoadIdRef.current) {
@@ -516,94 +532,96 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
 
     try {
       await trackPlayerAdapter.setup({
-        appName: "MicBoxx",
-        iosCategory: "playback",
-        androidChannelId: "micboxx-playback",
+        appName: 'MicBoxx',
+        iosCategory: 'playback',
+        androidChannelId: 'micboxx-playback',
       });
 
       unsubscribeRef.current = trackPlayerAdapter.subscribe((event) => {
         const currentState = stateRef.current;
 
         switch (event.type) {
-          case "playback-state-changed":
+          case 'playback-state-changed':
             dispatch(setPlaybackState(event.state));
-            if (event.state === "playing") {
+            if (event.state === 'playing') {
               wasPlayingBeforeInterruptionRef.current = true;
-              emitAnalytics("playbackStarted", {
+              emitAnalytics('playbackStarted', {
                 trackId: currentState.nowPlaying.currentItem?.id ?? null,
-                sourceKind:
-                  currentState.nowPlaying.currentItem?.authorization.sourceKind ?? null,
+                sourceKind: currentState.nowPlaying.currentItem?.authorization.sourceKind ?? null,
                 currentPositionSec: currentState.nowPlaying.position.positionSec,
               });
               void reportCurrentTrackPlay();
-              void reportPlayEvent("play_started");
+              void reportPlayEvent('play_started');
             }
-            if (event.state === "paused") {
-              emitAnalytics("playbackPaused", {
+            if (event.state === 'paused') {
+              emitAnalytics('playbackPaused', {
                 trackId: currentState.nowPlaying.currentItem?.id ?? null,
-                sourceKind:
-                  currentState.nowPlaying.currentItem?.authorization.sourceKind ?? null,
+                sourceKind: currentState.nowPlaying.currentItem?.authorization.sourceKind ?? null,
                 currentPositionSec: currentState.nowPlaying.position.positionSec,
               });
             }
-            if (event.state === "ended") {
-              emitAnalytics("playbackCompleted", {
+            if (event.state === 'ended') {
+              emitAnalytics('playbackCompleted', {
                 trackId: currentState.nowPlaying.currentItem?.id ?? null,
-                sourceKind:
-                  currentState.nowPlaying.currentItem?.authorization.sourceKind ?? null,
+                sourceKind: currentState.nowPlaying.currentItem?.authorization.sourceKind ?? null,
                 currentPositionSec: currentState.nowPlaying.position.positionSec,
               });
             }
             break;
-          case "active-track-changed": {
-            const nextIndex = getQueueIndexByTrackId(
-              currentState.queue,
-              event.trackId,
-            );
+          case 'active-track-changed': {
+            const controlledLoad = controlledLoadRef.current;
+            const loadingRequestedTrack =
+              currentState.nowPlaying.playbackState === 'loading' &&
+              currentState.nowPlaying.currentItem !== null;
+            if (!event.trackId && (controlledLoad || loadingRequestedTrack)) {
+              break;
+            }
+
+            const nextIndex = getQueueIndexByTrackId(currentState.queue, event.trackId);
             if (nextIndex >= 0) {
               dispatch(setCurrentIndex(nextIndex));
               void syncMetadata(currentState.queue.items[nextIndex] ?? null);
+              if (controlledLoad?.trackId === event.trackId) {
+                controlledLoadRef.current = null;
+              }
             } else {
               dispatch(setCurrentItem(null));
             }
             break;
           }
-          case "position-changed":
+          case 'position-changed':
             dispatch(setPosition(event.position));
-            void checkQualifiedAndCompleted(
-              event.position.positionSec,
-              event.position.durationSec,
-            );
+            void checkQualifiedAndCompleted(event.position.positionSec, event.position.durationSec);
             break;
-          case "remote-play":
+          case 'remote-play':
             void trackPlayerAdapter.play();
             break;
-          case "remote-pause":
+          case 'remote-pause':
             void trackPlayerAdapter.pause();
             break;
-          case "remote-next":
+          case 'remote-next':
             void trackPlayerAdapter.skipNext();
             break;
-          case "remote-previous":
+          case 'remote-previous':
             void trackPlayerAdapter.skipPrevious();
             break;
-          case "remote-seek":
+          case 'remote-seek':
             void trackPlayerAdapter.seekTo(event.positionSec);
             break;
-          case "interruption-began":
+          case 'interruption-began':
             wasPlayingBeforeInterruptionRef.current =
-              currentState.nowPlaying.playbackState === "playing";
+              currentState.nowPlaying.playbackState === 'playing';
             void trackPlayerAdapter.pause();
             break;
-          case "interruption-ended":
+          case 'interruption-ended':
             if (event.shouldResume && wasPlayingBeforeInterruptionRef.current) {
               void trackPlayerAdapter.play();
             }
             break;
-          case "audio-becoming-noisy":
+          case 'audio-becoming-noisy':
             void trackPlayerAdapter.pause();
             break;
-          case "playback-error":
+          case 'playback-error':
             dispatch(setError(event.message));
             break;
         }
@@ -613,11 +631,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       dispatch(setInitialized());
     } catch (error) {
       dispatch(
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Unable to initialize MicBoxx playback.",
-        ),
+        setError(error instanceof Error ? error.message : 'Unable to initialize MicBoxx playback.'),
       );
       initializedRef.current = false;
     } finally {
@@ -649,14 +663,14 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   // which fires async storage writes mid-animation when the modal closes.
   const playbackState = state.nowPlaying.playbackState;
   const sessionTrackId = state.nowPlaying.currentItem?.id ?? null;
-  const isRoomQueue = Boolean(state.queue.context?.id?.startsWith("room:"));
+  const isRoomQueue = Boolean(state.queue.context?.id?.startsWith('room:'));
   useEffect(() => {
     if (isRoomQueue) {
       void clearPersistedPlaybackSession();
       return;
     }
 
-    if (playbackState !== "paused") {
+    if (playbackState !== 'paused') {
       return;
     }
 
@@ -679,7 +693,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unable to play.",
+        error: error instanceof Error ? error.message : 'Unable to play.',
       };
     } finally {
       inFlightPlaybackActionRef.current = false;
@@ -697,7 +711,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unable to pause.",
+        error: error instanceof Error ? error.message : 'Unable to pause.',
       };
     } finally {
       inFlightPlaybackActionRef.current = false;
@@ -711,7 +725,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unable to seek.",
+        error: error instanceof Error ? error.message : 'Unable to seek.',
       };
     }
   }, []);
@@ -719,17 +733,16 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   const skipNext = useCallback(async (): Promise<PlayerActionResult> => {
     try {
       await trackPlayerAdapter.skipNext();
-      emitAnalytics("playbackSkipped", {
+      emitAnalytics('playbackSkipped', {
         trackId: stateRef.current.nowPlaying.currentItem?.id ?? null,
-        sourceKind:
-          stateRef.current.nowPlaying.currentItem?.authorization.sourceKind ?? null,
+        sourceKind: stateRef.current.nowPlaying.currentItem?.authorization.sourceKind ?? null,
         currentPositionSec: stateRef.current.nowPlaying.position.positionSec,
       });
       return { ok: true };
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unable to skip next.",
+        error: error instanceof Error ? error.message : 'Unable to skip next.',
       };
     }
   }, [emitAnalytics]);
@@ -737,18 +750,16 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
   const skipPrevious = useCallback(async (): Promise<PlayerActionResult> => {
     try {
       await trackPlayerAdapter.skipPrevious();
-      emitAnalytics("playbackSkipped", {
+      emitAnalytics('playbackSkipped', {
         trackId: stateRef.current.nowPlaying.currentItem?.id ?? null,
-        sourceKind:
-          stateRef.current.nowPlaying.currentItem?.authorization.sourceKind ?? null,
+        sourceKind: stateRef.current.nowPlaying.currentItem?.authorization.sourceKind ?? null,
         currentPositionSec: stateRef.current.nowPlaying.position.positionSec,
       });
       return { ok: true };
     } catch (error) {
       return {
         ok: false,
-        error:
-          error instanceof Error ? error.message : "Unable to skip previous.",
+        error: error instanceof Error ? error.message : 'Unable to skip previous.',
       };
     }
   }, [emitAnalytics]);
@@ -760,14 +771,13 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
     } catch (error) {
       return {
         ok: false,
-        error:
-          error instanceof Error ? error.message : "Unable to skip to track.",
+        error: error instanceof Error ? error.message : 'Unable to skip to track.',
       };
     }
   }, []);
 
   const setRepeatMode = useCallback(
-    async (mode: "off" | "queue" | "track"): Promise<PlayerActionResult> => {
+    async (mode: 'off' | 'queue' | 'track'): Promise<PlayerActionResult> => {
       try {
         await trackPlayerAdapter.setRepeatMode(mode);
         applyQueueState({
@@ -778,35 +788,34 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       } catch (error) {
         return {
           ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Unable to update repeat mode.",
+          error: error instanceof Error ? error.message : 'Unable to update repeat mode.',
         };
       }
     },
     [applyQueueState],
   );
 
-  const enqueue = useCallback(async (items: PlayerItem[]): Promise<PlayerActionResult> => {
-    try {
-      const playableItems = items.filter(
-        (item) => item.authorization.allowed && item.authorization.url,
-      );
-      await trackPlayerAdapter.addToQueue(playableItems.map(toEngineTrack));
-      applyQueueState({
-        ...stateRef.current.queue,
-        items: [...stateRef.current.queue.items, ...playableItems],
-      });
-      return { ok: true };
-    } catch (error) {
-      return {
-        ok: false,
-        error:
-          error instanceof Error ? error.message : "Unable to enqueue tracks.",
-      };
-    }
-  }, [applyQueueState]);
+  const enqueue = useCallback(
+    async (items: PlayerItem[]): Promise<PlayerActionResult> => {
+      try {
+        const playableItems = items.filter(
+          (item) => item.authorization.allowed && item.authorization.url,
+        );
+        await trackPlayerAdapter.addToQueue(playableItems.map(toEngineTrack));
+        applyQueueState({
+          ...stateRef.current.queue,
+          items: [...stateRef.current.queue.items, ...playableItems],
+        });
+        return { ok: true };
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : 'Unable to enqueue tracks.',
+        };
+      }
+    },
+    [applyQueueState],
+  );
 
   const startPlayback = useCallback(
     async (payload: StartPlaybackPayload): Promise<PlayerActionResult> => {
@@ -816,10 +825,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       } catch (error) {
         return {
           ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Unable to start playback.",
+          error: error instanceof Error ? error.message : 'Unable to start playback.',
         };
       }
     },
@@ -834,10 +840,7 @@ function usePlayerProviderValue(): PlayerProviderContextValue {
       } catch (error) {
         return {
           ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Unable to replace the playback queue.",
+          error: error instanceof Error ? error.message : 'Unable to replace the playback queue.',
         };
       }
     },
@@ -893,7 +896,7 @@ export function PlayerProvider({ children }: PropsWithChildren) {
 export function usePlayerContext() {
   const context = useContext(PlayerContext);
   if (!context) {
-    throw new Error("usePlayerContext must be used within PlayerProvider.");
+    throw new Error('usePlayerContext must be used within PlayerProvider.');
   }
 
   return context;
