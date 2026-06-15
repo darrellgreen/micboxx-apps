@@ -228,6 +228,7 @@ export function useMobileRoom(input: {
   const [isSubmittingChat, setIsSubmittingChat] = useState(false);
   const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
   const [isMomentReconnecting, setIsMomentReconnecting] = useState(false);
+  const [isAudioBlocked, setIsAudioBlocked] = useState(false);
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef(createSessionId());
@@ -289,9 +290,11 @@ export function useMobileRoom(input: {
       });
 
       if (!result.ok) {
-        setInteractionError(result.error ?? 'Unable to synchronize Room playback.');
+        setIsAudioBlocked(true);
         return;
       }
+
+      setIsAudioBlocked(false);
     },
     [input.releaseTracks, replaceQueue, roomEntry],
   );
@@ -817,8 +820,12 @@ export function useMobileRoom(input: {
     error,
     interactionError,
     clearInteractionError: () => setInteractionError(null),
+    isAudioBlocked,
     refreshClock,
     refreshRoomExtras,
+    joinAudio: useCallback(async () => {
+      await refreshClock({ syncPlayback: true });
+    }, [refreshClock]),
     sendChat,
     react,
     submitQuestion,

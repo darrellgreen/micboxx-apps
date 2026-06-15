@@ -5,14 +5,9 @@ import { StyleSheet, Text, View } from "react-native";
 import type { RoomClockState, RoomClockTrackEntry } from "@micboxx/contracts";
 import { TrackWaveform } from "@/features/player/components/TrackWaveform";
 import { useNowPlaying } from "@/features/player/hooks/useNowPlaying";
+import { RoomAudioController } from "@/features/rooms/components/RoomAudioController";
 import { tokens } from "@micboxx/theme";
 
-function formatTime(seconds: number) {
-  const safe = Math.max(0, Math.floor(seconds));
-  const mins = Math.floor(safe / 60);
-  const secs = safe % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
 
 export function RoomNowPlaying({
   clockState,
@@ -21,6 +16,8 @@ export function RoomNowPlaying({
   artworkUrl,
   awakenedAt,
   presenceCount,
+  audioBlocked,
+  onJoinAudio,
 }: {
   clockState: RoomClockState | null;
   releaseTitle?: string | null;
@@ -28,6 +25,8 @@ export function RoomNowPlaying({
   artworkUrl?: string | null;
   awakenedAt?: number | null;
   presenceCount?: number;
+  audioBlocked?: boolean;
+  onJoinAudio?: () => Promise<void>;
 }) {
   const { currentItem } = useNowPlaying();
   const fallbackTrack = clockState?.track_map.find((entry) => entry.index === clockState.track_index)
@@ -105,13 +104,12 @@ export function RoomNowPlaying({
         <Text numberOfLines={1} style={styles.trackTitle}>
           {activeTrackTitle ?? "Waiting for room clock"}
         </Text>
-        <Text style={styles.clockLine}>
-          {formatTime(playbackPosition)} / {formatTime(playbackDuration)}
-          {awakenedAt ? ` · Last visited ${formatTimeSince(awakenedAt)}` : ""}
-          {typeof presenceCount === "number"
-            ? ` · ${presenceCount <= 1 ? "Just you here" : `${presenceCount} here`}`
-            : ""}
-        </Text>
+        {awakenedAt ? (
+          <Text style={styles.clockLine}>Last visited {formatTimeSince(awakenedAt)}</Text>
+        ) : null}
+        {audioBlocked && onJoinAudio ? (
+          <RoomAudioController onJoin={onJoinAudio} />
+        ) : null}
       </View>
     </View>
   );

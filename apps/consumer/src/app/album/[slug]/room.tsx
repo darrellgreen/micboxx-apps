@@ -141,6 +141,8 @@ export default function AlbumRoomScreen() {
               artworkUrl={artworkUrl}
               awakenedAt={room.room?.awakened_at ?? null}
               presenceCount={room.presence.length}
+              audioBlocked={room.isAudioBlocked}
+              onJoinAudio={room.joinAudio}
             />
           )}
           {!activeStageMoment && capabilities?.can_show_presence ? (
