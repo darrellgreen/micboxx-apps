@@ -8,8 +8,6 @@ import {
     type NativeSyntheticEvent,
 } from "react-native";
 
-import type { RoomChatMessage } from "@micboxx/contracts";
-
 interface UseRoomChatListOptions {
   messageCount: number;
   windowHeight: number;
@@ -30,7 +28,8 @@ interface RoomChatListDerivedLayout {
 }
 
 interface UseRoomChatListResult {
-  listRef: MutableRefObject<FlatList<RoomChatMessage> | null>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  listRef: MutableRefObject<FlatList<any> | null>;
   isExpanded: boolean;
   keyboardHeight: number;
   layout: RoomChatListDerivedLayout;
@@ -52,7 +51,8 @@ export function useRoomChatList({
   const [isExpanded, setIsExpanded] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const listRef = useRef<FlatList<RoomChatMessage> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const listRef = useRef<FlatList<any> | null>(null);
   const dragStartYRef = useRef<number | null>(null);
 
   useEffect(() => {

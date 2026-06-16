@@ -2,10 +2,11 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RoomMomentState } from "@micboxx/contracts";
+import { env } from "@/config/env";
 import { useAuth } from "@/features/auth/provider";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
 import { ArtistDropInBanner } from "@/features/rooms/components/ArtistDropInBanner";
@@ -52,7 +53,7 @@ export default function AlbumRoomScreen() {
     albumQuery.data?.album.artist?.displayName?.trim() ||
     albumQuery.data?.album.artist?.username?.trim() ||
     "Artist";
-  const canShowComposerSupport = capabilities?.can_show_support === true && !room.isCurrentUserBlocked;
+  const canShowComposerSupport = env.roomSupportEnabled && capabilities?.can_show_support === true && !room.isCurrentUserBlocked;
   const composerSupportDisabled =
     capabilities?.can_send_support !== true
     || (room.supportBalance?.available_amount_cents ?? 0) < 100;
@@ -70,8 +71,51 @@ export default function AlbumRoomScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={[styles.loading, { padding: 20, paddingTop: 60 }]}>
-           <Skeleton width="100%" height={300} borderRadius={16} />
+        {/* Header row */}
+        <View style={styles.skeletonHeader}>
+          <Skeleton width={38} height={38} borderRadius={19} />
+          <Skeleton width={60} height={16} borderRadius={8} />
+          <Skeleton width={52} height={24} borderRadius={12} />
+        </View>
+        {/* Stage: cover art */}
+        <View style={styles.skeletonStage}>
+          <Skeleton width={138} height={138} borderRadius={24} />
+          {/* Release title */}
+          <View style={styles.skeletonTitleBlock}>
+            <Skeleton width="72%" height={38} borderRadius={8} />
+            <Skeleton width="48%" height={38} borderRadius={8} />
+          </View>
+          {/* Artist line */}
+          <Skeleton width={140} height={14} borderRadius={7} />
+          {/* Waveform area */}
+          <View style={styles.skeletonWaveformBlock}>
+            <Skeleton width={100} height={10} borderRadius={5} />
+            <Skeleton width="100%" height={52} borderRadius={8} />
+            <Skeleton width={160} height={14} borderRadius={7} />
+          </View>
+        </View>
+        {/* Presence chip */}
+        <View style={styles.skeletonPresence}>
+          <Skeleton width={200} height={38} borderRadius={19} />
+        </View>
+        {/* Chat area */}
+        <View style={styles.skeletonChat}>
+          <View style={styles.skeletonChatRow}>
+            <Skeleton width={28} height={28} borderRadius={14} />
+            <Skeleton width="60%" height={14} borderRadius={7} />
+          </View>
+          <View style={styles.skeletonChatRow}>
+            <Skeleton width={28} height={28} borderRadius={14} />
+            <Skeleton width="45%" height={14} borderRadius={7} />
+          </View>
+          <View style={styles.skeletonChatRow}>
+            <Skeleton width={28} height={28} borderRadius={14} />
+            <Skeleton width="55%" height={14} borderRadius={7} />
+          </View>
+        </View>
+        {/* Composer bar */}
+        <View style={styles.skeletonComposer}>
+          <Skeleton width="100%" height={48} borderRadius={24} />
         </View>
       </SafeAreaView>
     );
@@ -157,6 +201,7 @@ export default function AlbumRoomScreen() {
           blocked={room.isCurrentUserBlocked}
           submitting={room.isSubmittingChat}
           onSend={room.sendChat}
+          onDelete={room.deleteChat}
           pinnedMessageText={room.pinnedMessage?.isPinned ? room.pinnedMessage.messageText : null}
           canReact={capabilities?.can_react === true && !room.isCurrentUserBlocked}
           canShowReactions={capabilities?.can_show_reactions === true}
@@ -380,6 +425,55 @@ const styles = StyleSheet.create({
     maxWidth: 320,
   },
   loading: { flex: 1 },
+  skeletonHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 12,
+  },
+  skeletonStage: {
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    gap: 0,
+  },
+  skeletonTitleBlock: {
+    alignItems: "center",
+    gap: 6,
+    marginTop: 22,
+    marginBottom: 12,
+    width: "100%",
+  },
+  skeletonWaveformBlock: {
+    width: "100%",
+    maxWidth: 390,
+    alignItems: "center",
+    gap: 8,
+    marginTop: 22,
+  },
+  skeletonPresence: {
+    alignItems: "center",
+    marginTop: 6,
+    paddingHorizontal: 20,
+  },
+  skeletonChat: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 16,
+  },
+  skeletonChatRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  skeletonComposer: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    paddingTop: 8,
+  },
   backdropImage: {
     ...StyleSheet.absoluteFillObject,
     opacity: 0.34,

@@ -1,7 +1,7 @@
-import { memo, useEffect, useRef } from "react";
-import { Animated, Image, StyleSheet, Text, View } from "react-native";
+import { memo, useEffect, useRef, useState } from "react";
+import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { VerifiedBadge } from "@micboxx/ui";
+import { BottomActionSheet, VerifiedBadge } from "@micboxx/ui";
 import type { RoomChatMessage } from "@micboxx/contracts";
 import { tokens } from "@micboxx/theme";
 
@@ -12,6 +12,7 @@ interface ChatBubbleProps {
   currentUserUuid: string | null;
   opacity?: number;
   compactWithPrevious?: boolean;
+  onDelete?: (messageId: string) => Promise<void>;
 }
 
 function ChatBubbleBase({
@@ -19,6 +20,7 @@ function ChatBubbleBase({
   currentUserUuid,
   opacity = 1,
   compactWithPrevious = false,
+  onDelete,
 }: ChatBubbleProps) {
   const isArtist = item.senderRole === "artist";
   const isElevated =
@@ -26,6 +28,7 @@ function ChatBubbleBase({
     || item.senderRole === "moderator"
     || item.senderRole === "admin";
   const isOwn = currentUserUuid != null && item.senderUid === currentUserUuid;
+  const [sheetVisible, setSheetVisible] = useState(false);
 
   const senderName = isOwn
     ? "You"
@@ -43,68 +46,93 @@ function ChatBubbleBase({
     }).start();
   }, [entrance]);
 
-  return (
-    <Animated.View
-      style={[
-        styles.bubbleRow,
-        compactWithPrevious ? styles.bubbleRowGrouped : styles.bubbleRowSeparated,
-        {
-          opacity,
-          transform: [
-            {
-              translateY: entrance.interpolate({
-                inputRange: [0, 1],
-                outputRange: [8, 0],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
-      {compactWithPrevious ? (
-        <View style={styles.avatarSpacer} />
-      ) : item.senderAvatarUrl ? (
-        <Image
-          source={{ uri: item.senderAvatarUrl }}
-          style={[styles.avatar, isArtist && styles.avatarArtist]}
-        />
-      ) : (
-        <View
-          style={[
-            styles.avatarInitials,
-            isArtist && styles.avatarArtist,
-            { backgroundColor: getAvatarBackground(item.senderUid) },
-          ]}
-        >
-          <Text style={styles.avatarInitialsText}>
-            {getInitials(item.senderDisplayName, item.senderUsername)}
-          </Text>
-        </View>
-      )}
+  const canDelete = isOwn && typeof onDelete === "function";
 
-      <View style={styles.bubbleCopy}>
-        {!compactWithPrevious && (
-          <View style={styles.bubbleMeta}>
-            <Text
-              numberOfLines={1}
-              style={[styles.bubbleAuthor, isOwn && styles.bubbleAuthorOwn]}
-            >
-              {senderName}
+  return (
+    <>
+      <Animated.View
+        style={[
+          styles.bubbleRow,
+          compactWithPrevious ? styles.bubbleRowGrouped : styles.bubbleRowSeparated,
+          {
+            opacity,
+            transform: [
+              {
+                translateY: entrance.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [8, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        {compactWithPrevious ? (
+          <View style={styles.avatarSpacer} />
+        ) : item.senderAvatarUrl ? (
+          <Image
+            source={{ uri: item.senderAvatarUrl }}
+            style={[styles.avatar, isArtist && styles.avatarArtist]}
+          />
+        ) : (
+          <View
+            style={[
+              styles.avatarInitials,
+              isArtist && styles.avatarArtist,
+              { backgroundColor: getAvatarBackground(item.senderUid) },
+            ]}
+          >
+            <Text style={styles.avatarInitialsText}>
+              {getInitials(item.senderDisplayName, item.senderUsername)}
             </Text>
-            {isElevated && <VerifiedBadge size={10} />}
-            <Text style={styles.bubbleTime}>{formatTime(item.createdAt)}</Text>
           </View>
         )}
-        <View
-          style={[
-            styles.bubble,
-            isElevated && !isOwn && styles.bubbleArtist,
-          ]}
-        >
-          <Text style={styles.bubbleBody}>{item.messageText}</Text>
+
+        <View style={styles.bubbleCopy}>
+          {!compactWithPrevious && (
+            <View style={styles.bubbleMeta}>
+              <Text
+                numberOfLines={1}
+                style={[styles.bubbleAuthor, isOwn && styles.bubbleAuthorOwn]}
+              >
+                {senderName}
+              </Text>
+              {isElevated && <VerifiedBadge size={10} />}
+              <Text style={styles.bubbleTime}>{formatTime(item.createdAt)}</Text>
+            </View>
+          )}
+          <Pressable
+            onLongPress={canDelete ? () => setSheetVisible(true) : undefined}
+            delayLongPress={400}
+          >
+            <View
+              style={[
+                styles.bubble,
+                isElevated && !isOwn && styles.bubbleArtist,
+              ]}
+            >
+              <Text style={styles.bubbleBody}>{item.messageText}</Text>
+            </View>
+          </Pressable>
         </View>
-      </View>
-    </Animated.View>
+      </Animated.View>
+
+      {canDelete && (
+        <BottomActionSheet
+          visible={sheetVisible}
+          onClose={() => setSheetVisible(false)}
+          items={[
+            {
+              key: "delete",
+              label: "Delete message",
+              icon: "trash-outline",
+              tone: "destructive",
+              onPress: () => void onDelete(item.messageId),
+            },
+          ]}
+        />
+      )}
+    </>
   );
 }
 

@@ -601,7 +601,7 @@ export function useMobileRoom(input: {
   }, [refreshClock, room?.id]);
 
   const sendChat = useCallback(
-    async (messageText: string) => {
+    async (messageText: string): Promise<string | null> => {
       if (!room?.id) throw new Error('Room is not ready.');
       if (!capabilities?.can_comment || isCurrentUserMuted || isCurrentUserBlocked) {
         throw new Error(
@@ -612,11 +612,11 @@ export function useMobileRoom(input: {
       }
 
       const trimmed = messageText.trim();
-      if (!trimmed) return;
+      if (!trimmed) return null;
       setIsSubmittingChat(true);
       setInteractionError(null);
       try {
-        await sendRoomChatMessage({
+        const result = await sendRoomChatMessage({
           roomId: room.id,
           messageText: trimmed,
           releasePositionSeconds: clockState?.release_position_seconds ?? null,
@@ -625,6 +625,7 @@ export function useMobileRoom(input: {
           loopNumber: clockState?.loop_number ?? null,
           accessToken,
         });
+        return result.message_id ?? null;
       } catch (chatError) {
         const message = normalizeRoomErrorMessage(chatError, 'Unable to send Room message.');
         setInteractionError(message);
@@ -643,6 +644,40 @@ export function useMobileRoom(input: {
     ],
   );
 
+  const deleteChat = useCallback(
+    async (messageId: string) => {
+      if (!room?.id) throw new Error('Room is not ready.');
+      const webBaseUrl = env.micboxxWebBaseUrl;
+      if (!webBaseUrl) throw new Error('Web base URL is not configured.');
+      try {
+        const response = await fetch(
+          `${webBaseUrl.replace(/\/$/, '')}/api/public/rooms/${encodeURIComponent(String(room.id))}/chat/messages/${encodeURIComponent(messageId)}/delete`,
+          {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              accept: 'application/json',
+              ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+            },
+            body: JSON.stringify({}),
+          },
+        );
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({})) as { error?: { message?: string } };
+          throw new ApiError(
+            payload?.error?.message ?? `Request failed with ${response.status}.`,
+            response.status,
+          );
+        }
+      } catch (deleteError) {
+        const message = normalizeRoomErrorMessage(deleteError, 'Unable to delete message.');
+        setInteractionError(message);
+        throw new Error(message);
+      }
+    },
+    [accessToken, room?.id],
+  );
+
   const react = useCallback(
     async (reactionType: RoomReactionType) => {
       if (!room?.id) throw new Error('Room is not ready.');
@@ -650,14 +685,22 @@ export function useMobileRoom(input: {
         throw new Error('Reactions are not available in this Room.');
       }
       try {
+        const reactionId =
+          typeof crypto !== 'undefined' && 'randomUUID' in crypto
+            ? crypto.randomUUID()
+            : `rx-${Date.now()}-${Math.random().toString(36).slice(2)}`;
         await sendRoomReaction({
           roomId: room.id,
-          reactionId: createSessionId(),
+          reactionId,
           reactionType,
           actorVisibility: 'anonymous',
           accessToken,
         });
       } catch (reactionError) {
+        // Let the caller handle rate-limit UX; don't surface it as a room error.
+        if (reactionError instanceof ApiError && reactionError.status === 429) {
+          throw reactionError;
+        }
         const message = normalizeRoomErrorMessage(reactionError, 'Unable to send Room reaction.');
         setInteractionError(message);
         throw new Error(message);
@@ -827,6 +870,7 @@ export function useMobileRoom(input: {
       await refreshClock({ syncPlayback: true });
     }, [refreshClock]),
     sendChat,
+    deleteChat,
     react,
     submitQuestion,
     voteQuestion,

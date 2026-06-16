@@ -215,6 +215,21 @@ export async function sendRoomChatMessage(input: {
   });
 }
 
+export async function deleteRoomChatMessage(input: {
+  roomId: number | string;
+  messageId: string;
+  accessToken?: string | null;
+}): Promise<Record<string, never>> {
+  return apiFetch<Record<string, never>>(
+    `/v1/rooms/${encodeURIComponent(String(input.roomId))}/chat/messages/${encodeURIComponent(input.messageId)}/delete`,
+    {
+      method: 'POST',
+      accessToken: await getAccessToken(input.accessToken),
+      body: JSON.stringify({}),
+    },
+  );
+}
+
 export async function reportRoomChatMessage(input: {
   roomId: number | string;
   messageId: string;

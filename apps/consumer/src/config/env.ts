@@ -95,6 +95,11 @@ export const env = {
     expoExtra.EXPO_PUBLIC_MOMENT_HARDENING_ENABLED,
     true,
   ),
+  roomSupportEnabled: firstBoolean(
+    process.env.EXPO_PUBLIC_ROOM_SUPPORT_ENABLED,
+    expoExtra.EXPO_PUBLIC_ROOM_SUPPORT_ENABLED,
+    false,
+  ),
 } as const;
 
 export function hasLiveDrupalConfig(): boolean {

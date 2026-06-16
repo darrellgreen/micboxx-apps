@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
@@ -25,6 +25,19 @@ import { getMessageOpacity, shouldCompactWithPrevious } from "@micboxx/utils";
 import { useRoomChatList } from "./useRoomChatList";
 
 const MESSAGE_LIMIT = 60;
+const PENDING_CONFIRM_TIMEOUT_MS = 8_000;
+const PENDING_MATCH_WINDOW_MS = 120_000;
+
+interface PendingChatEntry {
+  id: string;
+  text: string;
+  createdAtMs: number;
+  status: 'pending' | 'failed';
+}
+
+type ChatListItem =
+  | { kind: 'message'; item: RoomChatMessage }
+  | { kind: 'pending'; item: PendingChatEntry };
 
 interface RoomChatPanelProps {
   messages: RoomChatMessage[];
@@ -33,7 +46,8 @@ interface RoomChatPanelProps {
   muted: boolean;
   blocked: boolean;
   submitting: boolean;
-  onSend: (message: string) => Promise<void>;
+  onSend: (message: string) => Promise<string | null>;
+  onDelete?: (messageId: string) => Promise<void>;
   pinnedMessageText?: string | null;
   variant?: "card" | "overlay";
   canReact?: boolean;
@@ -56,6 +70,7 @@ export function RoomChatPanel({
   blocked,
   submitting,
   onSend,
+  onDelete,
   pinnedMessageText,
   variant = "card",
   canReact = false,
@@ -73,6 +88,44 @@ export function RoomChatPanel({
   const { height: windowHeight } = useWindowDimensions();
 
   const [draft, setDraft] = useState("");
+  const [pendingMessages, setPendingMessages] = useState<PendingChatEntry[]>([]);
+  const pendingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    setPendingMessages((prev) =>
+      prev.filter((pending) => {
+        const isConfirmed = messages.some(
+          (msg) =>
+            (msg.messageId === pending.id || msg.id === pending.id) ||
+            (msg.messageText.trim() === pending.text.trim() &&
+              Math.abs(
+                (typeof msg.createdAt === 'number' ? msg.createdAt * 1000 :
+                  msg.createdAt && typeof msg.createdAt === 'object' && 'toMillis' in msg.createdAt
+                    ? (msg.createdAt as { toMillis: () => number }).toMillis()
+                    : 0
+                ) - pending.createdAtMs,
+              ) <= PENDING_MATCH_WINDOW_MS),
+        );
+        if (isConfirmed) {
+          const t = pendingTimeoutsRef.current.get(pending.id);
+          if (t) {
+            clearTimeout(t);
+            pendingTimeoutsRef.current.delete(pending.id);
+          }
+          return false;
+        }
+        return true;
+      }),
+    );
+  }, [messages]);
+
+  useEffect(() => {
+    const timeouts = pendingTimeoutsRef.current;
+    return () => {
+      for (const t of timeouts.values()) clearTimeout(t);
+      timeouts.clear();
+    };
+  }, []);
 
   const disabled = !canComment || muted || blocked || submitting;
   const requiresSignIn = !currentUserUuid && !muted && !blocked && !canComment;
@@ -97,7 +150,7 @@ export function RoomChatPanel({
     onTouchStart,
     onTouchEnd,
   } = useRoomChatList({
-    messageCount: visibleMessages.length,
+    messageCount: visibleMessages.length + pendingMessages.length,
     windowHeight,
     insetsBottom: insets.bottom + 60,
     hasPinnedMessage: Boolean(pinnedMessageText),
@@ -120,7 +173,21 @@ export function RoomChatPanel({
     if (!text || disabled) return;
     setDraft("");
     try {
-      await onSend(text);
+      const messageId = await onSend(text);
+      const id = messageId ?? `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const createdAtMs = Date.now();
+      const pending: PendingChatEntry = { id, text, createdAtMs, status: 'pending' };
+
+      if (!messages.some((msg) => msg.messageId === id || msg.id === id)) {
+        setPendingMessages((prev) => [...prev, pending]);
+        const t = setTimeout(() => {
+          setPendingMessages((prev) =>
+            prev.map((p) => p.id === id && p.status === 'pending' ? { ...p, status: 'failed' } : p),
+          );
+          pendingTimeoutsRef.current.delete(id);
+        }, PENDING_CONFIRM_TIMEOUT_MS);
+        pendingTimeoutsRef.current.set(id, t);
+      }
     } catch {
       // interactionError handled by caller
     }
@@ -225,7 +292,7 @@ export function RoomChatPanel({
           style={StyleSheet.absoluteFillObject}
         />
       </MaskedView>
-      {visibleMessages.length > 0 && (
+      {(visibleMessages.length > 0 || pendingMessages.length > 0) && (
         <MaskedView
           pointerEvents="box-none"
           style={[
@@ -249,10 +316,13 @@ export function RoomChatPanel({
           }
         >
           <View style={styles.listShell}>
-            <FlatList
+            <FlatList<ChatListItem>
               ref={listRef}
-              data={visibleMessages}
-              keyExtractor={(item) => item.id}
+              data={[
+                ...visibleMessages.map((item): ChatListItem => ({ kind: 'message', item })),
+                ...pendingMessages.map((item): ChatListItem => ({ kind: 'pending', item })),
+              ]}
+              keyExtractor={(entry) => entry.kind === 'pending' ? `pending:${entry.item.id}` : entry.item.id}
               scrollEnabled={isExpanded}
               showsVerticalScrollIndicator={false}
               style={styles.list}
@@ -262,15 +332,27 @@ export function RoomChatPanel({
               onScrollEndDrag={onScrollEndDrag}
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
-              renderItem={({ item, index }) => {
-                const compactWithPrevious = shouldCompactWithPrevious(visibleMessages, index);
+              renderItem={({ item: entry, index }) => {
+                if (entry.kind === 'pending') {
+                  const isFailed = entry.item.status === 'failed';
+                  return (
+                    <View style={styles.pendingBubble}>
+                      <Text style={styles.pendingText}>{entry.item.text}</Text>
+                      <Text style={[styles.pendingStatus, isFailed && styles.pendingStatusFailed]}>
+                        {isFailed ? 'Not confirmed. Check connection.' : 'Sending...'}
+                      </Text>
+                    </View>
+                  );
+                }
 
+                const compactWithPrevious = shouldCompactWithPrevious(visibleMessages, index);
                 return (
                   <ChatBubble
-                    item={item}
+                    item={entry.item}
                     currentUserUuid={currentUserUuid}
                     compactWithPrevious={compactWithPrevious}
                     opacity={getMessageOpacity(index, visibleMessages.length, isExpanded)}
+                    onDelete={onDelete}
                   />
                 );
               }}
@@ -548,6 +630,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
+  },
+
+  pendingBubble: {
+    alignSelf: "flex-end",
+    marginTop: 12,
+    marginRight: 4,
+    maxWidth: "80%",
+    borderRadius: 13,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    opacity: 0.72,
+  },
+  pendingText: {
+    color: "rgba(238,238,242,0.92)",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  pendingStatus: {
+    marginTop: 4,
+    fontSize: 10,
+    color: "rgba(238,238,242,0.42)",
+  },
+  pendingStatusFailed: {
+    color: "rgba(255,90,90,0.82)",
   },
 
   card: {

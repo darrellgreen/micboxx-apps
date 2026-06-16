@@ -11,6 +11,7 @@ export function RoomPresenceBar({ presence }: { presence: RoomPresenceSummaryEnt
         entry.actorType === "user"
         && entry.visibility === "visible",
     )
+    .sort((a, b) => a.uid < b.uid ? -1 : a.uid > b.uid ? 1 : 0)
     .slice(0, 3);
 
   const presenceLabel =
