@@ -55,8 +55,14 @@ export interface SubscriptionState {
   customerInfo: CustomerInfo | null;
   /** The currently active RevenueCat offering (contains available packages). */
   currentOffering: PurchasesOffering | null;
+  /** True once RevenueCat is configured. */
+  isSdkReady: boolean;
+  /** True when RevenueCat is logged in as the current Drupal user UUID. */
+  isIdentityBound: boolean;
   /** Manually refresh customer info from RevenueCat servers. */
   refreshCustomerInfo: () => Promise<void>;
+  /** Ensure RevenueCat purchases are attributed to the current Drupal user UUID. */
+  ensureIdentityBound: () => Promise<void>;
   /** Log the user in to RevenueCat (call after sign-in with your app user ID). */
   loginUser: (appUserId: string) => Promise<void>;
   /** Log the user out of RevenueCat (call on sign-out). */
@@ -70,7 +76,10 @@ const SubscriptionContext = createContext<SubscriptionState>({
   isPro: false,
   customerInfo: null,
   currentOffering: null,
+  isSdkReady: false,
+  isIdentityBound: false,
   refreshCustomerInfo: async () => {},
+  ensureIdentityBound: async () => {},
   loginUser: async () => {},
   logoutUser: async () => {},
 });
@@ -124,6 +133,8 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
 
   const { session } = useAuth();
   const sessionUserUuid = session?.user.uuid ?? null;
+  const isIdentityBound =
+    Boolean(sessionUserUuid) && boundUserUuid.current === sessionUserUuid;
 
   // Configure the SDK once on mount.
   useEffect(() => {
@@ -207,6 +218,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
   const loginUser = useCallback(async (appUserId: string) => {
     try {
       const { customerInfo: info } = await Purchases.logIn(appUserId);
+      boundUserUuid.current = appUserId;
       setCustomerInfo(info);
     } catch (err) {
       if (__DEV__) {
@@ -222,6 +234,7 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
   const logoutUser = useCallback(async () => {
     try {
       const info = await Purchases.logOut();
+      boundUserUuid.current = null;
       setCustomerInfo(info);
     } catch (err) {
       if (__DEV__) {
@@ -229,6 +242,22 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
       }
     }
   }, []);
+
+  const ensureIdentityBound = useCallback(async () => {
+    if (!isSdkReady) {
+      throw new Error('RevenueCat is still starting. Try again in a moment.');
+    }
+
+    if (!sessionUserUuid) {
+      throw new Error('Sign in before starting a purchase.');
+    }
+
+    if (boundUserUuid.current === sessionUserUuid) {
+      return;
+    }
+
+    await loginUser(sessionUserUuid);
+  }, [isSdkReady, loginUser, sessionUserUuid]);
 
   // Bind the RevenueCat identity to the MicBoxx account. Purchases made while
   // bound restore across devices and stay attributable to the Drupal user UUID
@@ -238,10 +267,8 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
     if (!isSdkReady) return;
 
     if (sessionUserUuid && boundUserUuid.current !== sessionUserUuid) {
-      boundUserUuid.current = sessionUserUuid;
       void loginUser(sessionUserUuid);
     } else if (!sessionUserUuid && boundUserUuid.current) {
-      boundUserUuid.current = null;
       void logoutUser();
     }
   }, [isSdkReady, sessionUserUuid, loginUser, logoutUser]);
@@ -255,7 +282,10 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
         isPro,
         customerInfo,
         currentOffering,
+        isSdkReady,
+        isIdentityBound,
         refreshCustomerInfo,
+        ensureIdentityBound,
         loginUser,
         logoutUser,
       }}

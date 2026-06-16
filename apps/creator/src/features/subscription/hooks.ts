@@ -45,10 +45,11 @@ function isPurchaseCancelledError(err: unknown): boolean {
  *   if (result.purchased) { // user is now Pro }
  */
 export function usePresentPaywall() {
-  const { refreshCustomerInfo } = useSubscription();
+  const { ensureIdentityBound, refreshCustomerInfo } = useSubscription();
 
   return useCallback(async (): Promise<PresentPaywallResult> => {
     try {
+      await ensureIdentityBound();
       const result = await RevenueCatUI.presentPaywall();
 
       // Refresh customer info so the provider's isPro flag updates immediately.
@@ -68,7 +69,7 @@ export function usePresentPaywall() {
       }
       return { purchased: false, customerInfo: null };
     }
-  }, [refreshCustomerInfo]);
+  }, [ensureIdentityBound, refreshCustomerInfo]);
 }
 
 /**
@@ -80,10 +81,11 @@ export function usePresentPaywall() {
  *   const result = await presentPaywallIfNeeded();
  */
 export function usePresentPaywallIfNeeded() {
-  const { refreshCustomerInfo } = useSubscription();
+  const { ensureIdentityBound, refreshCustomerInfo } = useSubscription();
 
   return useCallback(async (): Promise<PresentPaywallResult> => {
     try {
+      await ensureIdentityBound();
       const result = await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: ENTITLEMENT_PRO,
       });
@@ -104,7 +106,7 @@ export function usePresentPaywallIfNeeded() {
       }
       return { purchased: false, customerInfo: null };
     }
-  }, [refreshCustomerInfo]);
+  }, [ensureIdentityBound, refreshCustomerInfo]);
 }
 
 /**
@@ -116,11 +118,12 @@ export function usePresentPaywallIfNeeded() {
  *   const result = await purchasePlan("monthly");
  */
 export function usePurchasePlan() {
-  const { currentOffering, refreshCustomerInfo } = useSubscription();
+  const { currentOffering, ensureIdentityBound, refreshCustomerInfo } = useSubscription();
 
   return useCallback(
     async (storeProductId: string): Promise<PresentPaywallResult> => {
       try {
+        await ensureIdentityBound();
         const offering = currentOffering ?? (await Purchases.getOfferings()).current ?? null;
         const pkg = offering?.availablePackages.find(
           (p) => p.product?.identifier === storeProductId || p.identifier === storeProductId,
@@ -158,7 +161,7 @@ export function usePurchasePlan() {
         return { purchased: false, customerInfo: null };
       }
     },
-    [currentOffering, refreshCustomerInfo],
+    [currentOffering, ensureIdentityBound, refreshCustomerInfo],
   );
 }
 
@@ -174,10 +177,11 @@ export function usePurchasePlan() {
  *   await presentCustomerCenter();
  */
 export function usePresentCustomerCenter() {
-  const { refreshCustomerInfo } = useSubscription();
+  const { ensureIdentityBound, refreshCustomerInfo } = useSubscription();
 
   return useCallback(async (): Promise<void> => {
     try {
+      await ensureIdentityBound();
       await RevenueCatUI.presentCustomerCenter();
       // Refresh after dismissal in case the user restored or cancelled.
       await refreshCustomerInfo();
@@ -186,7 +190,7 @@ export function usePresentCustomerCenter() {
         console.warn('[RevenueCat] presentCustomerCenter error:', err);
       }
     }
-  }, [refreshCustomerInfo]);
+  }, [ensureIdentityBound, refreshCustomerInfo]);
 }
 
 // ─── restore ──────────────────────────────────────────────────────────────────
@@ -200,10 +204,11 @@ export function usePresentCustomerCenter() {
  *   const isPro = await restorePurchases();
  */
 export function useRestorePurchases() {
-  const { refreshCustomerInfo } = useSubscription();
+  const { ensureIdentityBound, refreshCustomerInfo } = useSubscription();
 
   return useCallback(async (): Promise<boolean> => {
     try {
+      await ensureIdentityBound();
       const info = await Purchases.restorePurchases();
       await refreshCustomerInfo();
       return info.entitlements.active[ENTITLEMENT_PRO] !== undefined;
@@ -213,5 +218,5 @@ export function useRestorePurchases() {
       }
       return false;
     }
-  }, [refreshCustomerInfo]);
+  }, [ensureIdentityBound, refreshCustomerInfo]);
 }
