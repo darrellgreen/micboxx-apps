@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+
 import { AnimatedPressable, Screen } from "@micboxx/ui";
 import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
 import { useAuth } from "@/features/auth/provider";
@@ -26,13 +27,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { session, signOut } = useAuth();
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      router.replace("/(tabs)/home");
-    } catch {
-      // Ignore sign-out errors
-    }
+  const handleSignOut = () => {
+    void signOut();
   };
 
   const navItems: AccountNavItem[] = [

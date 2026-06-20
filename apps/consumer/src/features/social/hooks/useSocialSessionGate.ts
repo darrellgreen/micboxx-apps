@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { isFirebaseConfigured } from "@/config/firebase";
 import { useAuth } from "@/features/auth/provider";
@@ -34,15 +34,10 @@ export function useSocialSessionGate({
     Boolean(viewerUid && firebaseUid === viewerUid);
   const authPending = Boolean(session && viewerUid && !socialReady);
 
-  useEffect(() => {
-    if (
-      configured &&
-      session?.accessToken &&
-      (socialStatus === "idle" || socialStatus === "error")
-    ) {
-      void dispatch(authenticateFirebaseSocial());
-    }
-  }, [configured, dispatch, session?.accessToken, socialStatus]);
+  // Authentication is owned solely by SocialAuthGate. This gate only consumes
+  // social-auth state and reports readiness; it never auto-initiates
+  // authentication. `requireSocialSession` may still trigger one explicit,
+  // user-initiated attempt below.
 
   const clearInteractionError = useCallback(() => {
     setInteractionError(null);

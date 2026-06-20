@@ -29,7 +29,7 @@ export interface AuthState {
 
 const initialState: AuthState = {
   session: null,
-  isHydrating: false,
+  isHydrating: true,
   isSigningIn: false,
   error: null,
 };

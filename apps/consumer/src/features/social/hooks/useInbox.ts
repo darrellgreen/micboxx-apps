@@ -31,15 +31,9 @@ export function useInbox(maxItems = 40) {
       ? (socialError ?? "Unable to authenticate Firebase social.")
       : null;
 
-  useEffect(() => {
-    if (
-      firebaseConfigured &&
-      hasDrupalSession &&
-      (socialStatus === "idle" || socialStatus === "error")
-    ) {
-      void dispatch(authenticateFirebaseSocial());
-    }
-  }, [dispatch, firebaseConfigured, hasDrupalSession, socialStatus]);
+  // Authentication is owned solely by SocialAuthGate. This hook only consumes
+  // social-auth state; it never auto-initiates authentication. The `retry`
+  // callback below remains for explicit, user-initiated recovery.
 
   useEffect(() => {
     if (
