@@ -6,6 +6,8 @@ import type { PublicTrackSummary } from "@micboxx/contracts";
 import { resolveAlbumRoute } from "@micboxx/utils";
 import { tokens } from "@micboxx/theme";
 
+import { usePrefetch } from "@micboxx/api";
+
 interface AlbumItem {
   id: number;
   title: string;
@@ -51,6 +53,7 @@ export function NewMusicAlbums({
   onAlbumPress?: (albumSlug: string) => void;
 }) {
   const router = useRouter();
+  const prefetchAlbum = usePrefetch("getAlbumPage", { ifOlderThan: 300 });
   const albums = extractAlbums(tracks, limit);
 
   if (!albums.length) return null;
@@ -68,6 +71,11 @@ export function NewMusicAlbums({
             }
 
             router.push(resolveAlbumRoute(album) as never);
+          }}
+          onPressIn={() => {
+            if (album.slug) {
+              prefetchAlbum(album.slug);
+            }
           }}
         >
           <View style={s.artworkWrap}>

@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,8 +31,9 @@ export default function UserDetailScreen() {
   const progressValue = useSharedValue(0);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
-  const { data, isLoading, error } = useGetUserPageQuery(username ?? '', {
+  const { data, isLoading, isFetching, error } = useGetUserPageQuery(username ?? '', {
     skip: !username,
+    refetchOnMountOrArgChange: 300,
   });
 
   const user = data?.artist;
@@ -186,7 +187,15 @@ export default function UserDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={[styles.headerOverlay, { top: insets.top + 8 }]}>
-        <DetailRouteHeader title="Profile" fallbackRoute="/(tabs)/search" />
+        <DetailRouteHeader
+          title="Profile"
+          fallbackRoute="/(tabs)/search"
+          rightContent={
+            isFetching && !isLoading ? (
+              <ActivityIndicator size="small" color={tokens.colors.textSecondary} />
+            ) : undefined
+          }
+        />
       </View>
       <ScrollView
         style={styles.scroll}

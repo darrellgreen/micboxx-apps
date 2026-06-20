@@ -15,7 +15,7 @@ import Animated, {
 import { AnimatedPressable } from "@micboxx/ui";
 import type { PublicTrackSummary } from "@micboxx/contracts";
 import { resolveTrackRoute } from "@micboxx/utils";
-import { formatDuration } from "@micboxx/api";
+import { formatDuration, usePrefetch } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 
 import { AnimatedEQ } from "./AnimatedEQ";
@@ -44,6 +44,7 @@ export const TrackRow = React.memo(function TrackRow({
   rank?: number;
 }) {
   const router = useRouter();
+  const prefetchTrack = usePrefetch("getTrackPage", { ifOlderThan: 300 });
   const activeProgress = useSharedValue(active ? 1 : 0);
 
   useEffect(() => {
@@ -108,6 +109,11 @@ export const TrackRow = React.memo(function TrackRow({
         onPress={() => {
           router.push(resolveTrackRoute(track) as never);
         }}
+        onPressIn={() => {
+          if (track.slug) {
+            prefetchTrack(track.slug);
+          }
+        }}
         haptic="none"
         style={s.artWrap}
       >
@@ -127,6 +133,11 @@ export const TrackRow = React.memo(function TrackRow({
       <AnimatedPressable
         onPress={() => {
           router.push(resolveTrackRoute(track) as never);
+        }}
+        onPressIn={() => {
+          if (track.slug) {
+            prefetchTrack(track.slug);
+          }
         }}
         haptic="none"
         style={s.trackText}

@@ -9,6 +9,7 @@ import type { PublicArtistSummary } from "@micboxx/contracts";
 import { resolveUserRoute } from "@micboxx/utils";
 import { tokens } from "@micboxx/theme";
 import { useUserFollowState } from "@/features/social/hooks/useUserFollowState";
+import { usePrefetch } from "@micboxx/api";
 
 function resolveArtistImageUri(artist: PublicArtistSummary): string | null {
   const avatarUrl =
@@ -55,6 +56,7 @@ function resolveArtistMeta(artist: PublicArtistSummary): string | null {
 
 export function TrendingArtists({ artists }: { artists: PublicArtistSummary[] }) {
   const router = useRouter();
+  const prefetchArtist = usePrefetch("getArtistPage", { ifOlderThan: 300 });
 
   if (!artists.length) return null;
 
@@ -70,6 +72,11 @@ export function TrendingArtists({ artists }: { artists: PublicArtistSummary[] })
               key={a.id}
               style={s.artistCard}
               onPress={() => router.push(resolveUserRoute(a) as never)}
+              onPressIn={() => {
+                if (a.username) {
+                  prefetchArtist(a.username);
+                }
+              }}
             >
               <View style={s.artistImgWrap}>
                 <Image

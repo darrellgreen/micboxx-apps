@@ -63,10 +63,11 @@ export default function TrackDetailScreen() {
     [session],
   );
 
-  const { data, isLoading, error, refetch } = useGetTrackPageQuery(
+  const { data, isLoading, isFetching, error, refetch } = useGetTrackPageQuery(
     slug ?? "",
     {
       skip: !slug,
+      refetchOnMountOrArgChange: 300,
     },
   );
 
@@ -203,7 +204,18 @@ export default function TrackDetailScreen() {
     }
   }
 
-  const detailHeader = <AppHeader variant="detail" title="Track" fallbackRoute="/(tabs)/home" />;
+  const detailHeader = (
+    <AppHeader
+      variant="detail"
+      title="Track"
+      fallbackRoute="/(tabs)/home"
+      rightContent={
+        isFetching && !isLoading ? (
+          <ActivityIndicator size="small" color={tokens.colors.textSecondary} />
+        ) : undefined
+      }
+    />
+  );
 
   if (!slug) {
     return (

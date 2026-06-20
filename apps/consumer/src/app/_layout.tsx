@@ -31,9 +31,11 @@ import { PushProvider } from "@/features/push/PushProvider";
 import { registerPushBackgroundHandler } from "@/features/push/registerPushBackgroundHandler";
 import { SocialAuthGate } from "@/features/social/SocialAuthGate";
 import { store } from "@/store/store";
+import { setSession } from "@/features/auth/auth-slice";
 import { tokens } from "@micboxx/theme";
 import {
   configureMicboxxApi,
+  micboxxApi,
 } from "@micboxx/api";
 import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
@@ -56,8 +58,16 @@ configureMicboxxApi({
   webBaseUrl: env.micboxxWebBaseUrl,
   useFixtures: env.drupalBaseUrl.length === 0,
   getToken: async () => {
-    const session = await ensureFreshSession();
-    return session?.accessToken ?? null;
+    try {
+      const session = await ensureFreshSession();
+      return session?.accessToken ?? null;
+    } catch (error) {
+      if (isAuthSessionExpiredError(error)) {
+        store.dispatch(setSession(null));
+        store.dispatch(micboxxApi.util.resetApiState());
+      }
+      throw error;
+    }
   },
   isAuthSessionExpiredError,
 });

@@ -98,9 +98,11 @@ export default function PlaylistDetailScreen() {
   const {
     data: publicData,
     isLoading: isPublicLoading,
+    isFetching: isPublicFetching,
     error: publicError,
   } = useGetPlaylistPageQuery(slug ?? "", {
     skip: !slug,
+    refetchOnMountOrArgChange: 300,
   });
   const {
     data: dashboardPlaylist,
@@ -229,7 +231,15 @@ export default function PlaylistDetailScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ headerShown: false }} />
-      <DetailRouteHeader title="Playlist" fallbackRoute="/(tabs)/library" />
+      <DetailRouteHeader
+        title="Playlist"
+        fallbackRoute="/(tabs)/library"
+        rightContent={
+          isPublicFetching && !isPublicLoading ? (
+            <ActivityIndicator size="small" color={tokens.colors.textSecondary} />
+          ) : undefined
+        }
+      />
 
         <DetailHeroCard
           title={playlist.title}

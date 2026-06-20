@@ -4,6 +4,7 @@ import {
     type PayloadAction,
 } from "@reduxjs/toolkit";
 import { identifyUser, resetUser } from "@micboxx/analytics";
+import { micboxxApi } from "@micboxx/api";
 
 import type { MicboxxSession } from "@micboxx/contracts";
 import {
@@ -73,6 +74,7 @@ export const signOut = createAsyncThunk<
   const currentSession = thunkApi.getState().auth.session;
   await clearStoredSession();
   resetUser();
+  thunkApi.dispatch(micboxxApi.util.resetApiState());
   await revokeDrupalSession(currentSession);
 });
 

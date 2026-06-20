@@ -32,8 +32,9 @@ export default function AlbumDetailScreen() {
   const { session } = useAuth();
   const progressValue = useSharedValue(0);
 
-  const { data, isLoading, error, refetch } = useGetAlbumPageQuery(slug ?? "", {
+  const { data, isLoading, isFetching, error, refetch } = useGetAlbumPageQuery(slug ?? "", {
     skip: !slug,
+    refetchOnMountOrArgChange: 300,
   });
 
   const album = data?.album;
@@ -125,7 +126,15 @@ export default function AlbumDetailScreen() {
 
   return (
     <Screen scroll={true} noPaddingBottom noPaddingHorizontal header={<Stack.Screen options={{ headerShown: false }} />}>
-      <DetailRouteHeader title="Album" fallbackRoute="/(tabs)/home" />
+      <DetailRouteHeader
+        title="Album"
+        fallbackRoute="/(tabs)/home"
+        rightContent={
+          isFetching && !isLoading ? (
+            <ActivityIndicator size="small" color={tokens.colors.textSecondary} />
+          ) : undefined
+        }
+      />
       <View style={styles.page}>
 
         <DetailHeroCard

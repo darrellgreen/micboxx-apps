@@ -159,6 +159,7 @@ export const micboxxApi = createApi({
       },
     }),
     getDiscoverTracks: builder.query<PublicTrackList, void>({
+      keepUnusedDataFor: 300,
       async queryFn() {
         try {
           const data = await getDiscoverTracks();
@@ -173,6 +174,7 @@ export const micboxxApi = createApi({
       },
     }),
     getFeaturedTracks: builder.query<{ tracks: PublicTrackSummary[] }, void>({
+      keepUnusedDataFor: 300,
       async queryFn() {
         try {
           const data = await getFeaturedTracks(8);
@@ -187,6 +189,7 @@ export const micboxxApi = createApi({
       },
     }),
     getTrackPage: builder.query<PublicTrackPage, string>({
+      keepUnusedDataFor: 300,
       async queryFn(slug) {
         try {
           const data = await getTrackPage(slug);
@@ -201,6 +204,7 @@ export const micboxxApi = createApi({
       },
     }),
     getAlbumPage: builder.query<PublicAlbumPage, string>({
+      keepUnusedDataFor: 300,
       async queryFn(slug) {
         try {
           const data = await getAlbumPage(slug);
@@ -230,6 +234,7 @@ export const micboxxApi = createApi({
       },
     }),
     getPlaylistPage: builder.query<PublicPlaylistPage, string>({
+      keepUnusedDataFor: 300,
       async queryFn(slug) {
         try {
           const data = await getPlaylistPage(slug);
@@ -258,6 +263,7 @@ export const micboxxApi = createApi({
       },
     }),
     getPopularTracks: builder.query<{ tracks: PublicTrackSummary[] }, void>({
+      keepUnusedDataFor: 300,
       async queryFn() {
         try {
           const data = await getPopularTracks(7);
@@ -272,6 +278,7 @@ export const micboxxApi = createApi({
       },
     }),
     getPopularArtists: builder.query<{ artists: PublicArtistSummary[] }, void>({
+      keepUnusedDataFor: 300,
       async queryFn() {
         try {
           const data = await getPopularArtists(6);
@@ -286,6 +293,7 @@ export const micboxxApi = createApi({
       },
     }),
     getTrendingArtists: builder.query<{ artists: PublicArtistSummary[] }, void>({
+      keepUnusedDataFor: 300,
       async queryFn() {
         try {
           const data = await getTrendingArtists(3);
@@ -618,3 +626,4 @@ export const {
 } = micboxxApi;
 
 export const useGetUserPageQuery = useGetArtistPageQuery;
+export const usePrefetch = micboxxApi.usePrefetch;
