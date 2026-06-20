@@ -175,9 +175,17 @@ function isSessionStillFresh(session: MicboxxSession | null | undefined) {
   );
 }
 
+// Serialises concurrent refresh calls so only one hits the server at a time.
+// All callers awaiting during an in-flight refresh receive the same result.
+let refreshInFlight: Promise<MicboxxSession | null> | null = null;
+
 export async function ensureFreshSession(
   session?: MicboxxSession | null,
 ): Promise<MicboxxSession | null> {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
   const storedSession = await readStoredSession().catch(() => null);
   const candidate =
     storedSession &&
@@ -194,6 +202,16 @@ export async function ensureFreshSession(
     return candidate;
   }
 
+  refreshInFlight = performTokenRefresh(candidate).finally(() => {
+    refreshInFlight = null;
+  });
+
+  return refreshInFlight;
+}
+
+async function performTokenRefresh(
+  candidate: MicboxxSession,
+): Promise<MicboxxSession | null> {
   const response = await fetch(`${env.drupalBaseUrl}/oauth/token`, {
     method: "POST",
     headers: {
@@ -203,7 +221,7 @@ export async function ensureFreshSession(
     body: new URLSearchParams({
       grant_type: "refresh_token",
       client_id: env.drupalOAuthClientId,
-      refresh_token: candidate.refreshToken,
+      refresh_token: candidate.refreshToken!,
       ...(env.drupalOAuthScope ? { scope: env.drupalOAuthScope } : null),
     }).toString(),
   });
@@ -229,10 +247,11 @@ export async function ensureFreshSession(
     );
   }
 
-  const user = await getDashboardBootstrapUser(payload.access_token);
+  // Write the new token immediately so it is not lost if the user-profile
+  // fetch below fails. The user object will be refreshed on the next
+  // successful profile fetch; stale user data is acceptable.
   const nextSession: MicboxxSession = {
     ...candidate,
-    user,
     accessToken: payload.access_token,
     refreshToken:
       typeof payload.refresh_token === "string"
@@ -242,7 +261,16 @@ export async function ensureFreshSession(
   };
 
   await writeStoredSession(nextSession);
-  return nextSession;
+
+  // Best-effort user profile refresh — failure does not invalidate the token.
+  try {
+    const user = await getDashboardBootstrapUser(payload.access_token);
+    const sessionWithUser: MicboxxSession = { ...nextSession, user };
+    await writeStoredSession(sessionWithUser);
+    return sessionWithUser;
+  } catch {
+    return nextSession;
+  }
 }
 
 async function getDashboardBootstrapUser(

@@ -214,8 +214,35 @@ export async function readStoredSession(): Promise<MicboxxSession | null> {
   }
 
   if (!cacheRaw) {
-    await clearStoredSession();
-    return null;
+    // AsyncStorage can be evicted by the OS while SecureStore survives.
+    // Don't wipe credentials — return the session marked as expired so
+    // ensureFreshSession will use the refresh token to rebuild it, including
+    // re-fetching the user profile via getDashboardBootstrapUser.
+    const legacy = await migrateLegacySessionIfPresent();
+    if (legacy) return legacy;
+    return {
+      user: {
+        id: 0,
+        uuid: '',
+        username: '',
+        displayName: '',
+        email: '',
+        roles: [],
+        permissions: {
+          canUploadTracks: false,
+          canAdministerTracks: false,
+          canSellCatalog: false,
+          canCreatePlaylists: false,
+          canAdministerPlaylists: false,
+          canCreateAlbums: false,
+          canAdministerAlbums: false,
+        },
+      },
+      entitlements: null,
+      accessToken,
+      refreshToken: refreshToken ?? null,
+      accessTokenExpiresAt: 0,
+    };
   }
 
   try {
