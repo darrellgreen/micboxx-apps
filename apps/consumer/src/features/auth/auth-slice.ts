@@ -52,6 +52,7 @@ export const signIn = createAsyncThunk<
 >("auth/signIn", async (_input, thunkApi) => {
   try {
     const nextSession = await signInWithDrupal();
+    thunkApi.dispatch(micboxxApi.util.resetApiState());
     await writeStoredSession(nextSession);
     identifyUser(nextSession.user.uuid);
     return nextSession;

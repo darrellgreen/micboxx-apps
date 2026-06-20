@@ -223,10 +223,10 @@ const eb = StyleSheet.create({
 });
 
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { session, isHydrating } = useAuth();
+  const { session, isHydrating, isSigningIn } = useAuth();
   const pathname = usePathname();
 
-  if (isHydrating) {
+  if (isHydrating || isSigningIn) {
     return (
       <View style={{ flex: 1, backgroundColor: tokens.colors.bgApp, alignItems: "center", justifyContent: "center" }}>
         <ActivityIndicator size="large" color={tokens.colors.accent} />
@@ -239,17 +239,17 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!session && !isAuthRoute) {
     return (
-      <>
+      <React.Fragment key="unauthenticated">
         {children}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: tokens.colors.bgApp, alignItems: "center", justifyContent: "center", zIndex: 9999 }]}>
           <ActivityIndicator size="large" color={tokens.colors.accent} />
           <Redirect href="/sign-in" />
         </View>
-      </>
+      </React.Fragment>
     );
   }
 
-  return <>{children}</>;
+  return <React.Fragment key={session?.user?.uuid ?? "authenticated"}>{children}</React.Fragment>;
 }
 
 function RootLayout() {
