@@ -145,7 +145,7 @@ function trackToRecent(track: PublicTrackSummary): LibraryRecentlyPlayedTrack {
     title: track.title,
     artistName: track.artist?.displayName ?? 'Unknown artist',
     albumTitle: track.album?.title ?? null,
-    artwork: track.artworkUrl,
+    artwork: normalizeMediaUrl(env.drupalBaseUrl, track.artworkUrl),
     playedAt: 0,
     isOwned: false,
   };
@@ -155,13 +155,14 @@ function trackPageToSaved(page: PublicTrackPage, savedAt: number): LibrarySavedT
   return {
     id: String(page.track.id),
     uuid: page.track.uuid,
+    slug: page.track.slug,
     type: 'track',
     title: page.track.title,
     artistId: page.track.artist ? String(page.track.artist.id) : '',
     artistName: page.track.artist?.displayName ?? 'Unknown artist',
     albumId: page.track.album ? String(page.track.album.id) : null,
     albumTitle: page.track.album?.title ?? null,
-    artwork: page.track.artworkUrl,
+    artwork: normalizeMediaUrl(env.drupalBaseUrl, page.track.artworkUrl),
     savedAt,
     isOwned: false,
   };

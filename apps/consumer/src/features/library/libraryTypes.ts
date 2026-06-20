@@ -38,6 +38,7 @@ export interface LibrarySavedAlbum {
 export interface LibrarySavedTrack {
   id: string;
   uuid: string;
+  slug: string;
   type: "track";
   title: string;
   artistId: string;

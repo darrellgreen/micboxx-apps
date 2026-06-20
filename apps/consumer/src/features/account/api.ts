@@ -152,6 +152,29 @@ export async function uploadUserAvatar(
   return safeParseProfileResponse(response, "Unable to upload avatar image.");
 }
 
+export async function deleteAccount(accessToken: string, session?: MicboxxSession | null): Promise<void> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await authedFetch(accessToken, session, `${env.drupalBaseUrl}/v1/dashboard/user/account`, {
+      method: "DELETE",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok && response.status !== 408) {
+      const payload = await response.json().catch(() => ({})) as { error?: { message?: string } };
+      throw new Error(payload?.error?.message ?? `Delete account failed (${response.status})`);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function uploadUserCover(
   accessToken: string,
   fileUri: string,

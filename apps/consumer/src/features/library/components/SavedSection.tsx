@@ -20,7 +20,7 @@ export function SavedSection({ savedTracks, unavailableDomains }: SavedSectionPr
           meta="Saved track"
           artwork={track.artwork}
           isLast={i === savedTracks.length - 1}
-          onPress={() => router.push(`/track/${encodeURIComponent(track.uuid)}` as never)}
+          onPress={() => router.push(`/track/${encodeURIComponent(track.slug)}` as never)}
         />
       ))}
       {savedTracks.length === 0 ? (

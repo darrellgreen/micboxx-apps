@@ -29,8 +29,8 @@ export function SettingsNotificationsPanel({
         label="Push notifications"
         subtitle={
           canManagePushNotifications
-            ? "Control notification delivery for this signed-in account."
-            : "Sign in to manage notification delivery for your account."
+            ? "Push notifications on this device"
+            : "Sign in to manage push notifications for this device."
         }
         value={pushNotifications}
         onValueChange={() => onPushNotificationsChange(!pushNotifications)}

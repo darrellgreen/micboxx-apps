@@ -28,6 +28,7 @@ interface AccountPreferencesContextValue {
   isSavingAccountPreferences: boolean;
   error: string | null;
   canManagePushNotifications: boolean;
+  pushPreferenceReady: boolean;
   setPushNotificationsEnabled: (enabled: boolean) => Promise<void>;
   setAutoplayPreviewEnabled: (enabled: boolean) => Promise<void>;
   setExplicitFilterEnabled: (enabled: boolean) => Promise<void>;
@@ -49,6 +50,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
   const [isSavingAccountPreferences, setIsSavingAccountPreferences] =
     useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hydratedUserUuid, setHydratedUserUuid] = useState<string | null>(null);
 
   const preferencesRef = useRef(preferences);
   useEffect(() => {
@@ -60,6 +62,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
 
     async function hydratePreferences() {
       setIsHydrating(true);
+      setHydratedUserUuid(null);
       setError(null);
 
       try {
@@ -79,6 +82,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
           ...localPreferences,
           ...accountPreferences,
         });
+        setHydratedUserUuid(currentUserUuid);
       } catch (nextError) {
         if (isCancelled) {
           return;
@@ -215,6 +219,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
       isSavingAccountPreferences,
       error,
       canManagePushNotifications: Boolean(currentUserUuid),
+      pushPreferenceReady: Boolean(currentUserUuid) && hydratedUserUuid === currentUserUuid,
       setPushNotificationsEnabled,
       setAutoplayPreviewEnabled,
       setExplicitFilterEnabled,
@@ -222,6 +227,7 @@ export function AccountPreferencesProvider({ children }: PropsWithChildren) {
     [
       currentUserUuid,
       error,
+      hydratedUserUuid,
       isHydrating,
       isSavingAccountPreferences,
       isSavingLocalPreferences,

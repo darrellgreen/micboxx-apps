@@ -347,6 +347,24 @@ function RootLayout() {
                             }}
                           />
                           <Stack.Screen
+                            name="account/index"
+                            options={{
+                              headerShown: false,
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
+                            name="account/help"
+                            options={{
+                              headerShown: false,
+                              contentStyle: {
+                                backgroundColor: tokens.colors.bgApp,
+                              },
+                            }}
+                          />
+                          <Stack.Screen
                             name="recently-played"
                             options={{
                               headerShown: false,

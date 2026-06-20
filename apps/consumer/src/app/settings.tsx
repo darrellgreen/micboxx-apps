@@ -37,6 +37,14 @@ export default function SettingsScreen() {
 
   const navItems: AccountNavItem[] = [
     {
+      key: "account",
+      label: "Account & Security",
+      subtitle: "Email, sign-in, and account management",
+      icon: "person-circle-outline",
+      route: "/account",
+      requiresAuth: true,
+    },
+    {
       key: "settings-notifications",
       label: "Notification Settings",
       subtitle: "Control push notification delivery preferences",

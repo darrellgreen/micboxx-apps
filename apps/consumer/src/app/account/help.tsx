@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Linking, StyleSheet, Text, View } from "react-native";
-import { AnimatedPressable, AppHeader, Screen } from "@micboxx/ui";
-import { getHelpCenterUrl, getSupportUrl } from "@/shared/api/external-links";
+import { AnimatedPressable, Screen } from "@micboxx/ui";
+import { DetailRouteHeader } from "@/components/navigation/DetailRouteHeader";
+import { getHelpCenterUrl, getSupportUrl } from "@/features/account/external-links";
 import { tokens } from "@micboxx/theme";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -34,13 +35,18 @@ function LinkRow({ icon, label, subtitle, onPress, isLast = false }: LinkRowProp
   );
 }
 
-export default function SupportScreen() {
+export default function HelpScreen() {
   const helpUrl = getHelpCenterUrl();
   const supportUrl = getSupportUrl();
 
   return (
     <Screen
-      header={<AppHeader variant="detail" title="Support" fallbackRoute="/(tabs)/dashboard" />}
+      header={
+        <DetailRouteHeader
+          title="Help & Support"
+          fallbackRoute="/settings"
+        />
+      }
       contentContainerStyle={s.scroll}
     >
       <View style={s.navSection}>

@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -31,6 +31,9 @@ export default function AlbumRoomScreen() {
   const slug = normalizeParam(params.slug);
   const albumQuery = useGetAlbumPageQuery(slug ?? "", { skip: !slug });
   const playerQueue = usePlayerQueue();
+  const playerQueueRef = useRef(playerQueue);
+  playerQueueRef.current = playerQueue;
+
   const room = useMobileRoom({
     releaseIdentifier: slug ?? null,
     releaseTracks: albumQuery.data?.tracks ?? [],
@@ -38,11 +41,12 @@ export default function AlbumRoomScreen() {
 
   useEffect(() => {
     return () => {
-      if (playerQueue.context?.id?.startsWith("room:")) {
-        void playerQueue.clearQueue();
+      const pq = playerQueueRef.current;
+      if (pq.context?.id?.startsWith("room:")) {
+        void pq.clearQueue();
       }
     };
-  }, [playerQueue.clearQueue, playerQueue.context?.id]);
+  }, []);
 
   const capabilities = room.capabilities;
   const artworkUrl = albumQuery.data?.album.artworkUrl ?? null;
