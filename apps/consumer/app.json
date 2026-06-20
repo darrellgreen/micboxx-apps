@@ -78,7 +78,6 @@
           "organization": "fever-llc"
         }
       ],
-      "@sentry/react-native",
       "expo-asset",
       "@react-native-firebase/app",
       "./plugins/withFirebaseModularHeaders",

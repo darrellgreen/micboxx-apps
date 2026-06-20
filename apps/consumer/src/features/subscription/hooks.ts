@@ -2,7 +2,7 @@ import Purchases, { type CustomerInfo } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useCallback } from 'react';
 
-import { ENTITLEMENT_LISTENER, useSubscription } from '@/features/subscription/provider';
+import { ENTITLEMENT_LISTENER, OFFERING_IDENTIFIER, useSubscription } from '@/features/subscription/provider';
 
 // ─── types ───────────────────────────────────────────────────────────────────
 
@@ -80,7 +80,11 @@ export function usePurchasePlan() {
     async (storeProductId: string): Promise<PresentPaywallResult> => {
       try {
         await ensureIdentityBound();
-        const offering = currentOffering ?? (await Purchases.getOfferings()).current ?? null;
+        const allOfferings = await Purchases.getOfferings().catch(() => null);
+        const offering = currentOffering
+          ?? allOfferings?.all[OFFERING_IDENTIFIER]
+          ?? allOfferings?.current
+          ?? null;
         const pkg = offering?.availablePackages.find(
           (p) => p.product?.identifier === storeProductId || p.identifier === storeProductId,
         );

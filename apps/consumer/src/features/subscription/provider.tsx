@@ -30,6 +30,7 @@ import { useAuth } from '@/features/auth/provider';
 // ─── constants ───────────────────────────────────────────────────────────────
 
 const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
+export const OFFERING_IDENTIFIER = 'micboxx_premium';
 
 export const ENTITLEMENT_LISTENER = 'MicBoxx Premium';
 
@@ -114,10 +115,9 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
     async function configure() {
       try {
         if (!REVENUECAT_API_KEY) {
-          if (__DEV__) {
-            console.warn('[RevenueCat] EXPO_PUBLIC_REVENUECAT_IOS_KEY is not set — subscriptions disabled.');
-          }
-          return;
+          throw new Error(
+            'EXPO_PUBLIC_REVENUECAT_IOS_KEY is not set. Add it to .env before building.',
+          );
         }
 
         if (__DEV__) {
@@ -133,7 +133,9 @@ export const SubscriptionProvider: FC<PropsWithChildren> = ({ children }) => {
         ]);
 
         setCustomerInfo(info);
-        setCurrentOffering(offeringsResult?.current ?? null);
+        setCurrentOffering(
+          offeringsResult?.all[OFFERING_IDENTIFIER] ?? offeringsResult?.current ?? null,
+        );
       } catch (err) {
         if (__DEV__) {
           console.warn('[RevenueCat] configure failed:', err);
