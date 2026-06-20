@@ -100,6 +100,10 @@ export const env = {
     expoExtra.EXPO_PUBLIC_ROOM_SUPPORT_ENABLED,
     false,
   ),
+  revenueCatIosKey: firstString(
+    process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
+    expoExtra.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
+  ),
 } as const;
 
 export function hasLiveDrupalConfig(): boolean {

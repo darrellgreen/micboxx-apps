@@ -45,4 +45,8 @@ app-example
 
 .env.local
 
-.env.local
+# StoreKit local testing config (contains local pricing — not for source control)
+*.storekit
+
+# Sentry — auth token is injected via SENTRY_AUTH_TOKEN env var
+sentry.properties

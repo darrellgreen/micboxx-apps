@@ -19,6 +19,7 @@ import { AppBackdrop, ToastProvider } from "@micboxx/ui";
 import { env } from "@/config/env";
 import { AccountPreferencesProvider } from "@/features/account/provider";
 import { AuthProvider, useAuth } from "@/features/auth/provider";
+import { SubscriptionProvider } from "@/features/subscription/provider";
 import { MiniPlayer } from "@/features/player/components/MiniPlayer";
 import { usePlayerQueue } from "@/features/player/hooks/usePlayerQueue";
 import { PlayerProvider } from "@/features/player/provider";
@@ -246,6 +247,7 @@ function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <AuthProvider>
+          <SubscriptionProvider>
           <AccountPreferencesProvider>
             <SocialAuthGate />
             <PushProvider />
@@ -367,6 +369,7 @@ function RootLayout() {
               </PlayerSheetProvider>
             </PlayerProvider>
           </AccountPreferencesProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </Provider>
     </GestureHandlerRootView>

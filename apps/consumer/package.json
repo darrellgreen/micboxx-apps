@@ -82,6 +82,8 @@
     "react-native-svg": "15.12.1",
     "react-native-track-player": "^4.1.2",
     "react-native-web": "~0.21.0",
+    "react-native-purchases": "10.2.2",
+    "react-native-purchases-ui": "10.2.2",
     "react-redux": "^9.2.0"
   },
   "devDependencies": {

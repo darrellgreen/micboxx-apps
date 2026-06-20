@@ -9,10 +9,14 @@ import {
   Text,
   View,
 } from "react-native";
+import {
+  usePurchasePlan,
+  usePresentCustomerCenter,
+  useRestorePurchases,
+} from "@/features/subscription/hooks";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AnimatedPressable, Skeleton } from "@micboxx/ui";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
-import { env } from "@/config/env";
 import type {
   EntitlementCapabilityDetail,
   EntitlementState,
@@ -72,11 +76,6 @@ const TIER_PALETTE: Record<
   },
 };
 
-function joinWebUrl(path: string): string | null {
-  if (!env.micboxxWebBaseUrl) return null;
-  const base = env.micboxxWebBaseUrl.replace(/\/$/, "");
-  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
-}
 
 function resolveTierKey(machineKey: string): TierKey {
   const k = machineKey.toLowerCase();
@@ -185,6 +184,10 @@ export default function PremiumScreen() {
   const { session } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
 
+  const purchasePlan = usePurchasePlan();
+  const presentCustomerCenter = usePresentCustomerCenter();
+  const restorePurchases = useRestorePurchases();
+
   const { data: allPlans = [], isLoading: plansLoading } =
     useGetPublicSubscriptionPlansQuery();
 
@@ -216,11 +219,6 @@ export default function PremiumScreen() {
     return !isAnnualPlan(p);
   });
 
-  const manageUrl = joinWebUrl("/account/subscription");
-
-  const openUrl = (url: string | null) => {
-    if (url) void import("react-native").then(rn => rn.Linking.openURL(url));
-  };
 
   if (loading) {
     return (
@@ -394,7 +392,7 @@ export default function PremiumScreen() {
               </View>
             ) : null}
             <AnimatedPressable
-              onPress={() => openUrl(manageUrl)}
+              onPress={() => void presentCustomerCenter()}
               style={styles.manageButton}
             >
               <Text style={styles.manageButtonLabel}>Manage subscription</Text>
@@ -417,7 +415,6 @@ export default function PremiumScreen() {
                   billingPeriod === "annual" && isAnnualPlan(plan)
                     ? computeSavingsPct(plan, allPlans)
                     : null;
-                const upgradeUrl = joinWebUrl("/subscription");
                 return (
                   <PlanCard
                     key={plan.uuid}
@@ -427,7 +424,7 @@ export default function PremiumScreen() {
                     isCurrent={isCurrent}
                     savingsPct={savingsPct}
                     allPlans={allPlans}
-                    onUpgrade={() => openUrl(upgradeUrl)}
+                    onUpgrade={() => plan.storeProductId ? void purchasePlan(plan.storeProductId) : undefined}
                     isSignedIn={!!session}
                     onSignIn={() => router.push("/sign-in")}
                   />
@@ -468,6 +465,13 @@ export default function PremiumScreen() {
               onPress={() => void Linking.openURL("https://micboxx.com/privacy")}
             >
               Privacy Policy
+            </Text>
+            <Text style={styles.footerDot}>·</Text>
+            <Text
+              style={styles.footerLink}
+              onPress={() => void restorePurchases()}
+            >
+              Restore Purchases
             </Text>
           </View>
         </View>
@@ -610,29 +614,17 @@ function PlanCard({
                 {isSignedIn ? "Your current access" : "Explore free"}
               </Text>
             </AnimatedPressable>
-            {!isSignedIn ? (
-              <Text style={styles.redirectNote}>
-                Sign in on the website to continue.
-              </Text>
-            ) : null}
           </>
         ) : !isCurrent ? (
-          <>
-            <AnimatedPressable
-              onPress={onUpgrade}
-              scaleValue={0.93}
-              style={[styles.planCta, { backgroundColor: palette.color }]}
-            >
-              <Text style={styles.planCtaLabel}>
-                {isSignedIn ? "Upgrade" : "Get started"}
-              </Text>
-            </AnimatedPressable>
-            <Text style={styles.redirectNote}>
-              Clicking on {"\u201C"}Get Started{"\u201D"} will take you to our
-              website to finish the sign-up process and activate your
-              subscription.
+          <AnimatedPressable
+            onPress={isSignedIn ? onUpgrade : onSignIn}
+            scaleValue={0.93}
+            style={[styles.planCta, { backgroundColor: palette.color }]}
+          >
+            <Text style={styles.planCtaLabel}>
+              {isSignedIn ? "Upgrade" : "Get started"}
             </Text>
-          </>
+          </AnimatedPressable>
         ) : null}
       </View>
     </View>
@@ -869,13 +861,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   freeCtaLabel: { fontSize: 13, fontWeight: "600" },
-  redirectNote: {
-    marginTop: 8,
-    textAlign: "center",
-    color: tokens.colors.textSecondary,
-    fontSize: 11,
-    lineHeight: 16,
-  },
 
   guestRow: {
     flexDirection: "row",
