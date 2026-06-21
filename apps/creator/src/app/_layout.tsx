@@ -20,6 +20,7 @@ import {
 } from "@micboxx/api";
 import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
+import { expireSession } from "@/features/auth/auth-slice";
 import { PlatformAnalyticsAdapter } from "@/features/analytics/adapter";
 import { AccountPreferencesProvider } from "@/features/account/provider";
 import { SubscriptionProvider } from "@/features/subscription/provider";
@@ -40,8 +41,15 @@ configureMicboxxApi({
   webBaseUrl: env.micboxxWebBaseUrl,
   useFixtures: env.drupalBaseUrl.length === 0,
   getToken: async () => {
-    const session = await ensureFreshSession();
-    return session?.accessToken ?? null;
+    try {
+      const session = await ensureFreshSession();
+      return session?.accessToken ?? null;
+    } catch (error) {
+      if (isAuthSessionExpiredError(error)) {
+        void store.dispatch(expireSession());
+      }
+      throw error;
+    }
   },
   isAuthSessionExpiredError,
 });

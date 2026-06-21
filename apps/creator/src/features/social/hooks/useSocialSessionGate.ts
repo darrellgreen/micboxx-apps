@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { isFirebaseConfigured } from "@/config/firebase";
 import { useAuth } from "@/features/auth/provider";
-import { authenticateFirebaseSocial } from "@/features/social/social-auth-slice";
+import { retrySocialAuth } from "@/features/social/social-auth-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 interface RequireSocialSessionOptions {
@@ -34,15 +34,10 @@ export function useSocialSessionGate({
     Boolean(viewerUid && firebaseUid === viewerUid);
   const authPending = Boolean(session && viewerUid && !socialReady);
 
-  useEffect(() => {
-    if (
-      configured &&
-      session?.accessToken &&
-      (socialStatus === "idle" || socialStatus === "error")
-    ) {
-      void dispatch(authenticateFirebaseSocial());
-    }
-  }, [configured, dispatch, session?.accessToken, socialStatus]);
+  // Authentication is owned solely by SocialAuthGate. This gate only consumes
+  // social-auth state and reports readiness; it never auto-initiates
+  // authentication. `requireSocialSession` may still trigger one explicit,
+  // user-initiated attempt below.
 
   const clearInteractionError = useCallback(() => {
     setInteractionError(null);
@@ -81,7 +76,8 @@ export function useSocialSessionGate({
           session.accessToken &&
           (socialStatus === "idle" || socialStatus === "error")
         ) {
-          await dispatch(authenticateFirebaseSocial());
+          // Centralized recovery — never dispatches authentication directly.
+          await dispatch(retrySocialAuth());
         }
 
         setInteractionError(

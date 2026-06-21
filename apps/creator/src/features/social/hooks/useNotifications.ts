@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { authenticateFirebaseSocial } from "@/features/social/social-auth-slice";
+import { retrySocialAuth } from "@/features/social/social-auth-slice";
 import { useMicboxxNotifications } from "@micboxx/notifications";
 import { FirebaseNotificationAdapter } from "../FirebaseNotificationAdapter";
 import { useCallback } from "react";
@@ -15,7 +15,8 @@ export function useNotifications(maxItems = 40) {
   const hasDrupalSession = Boolean(accessToken);
 
   const handleRetryAuth = useCallback(() => {
-    void dispatch(authenticateFirebaseSocial());
+    // Centralized recovery — never dispatches authentication directly.
+    void dispatch(retrySocialAuth());
   }, [dispatch]);
 
   return useMicboxxNotifications({

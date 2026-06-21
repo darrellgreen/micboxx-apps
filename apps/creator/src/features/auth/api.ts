@@ -4,7 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 
 import { env, hasLiveDrupalConfig } from "@/config/env";
 import type { MicboxxSession, MicboxxSessionUser } from "@micboxx/contracts";
-import { readStoredSession, writeStoredSession } from "@/features/auth/storage";
+import { clearStoredSession, readStoredSession, writeStoredSession } from "@/features/auth/storage";
 
 export class AuthCancelledError extends Error {
   constructor(message = "Sign-in was cancelled.") {
@@ -30,6 +30,32 @@ export function isAuthSessionExpiredError(
   error: unknown,
 ): error is AuthSessionExpiredError {
   return error instanceof AuthSessionExpiredError;
+}
+
+export class AuthRefreshNetworkError extends Error {
+  constructor(message = "Network error during refresh.") {
+    super(message);
+    this.name = "AuthRefreshNetworkError";
+  }
+}
+
+export function isAuthRefreshNetworkError(
+  error: unknown,
+): error is AuthRefreshNetworkError {
+  return error instanceof AuthRefreshNetworkError;
+}
+
+export class AuthRefreshResponseError extends Error {
+  constructor(message = "Response error during refresh.") {
+    super(message);
+    this.name = "AuthRefreshResponseError";
+  }
+}
+
+export function isAuthRefreshResponseError(
+  error: unknown,
+): error is AuthRefreshResponseError {
+  return error instanceof AuthRefreshResponseError;
 }
 
 // ─── Deep-link fallback ────────────────────────────────────────────────────
@@ -113,8 +139,42 @@ function isSessionStillFresh(session: MicboxxSession | null | undefined) {
   );
 }
 
+let currentSessionGeneration = 0;
+
+export function getSessionGeneration(): number {
+  return currentSessionGeneration;
+}
+
+export function incrementSessionGeneration(): number {
+  currentSessionGeneration += 1;
+  return currentSessionGeneration;
+}
+
+function fingerprintAccessToken(token: string): string {
+  let hash = 0;
+  for (let index = 0; index < token.length; index += 1) {
+    hash = (hash * 31 + token.charCodeAt(index)) | 0;
+  }
+  return `fp_${(hash >>> 0).toString(16)}`;
+}
+
+function isInvalidRefreshTokenResponse(payload: {
+  error_description?: string;
+  error?: string;
+} | null): boolean {
+  const error = `${payload?.error ?? ""} ${payload?.error_description ?? ""}`.toLowerCase();
+  return (
+    error.includes("invalid_grant") ||
+    error.includes("refresh token") ||
+    error.includes("invalid refresh")
+  );
+}
+
+const refreshInFlightMap = new Map<string, Promise<MicboxxSession>>();
+
 export async function ensureFreshSession(
   session?: MicboxxSession | null,
+  options?: { force?: boolean },
 ): Promise<MicboxxSession | null> {
   const storedSession = await readStoredSession().catch(() => null);
   const candidate =
@@ -124,7 +184,11 @@ export async function ensureFreshSession(
       ? storedSession
       : (session ?? null);
 
-  if (!candidate || !hasLiveDrupalConfig() || isSessionStillFresh(candidate)) {
+  if (!candidate || !hasLiveDrupalConfig()) {
+    return candidate;
+  }
+
+  if (!options?.force && isSessionStillFresh(candidate)) {
     return candidate;
   }
 
@@ -132,19 +196,85 @@ export async function ensureFreshSession(
     return candidate;
   }
 
-  const response = await fetch(`${env.drupalBaseUrl}/oauth/token`, {
-    method: "POST",
-    headers: {
-      accept: "application/json",
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      client_id: env.drupalOAuthClientId,
-      refresh_token: candidate.refreshToken,
-      ...(env.drupalOAuthScope ? { scope: env.drupalOAuthScope } : null),
-    }).toString(),
-  });
+  const sessionKey = `${candidate.user.uuid}:${fingerprintAccessToken(candidate.refreshToken)}`;
+  const startGeneration = currentSessionGeneration;
+  const startUuid = candidate.user.uuid;
+  const startToken = candidate.accessToken;
+
+  let refreshPromise = refreshInFlightMap.get(sessionKey);
+  if (!refreshPromise) {
+    refreshPromise = performTokenRefresh(candidate).finally(() => {
+      refreshInFlightMap.delete(sessionKey);
+    });
+    refreshInFlightMap.set(sessionKey, refreshPromise);
+  }
+
+  let refreshed: MicboxxSession;
+  try {
+    refreshed = await refreshPromise;
+  } catch (error) {
+    const currentStored = await readStoredSession().catch(() => null);
+    const hasSessionChanged =
+      currentSessionGeneration !== startGeneration ||
+      !currentStored ||
+      currentStored.user.uuid !== startUuid ||
+      currentStored.accessToken !== startToken;
+
+    if (hasSessionChanged) {
+      return currentStored;
+    }
+
+    if (isAuthSessionExpiredError(error)) {
+      await clearStoredSession().catch(() => undefined);
+    }
+    throw error;
+  }
+
+  const currentStored = await readStoredSession().catch(() => null);
+  const hasSessionChanged =
+    currentSessionGeneration !== startGeneration ||
+    !currentStored ||
+    currentStored.user.uuid !== startUuid ||
+    (currentStored.accessToken !== startToken &&
+      (!refreshed || currentStored.accessToken !== refreshed.accessToken));
+
+  if (hasSessionChanged) {
+    return currentStored;
+  }
+
+  if (refreshed) {
+    if (options?.force && refreshed.accessToken === startToken) {
+      await clearStoredSession().catch(() => undefined);
+      throw new AuthSessionExpiredError();
+    }
+    await writeStoredSession(refreshed);
+  }
+  return refreshed;
+}
+
+async function performTokenRefresh(
+  candidate: MicboxxSession,
+): Promise<MicboxxSession> {
+  let response: Response;
+  try {
+    response = await fetch(`${env.drupalBaseUrl}/oauth/token`, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: env.drupalOAuthClientId,
+        refresh_token: candidate.refreshToken!,
+        ...(env.drupalOAuthScope ? { scope: env.drupalOAuthScope } : null),
+      }).toString(),
+    });
+  } catch (error) {
+    throw new AuthRefreshNetworkError(
+      error instanceof Error ? error.message : "Network request failed during token refresh."
+    );
+  }
 
   const payload = (await response.json().catch(() => null)) as {
     access_token?: string;
@@ -155,15 +285,25 @@ export async function ensureFreshSession(
   } | null;
 
   if (!response.ok || typeof payload?.access_token !== "string") {
-    throw new AuthSessionExpiredError(
+    if (isInvalidRefreshTokenResponse(payload)) {
+      throw new AuthSessionExpiredError();
+    }
+
+    throw new AuthRefreshResponseError(
       payload?.error_description ??
         payload?.error ??
-        "Your MicBoxx sign-in expired. Sign in again to load creator analytics.",
+        "Your MicBoxx sign-in expired. Sign in again to load creator analytics."
     );
   }
 
-  const user = await getDashboardBootstrapUser(payload.access_token);
-  const nextSession: MicboxxSession = {
+  let user = candidate.user;
+  try {
+    user = await getDashboardBootstrapUser(payload.access_token);
+  } catch {
+    // Stale user data is acceptable; bootstrap failure does not invalidate token.
+  }
+
+  return {
     ...candidate,
     user,
     accessToken: payload.access_token,
@@ -173,9 +313,6 @@ export async function ensureFreshSession(
         : candidate.refreshToken,
     accessTokenExpiresAt: Date.now() + (payload.expires_in ?? 300) * 1000,
   };
-
-  await writeStoredSession(nextSession);
-  return nextSession;
 }
 
 async function getDashboardBootstrapUser(

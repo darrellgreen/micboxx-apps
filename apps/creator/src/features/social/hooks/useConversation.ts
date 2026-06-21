@@ -10,7 +10,7 @@ import {
     readDirectConversation,
     readDirectMessage,
 } from "@/features/social/firestore";
-import { authenticateFirebaseSocial } from "@/features/social/social-auth-slice";
+import { retrySocialAuth } from "@/features/social/social-auth-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export function useConversation(conversationId: string | null) {
@@ -39,20 +39,6 @@ export function useConversation(conversationId: string | null) {
     : socialStatus === "error"
       ? (socialError ?? "Unable to authenticate Firebase social.")
       : null;
-
-  useEffect(() => {
-    if (fixtureMode) {
-      return;
-    }
-
-    if (
-      firebaseConfigured &&
-      hasDrupalSession &&
-      (socialStatus === "idle" || socialStatus === "error")
-    ) {
-      void dispatch(authenticateFirebaseSocial());
-    }
-  }, [dispatch, firebaseConfigured, fixtureMode, hasDrupalSession, socialStatus]);
 
   useEffect(() => {
     if (
@@ -134,7 +120,7 @@ export function useConversation(conversationId: string | null) {
       hasDrupalSession &&
       (socialStatus === "error" || socialStatus === "idle")
     ) {
-      void dispatch(authenticateFirebaseSocial());
+      void dispatch(retrySocialAuth());
       return;
     }
 
