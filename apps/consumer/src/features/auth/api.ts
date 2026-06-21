@@ -181,6 +181,7 @@ let refreshInFlight: Promise<MicboxxSession | null> | null = null;
 
 export async function ensureFreshSession(
   session?: MicboxxSession | null,
+  options?: { force?: boolean },
 ): Promise<MicboxxSession | null> {
   if (refreshInFlight) {
     return refreshInFlight;
@@ -194,7 +195,15 @@ export async function ensureFreshSession(
       ? storedSession
       : (session ?? null);
 
-  if (!candidate || isSessionStillFresh(candidate)) {
+  if (!candidate) {
+    return candidate;
+  }
+
+  // `force` performs a real refresh even when the access token is not yet
+  // locally expired — needed when the server has rejected a token the client
+  // still considers fresh (a social-auth 401). Everything else (single-flight
+  // serialization, invalid-grant handling) is unchanged.
+  if (!options?.force && isSessionStillFresh(candidate)) {
     return candidate;
   }
 

@@ -7,7 +7,7 @@ import {
     getUserConversationItemsCollection,
     readUserConversationInboxItem,
 } from "@/features/social/firestore";
-import { authenticateFirebaseSocial } from "@/features/social/social-auth-slice";
+import { retrySocialAuth } from "@/features/social/social-auth-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export function useInbox(maxItems = 40) {
@@ -91,7 +91,9 @@ export function useInbox(maxItems = 40) {
       hasDrupalSession &&
       (socialStatus === "error" || socialStatus === "idle")
     ) {
-      void dispatch(authenticateFirebaseSocial());
+      // Centralized recovery (refresh-then-authenticate). Never dispatches
+      // authentication directly — SocialAuthGate remains the owner.
+      void dispatch(retrySocialAuth());
       return;
     }
 

@@ -10,7 +10,7 @@ import {
     readDirectConversation,
     readDirectMessage,
 } from "@/features/social/firestore";
-import { authenticateFirebaseSocial } from "@/features/social/social-auth-slice";
+import { retrySocialAuth } from "@/features/social/social-auth-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export function useConversation(conversationId: string | null) {
@@ -117,7 +117,9 @@ export function useConversation(conversationId: string | null) {
       hasDrupalSession &&
       (socialStatus === "error" || socialStatus === "idle")
     ) {
-      void dispatch(authenticateFirebaseSocial());
+      // Centralized recovery (refresh-then-authenticate). Never dispatches
+      // authentication directly — SocialAuthGate remains the owner.
+      void dispatch(retrySocialAuth());
       return;
     }
 

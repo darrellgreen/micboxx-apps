@@ -56,5 +56,5 @@ jest.mock('react-native-track-player', () => ({
   useActiveTrack: jest.fn(),
 }));
 
-jest.mock('react-native-worklets-core', () => {});
-jest.mock('react-native-worklets', () => {});
+jest.mock('react-native-worklets-core', () => ({}), { virtual: true });
+jest.mock('react-native-worklets', () => ({}), { virtual: true });

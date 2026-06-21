@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 
 import { isFirebaseConfigured } from "@/config/firebase";
 import { useAuth } from "@/features/auth/provider";
-import { authenticateFirebaseSocial } from "@/features/social/social-auth-slice";
+import { retrySocialAuth } from "@/features/social/social-auth-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 interface RequireSocialSessionOptions {
@@ -76,7 +76,8 @@ export function useSocialSessionGate({
           session.accessToken &&
           (socialStatus === "idle" || socialStatus === "error")
         ) {
-          await dispatch(authenticateFirebaseSocial());
+          // Centralized recovery — never dispatches authentication directly.
+          await dispatch(retrySocialAuth());
         }
 
         setInteractionError(
