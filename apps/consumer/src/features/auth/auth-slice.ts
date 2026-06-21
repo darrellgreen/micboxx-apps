@@ -8,6 +8,7 @@ import { micboxxApi } from "@micboxx/api";
 
 import type { MicboxxSession } from "@micboxx/contracts";
 import {
+    incrementSessionGeneration,
     isAuthCancelledError,
     revokeDrupalSession,
     signInWithDrupal,
@@ -37,6 +38,7 @@ const initialState: AuthState = {
 export const hydrateAuthSession = createAsyncThunk<MicboxxSession | null>(
   "auth/hydrateAuthSession",
   async () => {
+    incrementSessionGeneration();
     const session = await readStoredSession();
     if (session?.user.uuid) {
       identifyUser(session.user.uuid);
@@ -51,6 +53,7 @@ export const signIn = createAsyncThunk<
   { rejectValue: string }
 >("auth/signIn", async (_input, thunkApi) => {
   try {
+    incrementSessionGeneration();
     const nextSession = await signInWithDrupal();
     thunkApi.dispatch(micboxxApi.util.resetApiState());
     await writeStoredSession(nextSession);
@@ -72,6 +75,7 @@ export const signOut = createAsyncThunk<
   void,
   { state: { auth: AuthState } }
 >("auth/signOut", async (_input, thunkApi) => {
+  incrementSessionGeneration();
   const currentSession = thunkApi.getState().auth.session;
   await clearStoredSession();
   resetUser();

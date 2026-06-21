@@ -24,7 +24,7 @@ jest.mock('../engine/adapter', () => ({
     subscribe: jest.fn().mockReturnValue(jest.fn()),
     play: jest.fn().mockResolvedValue(undefined),
     pause: jest.fn().mockResolvedValue(undefined),
-    add: jest.fn().mockResolvedValue(undefined),
+    addToQueue: jest.fn().mockResolvedValue(undefined),
     reset: jest.fn().mockResolvedValue(undefined),
   },
 }));
@@ -88,7 +88,7 @@ describe('PlayerProvider Concurrency', () => {
       resolveStorage(JSON.stringify({ queue: [{ id: 'old-track' }], activeTrackId: 'old-track' }));
     });
 
-    expect(trackPlayerAdapter.add).not.toHaveBeenCalledWith(
+    expect(trackPlayerAdapter.addToQueue).not.toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ id: 'old-track' })]),
     );
 

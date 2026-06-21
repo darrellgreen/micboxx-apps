@@ -21,6 +21,8 @@ import {
     type AccountPreferences,
 } from "./preferences-storage";
 
+export { DEFAULT_ACCOUNT_PREFERENCES };
+
 interface AccountPreferencesContextValue {
   preferences: AccountPreferences;
   isHydrating: boolean;

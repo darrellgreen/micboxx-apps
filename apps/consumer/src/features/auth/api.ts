@@ -175,18 +175,33 @@ function isSessionStillFresh(session: MicboxxSession | null | undefined) {
   );
 }
 
-// Serialises concurrent refresh calls so only one hits the server at a time.
-// All callers awaiting during an in-flight refresh receive the same result.
-let refreshInFlight: Promise<MicboxxSession | null> | null = null;
+// Serialises concurrent refresh calls by session key so only one hits the server at a time.
+// All callers awaiting during an in-flight refresh for the same session receive the same result.
+let currentSessionGeneration = 0;
+
+export function getSessionGeneration(): number {
+  return currentSessionGeneration;
+}
+
+export function incrementSessionGeneration(): number {
+  currentSessionGeneration += 1;
+  return currentSessionGeneration;
+}
+
+function fingerprintAccessToken(token: string): string {
+  let hash = 0;
+  for (let index = 0; index < token.length; index += 1) {
+    hash = (hash * 31 + token.charCodeAt(index)) | 0;
+  }
+  return `fp_${(hash >>> 0).toString(16)}`;
+}
+
+const refreshInFlightMap = new Map<string, Promise<MicboxxSession | null>>();
 
 export async function ensureFreshSession(
   session?: MicboxxSession | null,
   options?: { force?: boolean },
 ): Promise<MicboxxSession | null> {
-  if (refreshInFlight) {
-    return refreshInFlight;
-  }
-
   const storedSession = await readStoredSession().catch(() => null);
   const candidate =
     storedSession &&
@@ -211,11 +226,60 @@ export async function ensureFreshSession(
     return candidate;
   }
 
-  refreshInFlight = performTokenRefresh(candidate).finally(() => {
-    refreshInFlight = null;
-  });
+  const sessionKey = `${candidate.user.uuid}:${fingerprintAccessToken(candidate.refreshToken)}`;
+  const startGeneration = currentSessionGeneration;
+  const startUuid = candidate.user.uuid;
+  const startToken = candidate.accessToken;
 
-  return refreshInFlight;
+  let refreshPromise = refreshInFlightMap.get(sessionKey);
+  if (!refreshPromise) {
+    refreshPromise = performTokenRefresh(candidate).finally(() => {
+      refreshInFlightMap.delete(sessionKey);
+    });
+    refreshInFlightMap.set(sessionKey, refreshPromise);
+  }
+
+  let refreshed: MicboxxSession | null;
+  try {
+    refreshed = await refreshPromise;
+  } catch (error) {
+    const currentStored = await readStoredSession().catch(() => null);
+    const hasSessionChanged =
+      currentSessionGeneration !== startGeneration ||
+      !currentStored ||
+      currentStored.user.uuid !== startUuid ||
+      currentStored.accessToken !== startToken;
+
+    if (hasSessionChanged) {
+      return currentStored;
+    }
+
+    if (isAuthSessionExpiredError(error)) {
+      await clearStoredSession().catch(() => undefined);
+    }
+    throw error;
+  }
+
+  const currentStored = await readStoredSession().catch(() => null);
+  const hasSessionChanged =
+    currentSessionGeneration !== startGeneration ||
+    !currentStored ||
+    currentStored.user.uuid !== startUuid ||
+    (currentStored.accessToken !== startToken &&
+      (!refreshed || currentStored.accessToken !== refreshed.accessToken));
+
+  if (hasSessionChanged) {
+    return currentStored;
+  }
+
+  if (refreshed) {
+    if (options?.force && refreshed.accessToken === startToken) {
+      await clearStoredSession().catch(() => undefined);
+      throw new AuthSessionExpiredError();
+    }
+    await writeStoredSession(refreshed);
+  }
+  return refreshed;
 }
 
 async function performTokenRefresh(
@@ -245,7 +309,6 @@ async function performTokenRefresh(
 
   if (!response.ok || typeof payload?.access_token !== "string") {
     if (isInvalidRefreshTokenResponse(payload)) {
-      await clearStoredSession().catch(() => undefined);
       throw new AuthSessionExpiredError();
     }
 
@@ -256,9 +319,7 @@ async function performTokenRefresh(
     );
   }
 
-  // Write the new token immediately so it is not lost if the user-profile
-  // fetch below fails. The user object will be refreshed on the next
-  // successful profile fetch; stale user data is acceptable.
+  // Side-effect free nextSession preparation
   const nextSession: MicboxxSession = {
     ...candidate,
     accessToken: payload.access_token,
@@ -269,14 +330,10 @@ async function performTokenRefresh(
     accessTokenExpiresAt: Date.now() + (payload.expires_in ?? 300) * 1000,
   };
 
-  await writeStoredSession(nextSession);
-
   // Best-effort user profile refresh — failure does not invalidate the token.
   try {
     const user = await getDashboardBootstrapUser(payload.access_token);
-    const sessionWithUser: MicboxxSession = { ...nextSession, user };
-    await writeStoredSession(sessionWithUser);
-    return sessionWithUser;
+    return { ...nextSession, user };
   } catch {
     return nextSession;
   }
