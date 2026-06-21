@@ -8,9 +8,15 @@ import { useRoomHistory } from "@/features/account/hooks/useRoomHistory";
 import { Skeleton } from "@micboxx/ui";
 import { EmptyState, SectionHeader } from "./profile-shared";
 
-export function RoomHistorySection({ accessToken }: { accessToken: string }) {
+export function RoomHistorySection({
+  accessToken,
+  userUuid,
+}: {
+  accessToken: string;
+  userUuid: string;
+}) {
   const router = useRouter();
-  const { rooms, loading } = useRoomHistory(accessToken);
+  const { rooms, loading } = useRoomHistory(accessToken, userUuid);
 
   return (
     <View style={s.section}>

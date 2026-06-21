@@ -11,6 +11,10 @@ import {
   uploadUserCover,
   type DashboardUserProfile,
 } from "@/features/account/api";
+import {
+  getCachedUserProfile,
+  setCachedUserProfile,
+} from "@/features/account/profile-cache";
 import { UserProfileView } from "@/features/account/components/profile/UserProfileView";
 import { ScreenHeader } from "@/components/navigation/ScreenHeader";
 import { AnimatedPressable, Skeleton } from "@micboxx/ui";
@@ -19,6 +23,7 @@ import { tokens } from "@micboxx/theme";
 export default function ProfileTab() {
   const router = useRouter();
   const { session } = useAuth();
+  const userUuid = session?.user.uuid ?? null;
   const insets = useSafeAreaInsets();
 
   const [profile, setProfile] = useState<DashboardUserProfile | null>(null);
@@ -28,9 +33,15 @@ export default function ProfileTab() {
   const loadedForToken = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!session) {
+    if (!session || !userUuid) {
       setProfile(null);
       return;
+    }
+
+    const profileCacheKey = userUuid;
+    const cachedProfile = getCachedUserProfile(profileCacheKey);
+    if (cachedProfile) {
+      setProfile(cachedProfile);
     }
 
     // Avoid re-fetching if the token hasn't changed.
@@ -38,11 +49,12 @@ export default function ProfileTab() {
 
     let cancelled = false;
     async function load() {
-      setLoading(true);
+      setLoading(!cachedProfile);
       setError(null);
       try {
         const data = await fetchUserProfile(session!.accessToken, session!);
         if (!cancelled) {
+          setCachedUserProfile(profileCacheKey, data);
           setProfile(data);
           loadedForToken.current = session!.accessToken;
         }
@@ -57,17 +69,19 @@ export default function ProfileTab() {
 
     void load();
     return () => { cancelled = true; };
-  }, [session]);
+  }, [session, userUuid]);
 
   const handleUploadAvatar = async (fileUri: string, filename: string) => {
     if (!session?.accessToken) return;
     const updated = await uploadUserAvatar(session.accessToken, fileUri, filename, session);
+    setCachedUserProfile(session.user.uuid, updated);
     setProfile(updated);
   };
 
   const handleUploadCover = async (fileUri: string, filename: string) => {
     if (!session?.accessToken) return;
     const updated = await uploadUserCover(session.accessToken, fileUri, filename, session);
+    setCachedUserProfile(session.user.uuid, updated);
     setProfile(updated);
   };
 
@@ -157,6 +171,7 @@ export default function ProfileTab() {
           <UserProfileView
             profile={profile}
             accessToken={session.accessToken}
+            userUuid={session.user.uuid}
             session={session}
             coverTopInset={insets.top}
             onUpdateProfile={(updated) => setProfile(updated as DashboardUserProfile)}

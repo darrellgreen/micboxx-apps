@@ -10,12 +10,13 @@ import { EmptyState, SectionHeader } from "./profile-shared";
 
 interface RecentlyPlayedSectionProps {
   accessToken: string;
+  userUuid: string;
   session?: MicboxxSession | null;
 }
 
-export function RecentlyPlayedSection({ accessToken, session }: RecentlyPlayedSectionProps) {
+export function RecentlyPlayedSection({ accessToken, userUuid, session }: RecentlyPlayedSectionProps) {
   const router = useRouter();
-  const { tracks, loading } = useRecentlyPlayed(accessToken, session);
+  const { tracks, loading } = useRecentlyPlayed(accessToken, userUuid, session);
 
   return (
     <View style={s.section}>

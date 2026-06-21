@@ -26,6 +26,10 @@ import {
   uploadUserCover,
   type DashboardUserProfile,
 } from "@/features/account/api";
+import {
+  getCachedUserProfile,
+  setCachedUserProfile,
+} from "@/features/account/profile-cache";
 import { UserProfileView } from "@/features/account/components/profile/UserProfileView";
 import { GuestState } from "@/features/account/components/shared/GuestState";
 import { SummaryPanel } from "@/features/account/components/shared/SummaryPanel";
@@ -150,21 +154,29 @@ export default function AccountDestinationScreen() {
   const player = useDiscoverPlayer();
 
   const accessToken = session?.accessToken ?? null;
+  const userUuid = session?.user.uuid ?? null;
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<DashboardUserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   useEffect(() => {
-    if (slug !== "profile" || !session) {
+    if (slug !== "profile" || !session || !userUuid) {
       return;
+    }
+
+    const profileCacheKey = userUuid;
+    const cachedProfile = getCachedUserProfile(profileCacheKey);
+    if (cachedProfile) {
+      setProfile(cachedProfile);
     }
 
     let isCancelled = false;
     async function load() {
-      setLoadingProfile(true);
+      setLoadingProfile(!cachedProfile);
       try {
         const data = await fetchUserProfile(session!.accessToken, session!);
         if (!isCancelled) {
+          setCachedUserProfile(profileCacheKey, data);
           setProfile(data);
         }
       } catch (err) {
@@ -182,17 +194,19 @@ export default function AccountDestinationScreen() {
     return () => {
       isCancelled = true;
     };
-  }, [slug, session]);
+  }, [slug, session, userUuid]);
 
   const handleUploadAvatar = async (fileUri: string, filename: string) => {
     if (!session?.accessToken) return;
     const updated = await uploadUserAvatar(session.accessToken, fileUri, filename, session);
+    setCachedUserProfile(session.user.uuid, updated);
     setProfile(updated);
   };
 
   const handleUploadCover = async (fileUri: string, filename: string) => {
     if (!session?.accessToken) return;
     const updated = await uploadUserCover(session.accessToken, fileUri, filename, session);
+    setCachedUserProfile(session.user.uuid, updated);
     setProfile(updated);
   };
   const { state: libraryState, summary: librarySummary } = useLibraryDomains(
@@ -261,6 +275,7 @@ export default function AccountDestinationScreen() {
             <UserProfileView
               profile={profile}
               accessToken={session.accessToken}
+              userUuid={session.user.uuid}
               session={session}
               coverTopInset={insets.top}
               onUpdateProfile={(updated) => setProfile(updated as DashboardUserProfile)}

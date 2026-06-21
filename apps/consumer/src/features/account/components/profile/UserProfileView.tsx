@@ -13,6 +13,7 @@ import { RoomHistorySection } from "./RoomHistorySection";
 interface UserProfileViewProps {
   profile: DashboardUserProfile;
   accessToken: string;
+  userUuid: string;
   session?: MicboxxSession | null;
   coverTopInset?: number;
   onUpdateProfile: (data: Partial<DashboardUserProfile>) => void;
@@ -23,6 +24,7 @@ interface UserProfileViewProps {
 export function UserProfileView({
   profile,
   accessToken,
+  userUuid,
   session,
   coverTopInset = 0,
   onUpdateProfile,
@@ -52,9 +54,9 @@ export function UserProfileView({
 
       <ProfileIdentity profile={profile} />
 
-      <RecentlyPlayedSection accessToken={accessToken} session={session} />
-      <PlaylistsSection accessToken={accessToken} />
-      <RoomHistorySection accessToken={accessToken} />
+      <RecentlyPlayedSection accessToken={accessToken} userUuid={userUuid} session={session} />
+      <PlaylistsSection accessToken={accessToken} userUuid={userUuid} />
+      <RoomHistorySection accessToken={accessToken} userUuid={userUuid} />
 
       <EditProfileModal
         visible={editModalVisible}

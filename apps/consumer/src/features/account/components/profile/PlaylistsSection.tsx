@@ -11,9 +11,15 @@ import { EmptyState, SectionHeader } from "./profile-shared";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const PLAYLIST_CARD_WIDTH = (SCREEN_WIDTH - 40 - 14 * 3) / 4;
 
-export function PlaylistsSection({ accessToken }: { accessToken: string }) {
+export function PlaylistsSection({
+  accessToken,
+  userUuid,
+}: {
+  accessToken: string;
+  userUuid: string;
+}) {
   const router = useRouter();
-  const { playlists, loading } = useUserPlaylists(accessToken);
+  const { playlists, loading } = useUserPlaylists(accessToken, userUuid);
 
   return (
     <View style={s.section}>

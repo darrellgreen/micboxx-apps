@@ -101,6 +101,20 @@ function isFreePlan(plan: PublicSubscriptionPlan): boolean {
   return !plan.amount || plan.amount === 0;
 }
 
+function isListenerPlan(plan: PublicSubscriptionPlan): boolean {
+  const machineKey = plan.machineKey.toLowerCase();
+  const capabilities = plan.capabilities.map((capability) =>
+    capability.toLowerCase(),
+  );
+
+  return (
+    machineKey.includes("listener") ||
+    machineKey.includes("subscriber") ||
+    machineKey.includes("premium") ||
+    capabilities.includes("listener.subscription")
+  );
+}
+
 function formatPriceLabel(plan: PublicSubscriptionPlan): string {
   if (isFreePlan(plan)) return "Free";
   if (!plan.amount) return "Free";
@@ -152,6 +166,37 @@ function resolveEntitlementStatus(
   return "active";
 }
 
+function hasCreatorPlanEntitlement(
+  entitlement: EntitlementState | null | undefined,
+): boolean {
+  if (!entitlement) return false;
+
+  const planSignals = [
+    entitlement.plan.machineKey,
+    entitlement.source.planMachineKey,
+    entitlement.plan.label,
+  ].map((value) => value.toLowerCase());
+  const capabilities = entitlement.capabilities.map((capability) =>
+    capability.toLowerCase(),
+  );
+  const hasListenerCapability = capabilities.includes("listener.subscription");
+  const hasCreatorCapability = capabilities.some(
+    (capability) =>
+      capability.startsWith("creator.") || capability.startsWith("artist."),
+  );
+
+  return (
+    hasCreatorCapability ||
+    planSignals.some(
+      (value) =>
+        value.includes("creator") ||
+        value.includes("artist") ||
+        (!hasListenerCapability &&
+          (value.includes("pro") || value.includes("vip"))),
+    )
+  );
+}
+
 function formatCapabilityFallback(capability: string): string {
   const tail = capability.split(".").at(-1) ?? capability;
   return tail
@@ -201,6 +246,8 @@ export default function PremiumScreen() {
   const entitlementStatus = resolveEntitlementStatus(entitlement);
   const hasActivePlan =
     entitlementStatus === "active" || entitlementStatus === "grace";
+  const hasActiveCreatorPlan =
+    hasActivePlan && hasCreatorPlanEntitlement(entitlement);
 
   const hasAnnualPlans = allPlans.some(
     (p) => !isFreePlan(p) && isAnnualPlan(p),
@@ -411,6 +458,12 @@ export default function PremiumScreen() {
                 const tierKey = resolveTierKey(plan.machineKey);
                 const palette = TIER_PALETTE[tierKey];
                 const isCurrent = isCurrentPlan(plan, entitlement);
+                const disabledReason =
+                  hasActiveCreatorPlan &&
+                  !isFreePlan(plan) &&
+                  isListenerPlan(plan)
+                    ? "Your creator plan is managed separately and already covers this account. Listener plans are not an update path from creator plans."
+                    : null;
                 const savingsPct =
                   billingPeriod === "annual" && isAnnualPlan(plan)
                     ? computeSavingsPct(plan, allPlans)
@@ -423,7 +476,7 @@ export default function PremiumScreen() {
                     palette={palette}
                     isCurrent={isCurrent}
                     savingsPct={savingsPct}
-                    allPlans={allPlans}
+                    disabledReason={disabledReason}
                     onUpgrade={() => plan.storeProductId ? void purchasePlan(plan.storeProductId) : undefined}
                     isSignedIn={!!session}
                     onSignIn={() => router.push("/sign-in")}
@@ -488,7 +541,7 @@ function PlanCard({
   palette,
   isCurrent,
   savingsPct,
-  allPlans,
+  disabledReason,
   onUpgrade,
   isSignedIn,
   onSignIn,
@@ -498,12 +551,13 @@ function PlanCard({
   palette: (typeof TIER_PALETTE)[TierKey];
   isCurrent: boolean;
   savingsPct: number | null;
-  allPlans: PublicSubscriptionPlan[];
+  disabledReason: string | null;
   onUpgrade: () => void;
   isSignedIn: boolean;
   onSignIn: () => void;
 }) {
   const isFree = isFreePlan(plan);
+  const isDisabled = Boolean(disabledReason);
 
   return (
     <View>
@@ -527,6 +581,7 @@ function PlanCard({
           styles.planCard,
           { backgroundColor: palette.bg },
           isCurrent && styles.planCardCurrent,
+          isDisabled && styles.planCardDisabled,
         ]}
       >
         {/* Header row */}
@@ -616,15 +671,41 @@ function PlanCard({
             </AnimatedPressable>
           </>
         ) : !isCurrent ? (
-          <AnimatedPressable
-            onPress={isSignedIn ? onUpgrade : onSignIn}
-            scaleValue={0.93}
-            style={[styles.planCta, { backgroundColor: palette.color }]}
-          >
-            <Text style={styles.planCtaLabel}>
-              {isSignedIn ? "Upgrade" : "Get started"}
-            </Text>
-          </AnimatedPressable>
+          <>
+            {disabledReason ? (
+              <View style={styles.disabledNotice}>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={14}
+                  color={tokens.colors.textSecondary}
+                />
+                <Text style={styles.disabledNoticeText}>{disabledReason}</Text>
+              </View>
+            ) : null}
+            <AnimatedPressable
+              disabled={isDisabled}
+              onPress={isSignedIn ? onUpgrade : onSignIn}
+              scaleValue={0.93}
+              style={[
+                styles.planCta,
+                { backgroundColor: palette.color },
+                isDisabled && styles.planCtaDisabled,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.planCtaLabel,
+                  isDisabled && styles.planCtaLabelDisabled,
+                ]}
+              >
+                {isDisabled
+                  ? "Included with creator plan"
+                  : isSignedIn
+                    ? "Upgrade"
+                    : "Get started"}
+              </Text>
+            </AnimatedPressable>
+          </>
         ) : null}
       </View>
     </View>
@@ -793,6 +874,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   planCardCurrent: {},
+  planCardDisabled: {
+    opacity: 0.72,
+  },
   popularLabelRow: {
     alignItems: "center",
     marginBottom: 8,
@@ -848,12 +932,35 @@ const styles = StyleSheet.create({
   },
   savingsBadgeText: { fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
   capBlock: { gap: 8 },
+  disabledNotice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: tokens.radii.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderSubtle,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  disabledNoticeText: {
+    flex: 1,
+    color: tokens.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+  },
   planCta: {
     alignItems: "center",
     paddingVertical: 14,
     borderRadius: tokens.radii.pill,
   },
   planCtaLabel: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  planCtaDisabled: {
+    backgroundColor: "rgba(216,223,238,0.14)",
+  },
+  planCtaLabelDisabled: {
+    color: tokens.colors.textSecondary,
+  },
   freeCta: {
     alignItems: "center",
     paddingVertical: 13,
