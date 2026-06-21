@@ -7,6 +7,8 @@ import { formatDuration } from "@micboxx/api";
 import { tokens } from "@micboxx/theme";
 import { AnimatedPressable, BodyText } from "@micboxx/ui";
 
+const PLAYER_WAVEFORM_MAX_WIDTH = 460;
+
 interface PlayerTransportProps {
   playing: boolean;
   progress: number;
@@ -103,6 +105,8 @@ export function PlayerTransport({
 const s = StyleSheet.create({
   waveformSection: {
     width: "100%",
+    maxWidth: PLAYER_WAVEFORM_MAX_WIDTH,
+    alignSelf: "center",
     paddingHorizontal: 20,
   },
   timeRow: {

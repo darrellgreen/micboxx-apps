@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { NewMusicAlbums, SectionHeader, TrackRow, TrendingArtists } from '@/components/discover';
 import { ScreenHeader } from '@/components/navigation/ScreenHeader';
@@ -62,6 +62,8 @@ function dedupeRooms(rooms: PublicRoomSummary[], seen = new Set<string>()): Publ
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
 const LANE_LIMIT = 5;
+const DISCOVER_WIDE_BREAKPOINT = 700;
+const DISCOVER_MAX_WIDTH = 660;
 
 const LANE_TITLE_PARTS: Record<string, { bold: string; light: string }> = {
   followed_artists: { bold: 'Latest', light: 'from artists you follow' },
@@ -286,6 +288,8 @@ function ReleaseRoomsSection({
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isWide = width >= DISCOVER_WIDE_BREAKPOINT;
   const accessToken = useAppSelector((st) => st.auth.session?.accessToken ?? null);
   const isLoggedIn = accessToken !== null;
 
@@ -630,8 +634,8 @@ export default function HomeScreen() {
         data={homeSections}
         keyExtractor={extractKey}
         renderItem={renderHomeItem}
-        style={s.scroll}
-        contentContainerStyle={s.scrollContent}
+        style={[s.scroll, isWide && s.scrollWide]}
+        contentContainerStyle={[s.scrollContent, isWide && s.scrollContentWide]}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews
         refreshing={refreshing}
@@ -645,7 +649,13 @@ export default function HomeScreen() {
 
 const s = StyleSheet.create({
   scroll: { flex: 1 },
+  scrollWide: {
+    width: '100%',
+    maxWidth: DISCOVER_MAX_WIDTH,
+    alignSelf: 'center',
+  },
   scrollContent: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 160 },
+  scrollContentWide: { paddingHorizontal: 26 },
   loadingWrap: {
     flex: 1,
     alignItems: 'center',
