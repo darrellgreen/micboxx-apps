@@ -5,6 +5,7 @@ import {
     hydrateAuthSession,
     signIn as signInThunk,
     signOut as signOutThunk,
+    type UnverifiedAccount,
 } from "@/features/auth/auth-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -15,6 +16,7 @@ interface AuthContextValue {
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   error: string | null;
+  unverifiedAccount: UnverifiedAccount | null;
 }
 
 export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
@@ -33,12 +35,14 @@ export function useAuth(): AuthContextValue {
   const isHydrating = useAppSelector((state) => state.auth.isHydrating);
   const isSigningIn = useAppSelector((state) => state.auth.isSigningIn);
   const error = useAppSelector((state) => state.auth.error);
+  const unverifiedAccount = useAppSelector((state) => state.auth.unverifiedAccount);
 
   return {
     session,
     isHydrating,
     isSigningIn,
     error,
+    unverifiedAccount,
     signIn: async () => {
       await dispatch(signInThunk());
     },

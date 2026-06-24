@@ -50,7 +50,7 @@ export default function SignUpVerifyScreen() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const [cooldown, setCooldown] = useState(0);
+  const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
 

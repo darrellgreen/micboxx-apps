@@ -5,11 +5,27 @@ import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen, Button, AnimatedPressable } from "@micboxx/ui";
 import { useAuth } from "@/features/auth/provider";
+import { clearUnverifiedAccount } from "@/features/auth/auth-slice";
+import { useAppDispatch } from "@/store/hooks";
 import { tokens } from "@micboxx/theme";
 
 export default function SignInScreen() {
-  const { session, isHydrating, isSigningIn, error, signIn, signOut } =
+  const { session, isHydrating, isSigningIn, error, signIn, signOut, unverifiedAccount } =
     useAuth();
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (!unverifiedAccount) return;
+    router.push({
+      pathname: "/sign-up-verify",
+      params: {
+        uid: String(unverifiedAccount.uid),
+        email: unverifiedAccount.email,
+        intent: "listener",
+      },
+    });
+    dispatch(clearUnverifiedAccount());
+  }, [unverifiedAccount, dispatch]);
 
   // Once signed in, pop back to wherever the user came from
   useEffect(() => {
@@ -215,6 +231,7 @@ const s = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
   },
+
   signOutBtn: {
     height: 48,
     alignItems: "center",

@@ -36,6 +36,23 @@ export function isAuthSessionExpiredError(
   return error instanceof AuthSessionExpiredError;
 }
 
+export class EmailNotVerifiedError extends Error {
+  readonly uid: number;
+  readonly email: string;
+  constructor(uid: number, email: string, message = "Email address has not been verified.") {
+    super(message);
+    this.name = "EmailNotVerifiedError";
+    this.uid = uid;
+    this.email = email;
+  }
+}
+
+export function isEmailNotVerifiedError(
+  error: unknown,
+): error is EmailNotVerifiedError {
+  return error instanceof EmailNotVerifiedError;
+}
+
 // ─── Deep-link fallback ────────────────────────────────────────────────────
 // When the auth session intercepts the final app callback it closes the browser
 // itself and resolves promptAsync/openAuthSessionAsync — no Linking event fires.
@@ -357,14 +374,27 @@ async function getDashboardBootstrapUser(
     isRecord(payload) && isRecord(payload.data)
       ? payload.data.currentUser
       : null;
+  const errorPayload =
+    isRecord(payload) && isRecord(payload.error) ? payload.error : null;
   const errorMessage =
-    isRecord(payload) &&
-    isRecord(payload.error) &&
-    typeof payload.error.message === "string"
-      ? payload.error.message
+    errorPayload && typeof errorPayload.message === "string"
+      ? errorPayload.message
       : null;
 
   if (!response.ok || !isMicboxxSessionUser(currentUser)) {
+    if (
+      errorPayload &&
+      errorPayload.code === "email_not_verified" &&
+      typeof errorPayload.uid === "number" &&
+      typeof errorPayload.email === "string"
+    ) {
+      throw new EmailNotVerifiedError(
+        errorPayload.uid as number,
+        errorPayload.email as string,
+        errorMessage ?? undefined,
+      );
+    }
+
     throw new Error(
       errorMessage ??
         "Drupal did not return a usable dashboard bootstrap user.",
@@ -483,6 +513,14 @@ export async function signInWithDrupal(): Promise<MicboxxSession> {
   }
 
   if (result.type !== "success" || !result.params.code) {
+    if (result.type === "error" && result.params?.error_code === "email_not_verified") {
+      throw new EmailNotVerifiedError(
+        Number(result.params.uid),
+        result.params.email ?? "",
+        result.error?.description ?? "Email verification is required."
+      );
+    }
+
     const errMsg =
       result.type === "error"
         ? (result.error?.description ??

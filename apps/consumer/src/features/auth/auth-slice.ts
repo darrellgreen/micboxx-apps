@@ -10,6 +10,7 @@ import type { MicboxxSession } from "@micboxx/contracts";
 import {
     incrementSessionGeneration,
     isAuthCancelledError,
+    isEmailNotVerifiedError,
     revokeDrupalSession,
     signInWithDrupal,
 } from "@/features/auth/api";
@@ -21,11 +22,17 @@ import {
 
 const SIGN_IN_CANCELLED = "__SIGN_IN_CANCELLED__";
 
+export interface UnverifiedAccount {
+  uid: number;
+  email: string;
+}
+
 export interface AuthState {
   session: MicboxxSession | null;
   isHydrating: boolean;
   isSigningIn: boolean;
   error: string | null;
+  unverifiedAccount: UnverifiedAccount | null;
 }
 
 const initialState: AuthState = {
@@ -33,6 +40,7 @@ const initialState: AuthState = {
   isHydrating: true,
   isSigningIn: false,
   error: null,
+  unverifiedAccount: null,
 };
 
 export const hydrateAuthSession = createAsyncThunk<MicboxxSession | null>(
@@ -61,6 +69,11 @@ export const signIn = createAsyncThunk<
     return nextSession;
   } catch (error) {
     if (isAuthCancelledError(error)) {
+      return thunkApi.rejectWithValue(SIGN_IN_CANCELLED);
+    }
+
+    if (isEmailNotVerifiedError(error)) {
+      thunkApi.dispatch(setUnverifiedAccount({ uid: error.uid, email: error.email }));
       return thunkApi.rejectWithValue(SIGN_IN_CANCELLED);
     }
 
@@ -93,6 +106,12 @@ const authSlice = createSlice({
     setSession(state, action: PayloadAction<MicboxxSession | null>) {
       state.session = action.payload;
     },
+    setUnverifiedAccount(state, action: PayloadAction<UnverifiedAccount>) {
+      state.unverifiedAccount = action.payload;
+    },
+    clearUnverifiedAccount(state) {
+      state.unverifiedAccount = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -115,6 +134,7 @@ const authSlice = createSlice({
       .addCase(signIn.fulfilled, (state, action) => {
         state.isSigningIn = false;
         state.session = action.payload;
+        state.unverifiedAccount = null;
       })
       .addCase(signIn.rejected, (state, action) => {
         state.isSigningIn = false;
@@ -128,6 +148,7 @@ const authSlice = createSlice({
       })
       .addCase(signOut.fulfilled, (state) => {
         state.session = null;
+        state.unverifiedAccount = null;
       })
       .addCase(signOut.rejected, (state, action) => {
         state.error = action.error.message ?? "Unable to sign out.";
@@ -135,5 +156,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearAuthError, setSession } = authSlice.actions;
+export const { clearAuthError, setSession, setUnverifiedAccount, clearUnverifiedAccount } = authSlice.actions;
 export const authReducer = authSlice.reducer;

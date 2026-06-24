@@ -362,13 +362,12 @@ export function isRoomRewardNotification(
   return notification.notification_type.startsWith('room_reward_');
 }
 
-export async function getRoomNotifications(input?: {
-  limit?: number;
-  accessToken?: string | null;
-}): Promise<RoomNotificationsResponse> {
+async function fetchRoomNotificationsWithToken(
+  accessToken: string | null,
+  limit: number,
+): Promise<RoomNotificationsResponse> {
   const params = new URLSearchParams();
-  params.set('limit', String(input?.limit ?? 12));
-  const accessToken = await getAccessToken(input?.accessToken);
+  params.set('limit', String(limit));
   const webProxyBaseUrl = resolveWebProxyBaseUrl();
 
   if (webProxyBaseUrl) {
@@ -384,7 +383,10 @@ export async function getRoomNotifications(input?: {
       if (response.notifications.length > 0) {
         return response;
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        throw error;
+      }
       // Fall back to Drupal directly when the web bridge is unavailable.
     }
   }
@@ -392,6 +394,27 @@ export async function getRoomNotifications(input?: {
   return apiFetch<RoomNotificationsResponse>(`/v1/rooms/notifications?${params.toString()}`, {
     accessToken,
   });
+}
+
+export async function getRoomNotifications(input?: {
+  limit?: number;
+  accessToken?: string | null;
+}): Promise<RoomNotificationsResponse> {
+  const limit = input?.limit ?? 12;
+  const accessToken = await getAccessToken(input?.accessToken);
+
+  try {
+    return await fetchRoomNotificationsWithToken(accessToken, limit);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      const config = getMicboxxApiConfig();
+      if (config.forceRefreshToken) {
+        const freshToken = await config.forceRefreshToken();
+        return fetchRoomNotificationsWithToken(freshToken, limit);
+      }
+    }
+    throw error;
+  }
 }
 
 export async function markRoomNotificationRead(input: {

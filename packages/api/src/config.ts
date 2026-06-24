@@ -3,6 +3,7 @@ export interface MicboxxApiConfig {
   webBaseUrl?: string;
   useFixtures: boolean;
   getToken: () => Promise<string | null>;
+  forceRefreshToken?: () => Promise<string | null>;
   isAuthSessionExpiredError?: (error: unknown) => boolean;
 }
 

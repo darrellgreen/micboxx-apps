@@ -69,6 +69,18 @@ configureMicboxxApi({
       throw error;
     }
   },
+  forceRefreshToken: async () => {
+    try {
+      const session = await ensureFreshSession(undefined, { force: true });
+      return session?.accessToken ?? null;
+    } catch (error) {
+      if (isAuthSessionExpiredError(error)) {
+        store.dispatch(setSession(null));
+        store.dispatch(micboxxApi.util.resetApiState());
+      }
+      throw error;
+    }
+  },
   isAuthSessionExpiredError,
 });
 

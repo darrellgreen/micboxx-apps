@@ -5,16 +5,28 @@ import { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen, AnimatedPressable, Button } from "@micboxx/ui";
 import { useAuth } from "@/features/auth/provider";
+import { clearUnverifiedAccount } from "@/features/auth/auth-slice";
+import { useAppDispatch } from "@/store/hooks";
 import { useCreatorBootstrap } from "@/features/bootstrap/provider";
 import { resolveCreatorEntryHref } from "@/features/bootstrap/routes";
 import { tokens } from "@micboxx/theme";
 
 export default function WelcomeScreen() {
   const bootstrap = useCreatorBootstrap();
-  const { session, isHydrating, isSigningIn, error, signIn, signOut } =
+  const { session, isHydrating, isSigningIn, error, signIn, signOut, unverifiedAccount } =
     useAuth();
+  const dispatch = useAppDispatch();
 
   const hasNavigated = useRef(false);
+
+  useEffect(() => {
+    if (!unverifiedAccount) return;
+    router.push({
+      pathname: "/verify-email",
+      params: { uid: String(unverifiedAccount.uid), email: unverifiedAccount.email },
+    });
+    dispatch(clearUnverifiedAccount());
+  }, [unverifiedAccount, dispatch]);
 
   useEffect(() => {
     if (session && !isHydrating && !bootstrap.loading) {
