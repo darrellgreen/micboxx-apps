@@ -22,6 +22,7 @@ import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
 import { expireSession } from "@/features/auth/auth-slice";
 import { PlatformAnalyticsAdapter } from "@/features/analytics/adapter";
+import { EmailAttributionCapture } from "@/features/analytics/email-attribution";
 import { AccountPreferencesProvider } from "@/features/account/provider";
 import { SubscriptionProvider } from "@/features/subscription/provider";
 import { PushProvider } from "@/features/push/PushProvider";
@@ -89,6 +90,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <AuthProvider>
+          <EmailAttributionCapture />
           <PushProvider />
           <SubscriptionProvider>
           <AccountPreferencesProvider>

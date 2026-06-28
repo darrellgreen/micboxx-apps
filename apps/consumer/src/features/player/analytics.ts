@@ -1,6 +1,7 @@
 import { apiFetch } from "@micboxx/api";
 import {
   type AnalyticsEventName,
+  getEmailAttributionRef,
   type PlayerAnalyticsPayload,
   PLAYER_ANALYTICS_EVENTS,
 } from "@micboxx/analytics";
@@ -29,6 +30,16 @@ export function createServerPlayerAnalyticsSink(
       const mediaSessionEvent = PLAYER_EVENT_TO_MEDIA_SESSION[event];
       if (!mediaSessionEvent || !payload.trackId) return;
 
+      const emailAttributionRef = getEmailAttributionRef();
+      const metadata = {
+        ...(payload.currentPositionSec !== undefined && {
+          position_sec: payload.currentPositionSec,
+        }),
+        ...(emailAttributionRef ? {
+          email_attribution_ref: emailAttributionRef,
+        } : {}),
+      };
+
       void apiFetch(`/v1/public/tracks/${payload.trackId}/analytics/event`, {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
@@ -36,9 +47,7 @@ export function createServerPlayerAnalyticsSink(
           eventType: mediaSessionEvent,
           sourceType: payload.sourceKind ?? "unknown",
           sessionId: getSessionId(),
-          ...(payload.currentPositionSec !== undefined && {
-            metadata: { position_sec: payload.currentPositionSec },
-          }),
+          ...(Object.keys(metadata).length > 0 && { metadata }),
         }),
         accessToken: getAccessToken(),
       }).catch(() => undefined);

@@ -2,6 +2,7 @@ import type { AnalyticsProvider } from "./types";
 import { type AnalyticsEventName, PLAYER_ANALYTICS_EVENTS } from "./events";
 
 let analyticsProvider: AnalyticsProvider | null = null;
+let currentEmailAttributionRef: string | null = null;
 
 const VALID_EVENT_NAMES = new Set<string>(Object.values(PLAYER_ANALYTICS_EVENTS));
 
@@ -31,7 +32,7 @@ export function trackEvent(eventName: AnalyticsEventName, properties?: Record<st
     console.warn(`Analytics not configured. Suppressing event: ${eventName}`);
     return;
   }
-  analyticsProvider.trackEvent(eventName, properties);
+  analyticsProvider.trackEvent(eventName, withEmailAttribution(properties));
 }
 
 export function identifyUser(userId: string, traits?: Record<string, unknown>): void {
@@ -54,5 +55,27 @@ export function trackScreen(screenName: string, properties?: Record<string, unkn
     console.warn(`Analytics not configured. Suppressing screen track: ${screenName}`);
     return;
   }
-  analyticsProvider.trackScreen(screenName, properties);
+  analyticsProvider.trackScreen(screenName, withEmailAttribution(properties));
+}
+
+export function setEmailAttributionRef(ref: string | null): void {
+  const normalized = typeof ref === "string" ? ref.trim() : "";
+  currentEmailAttributionRef = normalized.length > 0 ? normalized : null;
+}
+
+export function getEmailAttributionRef(): string | null {
+  return currentEmailAttributionRef;
+}
+
+export function withEmailAttribution(
+  properties?: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  if (!currentEmailAttributionRef) {
+    return properties;
+  }
+
+  return {
+    ...(properties ?? {}),
+    email_attribution_ref: currentEmailAttributionRef,
+  };
 }

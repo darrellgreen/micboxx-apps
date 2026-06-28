@@ -40,6 +40,7 @@ import {
 import { configureMicboxxAnalytics } from "@micboxx/analytics";
 import { ensureFreshSession, isAuthSessionExpiredError } from "@/features/auth/api";
 import { PlatformAnalyticsAdapter } from "@/features/analytics/adapter";
+import { EmailAttributionCapture } from "@/features/analytics/email-attribution";
 
 if (env.sentryDsn) {
   Sentry.init({
@@ -269,6 +270,7 @@ function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <AuthProvider>
+          <EmailAttributionCapture />
           <SubscriptionProvider>
           <AccountPreferencesProvider>
             <SocialAuthGate />
